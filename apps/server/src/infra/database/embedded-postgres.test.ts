@@ -1,8 +1,10 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
 import pg from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
+
 import { freePort } from '../../../test/free-port.js';
 import { startEmbeddedPostgres } from './embedded-postgres.js';
 

@@ -117,6 +117,7 @@
   [disabled]="inert()"
   [variant]="active['link'] ? 'secondary' : 'ghost'"
   hlmTooltip="Link"
+  aria-label="Link"
   (click)="setLink()">
   <ng-icon name="lucideLink" />
 </button>
@@ -164,6 +165,7 @@
   [disabled]="inert()"
   variant="ghost"
   hlmTooltip="Horizontal Rule"
+  aria-label="Horizontal Rule"
   (click)="editor?.chain().focus().setHorizontalRule().run()">
   <ng-icon name="lucideMinus" />
 </button>

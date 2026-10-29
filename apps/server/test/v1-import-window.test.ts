@@ -1,10 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets } from '../src/infra/database/schema.js';
+
 import { newUuid } from '../src/infra/database/id.js';
+import { assets } from '../src/infra/database/schema.js';
+import { S1 } from './ids.js';
 import { seedAsset, seedContent, seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_PUBLIC } from './seed.js';
 import { createTestApp, setImport, TestApp } from './test-app.js';
-import { S1 } from './ids.js';
 
 /**
  * Moving a space from Firebase: traffic for the old asset URLs may arrive before or while the space is imported.

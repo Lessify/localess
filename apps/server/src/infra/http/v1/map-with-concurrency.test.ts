@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { mapWithConcurrency } from './map-with-concurrency.js';
 
 /** Resolves after a tick, tracking peak concurrency in the supplied counter. */

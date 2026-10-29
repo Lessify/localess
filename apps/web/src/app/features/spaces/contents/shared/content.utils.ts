@@ -1,11 +1,6 @@
 import {
   CONTENT_DEFAULT_LOCALE,
-  ContentAsset,
   ContentData,
-  ContentReference,
-  isContentAsset,
-  isContentLink,
-  isContentReference,
   isFieldTranslatable,
   isSchemaArray,
   Schema,
@@ -90,82 +85,9 @@ export function extractSchemaContent(data: ContentData, schema: SchemaComponent,
 }
 
 /**
- * Extract References to other Content or Asset
- * @param {ContentData} data - document
- * @param {Schema[]} schemas
- * @param {string} locale
- * @return {[Set<string>, Set<string>, Set<string>]} [inUseAssets, inUseLinks, inUseReferences]
- */
-export function extractReferences(
-  data: ContentData | undefined,
-  schemas: Schema[],
-  locale: string,
-): [Set<string>, Set<string>, Set<string>] {
-  //console.group('extractReferences', locale);
-  const inUseAssets = new Set<string>();
-  const inUseLinks = new Set<string>();
-  const inUseReferences = new Set<string>();
-  const schemasByName = new Map<string, Schema>(schemas.map(it => [it.name, it]));
-  if (data === undefined) return [inUseAssets, inUseLinks, inUseReferences];
-  const contentIteration = [data];
-  // Iterative traversing content and extracting references.
-  let selectedContent = contentIteration.pop();
-  while (selectedContent) {
-    const schema = schemasByName.get(selectedContent._schema);
-    if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
-      const schemaContent = extractSchemaContent(selectedContent, schema, locale, true);
-      // handle array like Asset/Reference Array
-      Object.getOwnPropertyNames(schemaContent).forEach(fieldName => {
-        const content = schemaContent[fieldName];
-        //console.log(fieldName, content);
-        if (content instanceof Array) {
-          if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
-            // Assets
-            const assets: ContentAsset[] = content;
-            assets.forEach(it => inUseAssets.add(it.uri));
-          } else if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
-            // References
-            const references: ContentReference[] = content;
-            references.forEach(it => inUseReferences.add(it.uri));
-          }
-        } else {
-          if (isContentAsset(content)) {
-            inUseAssets.add(content.uri);
-          } else if (isContentReference(content)) {
-            inUseReferences.add(content.uri);
-          } else if (isContentLink(content) && content.type === 'content') {
-            inUseLinks.add(content.uri);
-          }
-        }
-      });
-
-      //console.log(schemaContent);
-      schema.fields
-        ?.filter(it => it.kind === SchemaFieldKind.SCHEMA)
-        .forEach(field => {
-          const sch: ContentData | undefined = (selectedContent && selectedContent[field.name]) as ContentData | undefined;
-          if (sch) {
-            contentIteration.push(sch);
-          }
-        });
-      schema.fields
-        ?.filter(it => it.kind === SchemaFieldKind.SCHEMAS)
-        .forEach(field => {
-          const sch: ContentData[] | undefined = selectedContent![field.name] as ContentData[] | undefined;
-          sch?.forEach(it => contentIteration.push(it));
-        });
-    }
-    selectedContent = contentIteration.pop();
-  }
-  //console.log(inUseAssets, inUseReferences);
-  //console.groupEnd();
-  return [inUseAssets, inUseLinks, inUseReferences];
-}
-
-/**
  * Collect every field a whole-document translation should fill.
  *
- * Traverses the document the way {@link extractReferences} does, but reads the raw
+ * Traverses the document by schema (Schema and Schemas fields into their blocks), reading the raw
  * locale-suffixed keys off each node rather than going through `extractSchemaContent`, because
  * it needs both the source value and whether the target is still empty.
  *

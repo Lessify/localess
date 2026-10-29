@@ -5,12 +5,13 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Locale, Space, Token, TokenType, Translation } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
-import { TokenService } from '@core/services/token.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { TranslateService } from '@core/services/translate.service';
 import { TranslationService } from '@core/services/translation.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { TranslationsComponent } from './translations.component';
@@ -18,14 +19,20 @@ import { TranslationsComponent } from './translations.component';
 const en: Locale = { id: 'en', name: 'English' };
 const de: Locale = { id: 'de', name: 'German' };
 
-function space(overrides: Partial<Space> = {}): Space {
-  return { id: 'space-1', name: 'Space 1', locales: [en, de], defaultLocale: en, ...overrides } as Space;
+/** The selected space with its locales (`spaceLocales`, as `GET /spaces/:id` answers them); `en` the default. */
+function space(overrides: Partial<Space> & { locales?: Locale[] } = {}): Space {
+  const { locales = [en, de], ...rest } = overrides;
+  const spaceLocales = locales.map((locale, position) => ({ spaceId: 'space-1', localeId: locale.id, position, createdAt: '', locale }));
+  return { id: 'space-1', name: 'Space 1', defaultLocaleId: 'en', defaultLocale: en, spaceLocales, ...rest } as Space;
 }
 
 function translation(overrides: Partial<Translation> = {}): Translation {
   // The key follows the id unless given, so tests can name translations by either.
   return { id: 't1', key: overrides.id ?? 't1', locales: { en: 'Hello' }, ...overrides } as Translation;
 }
+
+const saveAs = vi.hoisted(() => vi.fn());
+vi.mock('file-saver-es', () => ({ saveAs }));
 
 describe('TranslationsComponent', () => {
   afterEach(() => {
@@ -35,34 +42,55 @@ describe('TranslationsComponent', () => {
 
   const NO_SPACE = null;
 
-  function setup(translations: Translation[] = [], selectedSpace: Space | null = space()) {
+  function setup(labels: string[] = [], selectedSpace: Space | null = space()) {
     const resolvedSpace = selectedSpace === NO_SPACE ? undefined : selectedSpace;
-    const findAll = vi.fn().mockReturnValue(of(translations));
+    const findLabels = vi.fn().mockReturnValue(of(labels));
+    const findOne = vi.fn((_spaceId: string, id: string) => of(translation({ id, locales: { en: 'Fresh' } })));
+    const isKeyTaken = vi.fn().mockReturnValue(of(false));
     const create = vi.fn().mockReturnValue(of(undefined));
     const publish = vi.fn().mockReturnValue(of(undefined));
     const updateLocale = vi.fn().mockReturnValue(of(undefined));
-    const translateLocale = vi.fn().mockReturnValue(of({ translated: 12, failed: 0 }));
-    const createTranslationImportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
-    const createTranslationExportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
+    const exportLocaleUrl = vi.fn((spaceId: string, locale: string) => `/api/app/spaces/${spaceId}/translations/export/${locale}`);
+    const createTranslationImport = vi.fn().mockReturnValue(of({ id: 'task1' }));
+    const createTranslationExport = vi.fn().mockReturnValue(of({ id: 'task1' }));
+    const createTranslationTranslate = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const translate = vi.fn().mockReturnValue(of('translated'));
     const firstValue = vi.fn().mockReturnValue(of('token1'));
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const watch = vi.fn();
 
     TestBed.overrideComponent(TranslationsComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         {
           provide: TranslationService,
-          useValue: { findAll, create, publish, updateLocale, translateLocale },
+          useValue: { findLabels, findOne, isKeyTaken, create, publish, updateLocale, exportLocaleUrl },
         },
-        { provide: TaskService, useValue: { createTranslationImportTask, createTranslationExportTask } },
+        {
+          provide: TaskService,
+          useValue: {
+            createTranslationImport,
+            createTranslationExport,
+            createTranslationTranslate,
+            findActive: () => of([]),
+            spaceProgress: () => EMPTY,
+          },
+        },
         { provide: HlmDialogService, useValue: { open } },
+        { provide: TaskNotifierService, useValue: { watch } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: TranslateService, useValue: { translate } },
-        { provide: TokenService, useValue: { firstValue } },
-        { provide: SpaceStore, useValue: { selectedSpace: signal(resolvedSpace) } },
+        { provide: SpaceTokenService, useValue: { firstValue } },
+        {
+          provide: SpaceStore,
+          useValue: {
+            selectedSpace: signal(resolvedSpace),
+            locales: signal((resolvedSpace?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : []))),
+            defaultLocale: signal(resolvedSpace?.defaultLocale),
+          },
+        },
       ],
     });
     const fixture = TestBed.createComponent(TranslationsComponent);
@@ -70,13 +98,17 @@ describe('TranslationsComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
-      findAll,
+      watch,
+      findLabels,
+      findOne,
+      isKeyTaken,
       create,
       publish,
       updateLocale,
-      translateLocale,
-      createTranslationImportTask,
-      createTranslationExportTask,
+      exportLocaleUrl,
+      createTranslationImport,
+      createTranslationExport,
+      createTranslationTranslate,
       translate,
       firstValue,
       success,
@@ -85,36 +117,60 @@ describe('TranslationsComponent', () => {
     };
   }
 
-  describe('init', () => {
-    it('loads translations and auto-selects the first one', () => {
-      const t1 = translation({ id: 't1' });
-      const t2 = translation({ id: 't2' });
-      const { component, findAll } = setup([t1, t2]);
+  it('loads the labels of the space', () => {
+    const { component, findLabels } = setup(['marketing', 'ui']);
 
-      expect(findAll).toHaveBeenCalledWith('space-1');
-      expect(component.translations()).toEqual([t1, t2]);
-      expect(component.selectedTranslation()).toEqual(t1);
-      expect(component.isLoading()).toBe(false);
-    });
+    expect(findLabels).toHaveBeenCalledWith('space-1');
+    expect(component.allLabels()).toEqual(['marketing', 'ui']);
+    expect(component.isLoading()).toBe(false);
   });
 
-  it('allLabels() dedupes labels across all loaded translations', () => {
-    const { component } = setup([
-      translation({ id: 't1', labels: ['ui', 'marketing'] }),
-      translation({ id: 't2', labels: ['ui'] }),
-      translation({ id: 't3', labels: undefined }),
-    ]);
+  it('selects the first key the list shows when nothing is selected, then follows it live', () => {
+    const { component, findOne } = setup();
 
-    expect(component.allLabels()).toEqual(['ui', 'marketing']);
+    component.onFirstTranslation(translation({ id: 't1' }));
+    TestBed.tick();
+    component.onFirstTranslation(translation({ id: 't2' }));
+    TestBed.tick();
+
+    expect(findOne).toHaveBeenCalledExactlyOnceWith('space-1', 't1');
+    expect(component.selectedTranslation()).toEqual(translation({ id: 't1', locales: { en: 'Fresh' } }));
   });
 
-  it('selectTranslation() sets the selected translation', () => {
-    const { component } = setup();
-    const t = translation({ id: 't1' });
+  it('clears the selection when the selected translation is gone', () => {
+    const { component, findOne } = setup();
+    findOne.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
 
-    component.selectTranslation(t);
+    component.selectTranslation(translation({ id: 't1' }));
+    TestBed.tick();
 
-    expect(component.selectedTranslation()).toEqual(t);
+    expect(component.selectedTranslation()).toBeUndefined();
+  });
+
+  it('after a delete, selects the first key shown, but not the deleted one while it is still shown', () => {
+    const { component, findOne } = setup();
+    findOne.mockImplementation((_spaceId: string, id: string) =>
+      id === 't1' ? throwError(() => new HttpErrorResponse({ status: 404 })) : of(translation({ id })),
+    );
+    component.onFirstTranslation(translation({ id: 't1' }));
+    TestBed.tick();
+
+    expect(findOne).toHaveBeenCalledExactlyOnceWith('space-1', 't1');
+    expect(component.selectedTranslation()).toBeUndefined();
+
+    // The list read again without it.
+    component.onFirstTranslation(translation({ id: 't2' }));
+    TestBed.tick();
+
+    expect(component.selectedTranslation()).toEqual(translation({ id: 't2' }));
+  });
+
+  it('asks the server whether a key is taken (the add and rename dialogs)', () => {
+    const { component, isKeyTaken } = setup();
+
+    component.isKeyTaken('home.title').subscribe();
+
+    expect(isKeyTaken).toHaveBeenCalledWith('space-1', 'home.title');
   });
 
   describe('publish', () => {
@@ -132,13 +188,17 @@ describe('TranslationsComponent', () => {
       expect(component.isPublishLoading()).toBe(false);
     });
 
-    it('notifies an error on failure', () => {
+    it('notifies an error on failure, and Publish stops spinning (an error never completes)', async () => {
+      vi.useFakeTimers();
       const { component, publish, error } = setup();
       publish.mockReturnValue(throwError(() => new Error('boom')));
 
       component.publish();
 
       expect(error).toHaveBeenCalledWith('Translations can not be published.');
+      expect(component.isPublishLoading()).toBe(true);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isPublishLoading()).toBe(false);
     });
   });
 
@@ -230,82 +290,86 @@ describe('TranslationsComponent', () => {
   });
 
   describe('openImportDialog', () => {
-    it('creates a FLAT import task with the chosen locale', () => {
-      const { component, open, createTranslationImportTask, success } = setup();
+    it('imports a key-value JSON into its locale, and watches the task', () => {
+      const { component, open, createTranslationImport, watch } = setup();
       const file = new File(['data'], 'de.json');
-      open.mockReturnValue({ closed$: of({ kind: 'FLAT', locale: 'de', file }) });
+      open.mockReturnValue({ closed$: of({ locale: 'de', file }) });
 
       component.openImportDialog([en, de]);
 
-      expect(createTranslationImportTask).toHaveBeenCalledWith('space-1', file, 'de');
-      expect(success).toHaveBeenCalledWith('Translation Import Task has been created.', expect.anything());
+      expect(createTranslationImport).toHaveBeenCalledWith('space-1', file, 'de');
+      expect(watch).toHaveBeenCalledWith('space-1', { id: 'task1' });
     });
 
-    it('creates a FULL import task without a locale', () => {
-      const { component, open, createTranslationImportTask } = setup();
-      const file = new File(['data'], 'export.llt.zip');
-      open.mockReturnValue({ closed$: of({ kind: 'FULL', file }) });
+    it('imports a Localess file without a locale', () => {
+      const { component, open, createTranslationImport } = setup();
+      const file = new File(['data'], 'site-translations.localess.zip');
+      open.mockReturnValue({ closed$: of({ file }) });
 
       component.openImportDialog([en, de]);
 
-      expect(createTranslationImportTask).toHaveBeenCalledWith('space-1', file);
+      expect(createTranslationImport).toHaveBeenCalledWith('space-1', file, undefined);
     });
 
-    it('notifies an error on failure', () => {
-      const { component, open, createTranslationImportTask, error } = setup();
-      createTranslationImportTask.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ closed$: of({ kind: 'FULL', file: new File([], 'a.zip') }) });
+    it("tells the server's reason when the import can not be created", () => {
+      const { component, open, createTranslationImport, error } = setup();
+      createTranslationImport.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 400, error: { message: 'Expected a .json file' } })),
+      );
+      open.mockReturnValue({ closed$: of({ file: new File([], 'a.zip'), locale: 'de' }) });
 
       component.openImportDialog([en, de]);
 
-      expect(error).toHaveBeenCalledWith('Translation Import Task can not be created.');
+      expect(error).toHaveBeenCalledWith('Translations can not be imported: Expected a .json file');
     });
   });
 
   describe('openExportDialog', () => {
-    it('creates a FLAT export task with the chosen locale', () => {
-      const { component, open, createTranslationExportTask, success } = setup();
-      open.mockReturnValue({ closed$: of({ kind: 'FLAT', locale: 'de' }) });
+    it('downloads one locale at once, without a task', () => {
+      const { component, open, createTranslationExport } = setup();
+      open.mockReturnValue({ closed$: of({ kind: 'LOCALE', locale: 'de' }) });
 
       component.openExportDialog([en, de]);
 
-      expect(createTranslationExportTask).toHaveBeenCalledWith('space-1', 'de');
-      expect(success).toHaveBeenCalledWith('Translation Export Task has been created.', expect.anything());
+      expect(saveAs).toHaveBeenCalledWith('/api/app/spaces/space-1/translations/export/de', 'de.json');
+      expect(createTranslationExport).not.toHaveBeenCalled();
     });
 
-    it('creates a FULL export task without a locale', () => {
-      const { component, open, createTranslationExportTask } = setup();
+    it('exports all translations as a task, and watches it', () => {
+      const { component, open, createTranslationExport, watch } = setup();
       open.mockReturnValue({ closed$: of({ kind: 'FULL' }) });
 
       component.openExportDialog([en, de]);
 
-      expect(createTranslationExportTask).toHaveBeenCalledWith('space-1');
+      expect(createTranslationExport).toHaveBeenCalledWith('space-1');
+      expect(watch).toHaveBeenCalledWith('space-1', { id: 'task1' });
     });
   });
 
   describe('openTranslateLocaleDialog', () => {
     function run(result: unknown) {
-      const { component, open, translateLocale, success, error } = setup();
-      translateLocale.mockReturnValue(result);
+      const { component, open, createTranslationTranslate, error, watch } = setup();
+      createTranslationTranslate.mockReturnValue(result);
       open.mockReturnValue({ closed$: of({ sourceLocale: 'en', targetLocale: 'de', overwrite: true }) });
       component.openTranslateLocaleDialog([en, de]);
-      return { translateLocale, success, error };
+      return { createTranslationTranslate, error, open, watch };
     }
 
-    it('translates the locale and reports how many keys were written', () => {
-      const { translateLocale, success } = run(of({ translated: 12, failed: 0 }));
-      expect(translateLocale).toHaveBeenCalledWith('space-1', 'en', 'de', true);
-      expect(success).toHaveBeenCalledWith('Translated 12 keys.');
+    // The task writes every key at once, so the dialog has to say it saves; the column on show is the likely target.
+    it('opens the dialog in save mode, on the locale the list shows', () => {
+      const { component, open } = setup();
+      open.mockReturnValue({ closed$: of(undefined) });
+      component.currentLocale.set('de');
+
+      component.openTranslateLocaleDialog([en, de]);
+
+      expect(open.mock.calls[0][1].context).toMatchObject({ mode: 'save', locales: [en, de], selectedLocale: 'de' });
     });
 
-    it('reports keys the provider failed on', () => {
-      const { error } = run(of({ translated: 10, failed: 2 }));
-      expect(error).toHaveBeenCalledWith('Translated 10 keys; 2 failed and were left unchanged.');
-    });
-
-    it('says when there was nothing to translate', () => {
-      const { success } = run(of({ translated: 0, failed: 0 }));
-      expect(success).toHaveBeenCalledWith('Nothing to translate.');
+    it('starts a translate-locale task and watches it', () => {
+      const { createTranslationTranslate, watch } = run(of({ id: 'task1' }));
+      expect(createTranslationTranslate).toHaveBeenCalledWith('space-1', { sourceLocale: 'en', targetLocale: 'de', overwrite: true });
+      expect(watch).toHaveBeenCalledWith('space-1', { id: 'task1' });
     });
 
     it('explains that translation is not configured on a 412', () => {
@@ -338,13 +402,18 @@ describe('TranslationsComponent', () => {
       expect(component.translationUpdateId()).toBeUndefined();
     });
 
-    it('notifies an error on failure', () => {
+    it('notifies an error on failure, and the value stops saving (an error never completes)', async () => {
+      vi.useFakeTimers();
       const { component, updateLocale, error } = setup();
       updateLocale.mockReturnValue(throwError(() => new Error('boom')));
 
       component.updateLocale(translation({ id: 't1' }), de, 'Hallo');
 
       expect(error).toHaveBeenCalledWith('Translation can not be updated.');
+      expect(component.isLocaleUpdateLoading()).toBe(true);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isLocaleUpdateLoading()).toBe(false);
+      expect(component.translationUpdateId()).toBeUndefined();
     });
   });
 

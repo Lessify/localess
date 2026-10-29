@@ -1,5 +1,5 @@
-import { OpenAPIObject, ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 import { Schema, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
+import { OpenAPIObject, ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 /**
  * Generate Open API
  * @param {Map<string, Schema>} schemasById
@@ -534,7 +534,8 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'token',
               in: 'query',
-              description: 'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
+              description:
+                'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
               required: true,
               schema: {
                 type: 'string',
@@ -625,7 +626,8 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'token',
               in: 'query',
-              description: 'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
+              description:
+                'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
               required: true,
               schema: {
                 type: 'string',
@@ -715,7 +717,8 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'token',
               in: 'query',
-              description: 'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
+              description:
+                'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
               required: true,
               schema: {
                 type: 'string',
@@ -835,7 +838,8 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'token',
               in: 'query',
-              description: 'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
+              description:
+                'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
               required: true,
               schema: {
                 type: 'string',

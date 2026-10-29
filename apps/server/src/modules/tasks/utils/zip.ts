@@ -1,28 +1,9 @@
-import { PassThrough, Readable, Transform } from 'node:stream';
+import { Readable, Transform } from 'node:stream';
 import { json } from 'node:stream/consumers';
-import archiver from 'archiver';
+
 import unzipper from 'unzipper';
+
 import type { StorageDriver } from '../../../infra/storage/storage.driver.js';
-
-export interface ZipEntry {
-  name: string;
-  /** Inline content, or a factory opening a stream (opened one at a time, while archiving). */
-  content: string | Buffer | (() => Readable);
-}
-
-/** Builds a zip (zlib level 9, as before) straight into storage. Returns the stored size. */
-export async function writeZip(storage: StorageDriver, key: string, entries: ZipEntry[]): Promise<number> {
-  const archive = archiver('zip', { zlib: { level: 9 } });
-  const output = new PassThrough();
-  archive.pipe(output);
-  const stored = storage.put(key, output);
-  const failed = new Promise<never>((_, reject) => archive.on('error', reject));
-  for (const entry of entries) {
-    archive.append(typeof entry.content === 'function' ? entry.content() : entry.content, { name: entry.name });
-  }
-  await Promise.race([archive.finalize(), failed]);
-  return (await Promise.race([stored, failed])).size;
-}
 
 /** Thrown when an entry inflates past its cap (zip bomb, or simply too large). */
 export class EntryTooLargeError extends Error {}
@@ -37,6 +18,17 @@ export function capped(maxBytes: number, name: string): Transform {
       else callback(null, chunk);
     },
   });
+}
+
+/**
+ * `source` cut off at `maxBytes` (an `EntryTooLargeError`, the rest of the source drained), and failing with the
+ * source's own error (an aborted upload) instead of waiting for an end that never comes.
+ */
+export function limited(source: Readable, maxBytes: number, name: string): Readable {
+  const limiter = capped(maxBytes, name);
+  source.once('error', error => limiter.destroy(error));
+  limiter.once('error', () => source.unpipe(limiter).resume());
+  return source.pipe(limiter);
 }
 
 export interface ZipReader {

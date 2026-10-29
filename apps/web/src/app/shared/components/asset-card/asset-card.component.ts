@@ -1,6 +1,6 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { Asset } from '@localess/shared';
+import { Asset, type AssetFileMetadata } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideFile,
@@ -9,6 +9,7 @@ import {
   lucideFileMusic,
   lucideFileText,
   lucideFileVideoCamera,
+  lucideFileX,
   lucideFolder,
 } from '@ng-icons/lucide';
 import { fileIcon, filePreview } from '@shared/models/asset.model';
@@ -24,16 +25,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
   templateUrl: './asset-card.component.html',
   styleUrls: ['./asset-card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    CommonModule,
-    NgOptimizedImage,
-    TimeDurationPipe,
-    FormatFileSizePipe,
-    HlmCardImports,
-    HlmBadgeImports,
-    HlmIconImports,
-    HlmTooltipImports,
-  ],
+  imports: [CommonModule, TimeDurationPipe, FormatFileSizePipe, HlmCardImports, HlmBadgeImports, HlmIconImports, HlmTooltipImports],
   providers: [
     provideIcons({
       lucideFile,
@@ -42,16 +34,23 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
       lucideFileMusic,
       lucideFileText,
       lucideFileDigit,
+      lucideFileX,
       lucideFolder,
     }),
   ],
 })
 export class AssetCardComponent {
+  /** The playback length of an animated image or a video (seconds); other files have none. */
+  protected readonly durationOf = (metadata: AssetFileMetadata): number | undefined =>
+    'duration' in metadata ? metadata.duration : undefined;
+
   // Inputs
   readonly item = input.required<Asset>();
   readonly spaceId = input.required<string>();
   readonly zoomCursor = input(false);
   readonly showFooter = input(true);
+  /** Where the asset is ('~/Images/Photos'), shown under its name: lists from several folders set it. */
+  readonly path = input<string>();
 
   // Outputs
   readonly assetSelect = output<Asset>();

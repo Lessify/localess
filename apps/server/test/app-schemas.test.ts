@@ -1,11 +1,12 @@
+import { SchemaField, SchemaFieldKind } from '@localess/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { SchemaField, SchemaFieldKind } from '@localess/shared';
+
 import { newUuid } from '../src/infra/database/id.js';
-import { SchemasRepository } from '../src/modules/schemas/repositories/schemas.repository.js';
 import { contents } from '../src/infra/database/schema.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
+import { SchemaRepository } from '../src/modules/schemas/repositories/schema.repository.js';
 import { S1, UUID_V7 } from './ids.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 
 describe('app API: schemas', () => {
   let t: TestApp;
@@ -20,12 +21,12 @@ describe('app API: schemas', () => {
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
-        role: 'CUSTOM',
-        permissions: ['SCHEMA_READ', 'SCHEMA_CREATE', 'SCHEMA_UPDATE', 'SCHEMA_DELETE'],
+        role: 'DEVELOPER',
       }),
     );
-    contentReader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
-    other = api(t, await userWithAccess(t, 'other@example.com', { role: 'CUSTOM', permissions: ['TRANSLATION_READ'] }));
+    contentReader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' }));
+    // Every role reads schemas: only a user without one may not.
+    other = api(t, await userWithAccess(t, 'other@example.com', { role: null }));
   });
 
   afterAll(() => t?.close());
@@ -43,7 +44,7 @@ describe('app API: schemas', () => {
     expect((await editor.post('/api/app/spaces/missing/schemas', { name: 'x', type: 'NODE' })).statusCode).toBe(404);
   });
 
-  it('can be read with SCHEMA_READ or CONTENT_READ, ordered by name and filtered by type', async () => {
+  it('can be read by any role, ordered by name and filtered by type', async () => {
     ids['colors'] = (await editor.post(base, { name: 'colors', type: 'ENUM' })).json().id;
     expect((await contentReader.get(base)).json().map((s: { name: string }) => s.name)).toEqual(['colors', 'page']);
     expect((await contentReader.get(`${base}?type=ENUM`)).json().map((s: { id: string }) => s.id)).toEqual([ids['colors']]);
@@ -82,9 +83,15 @@ describe('app API: schemas', () => {
     expect((await editor.put(`${base}/${ids['colors']}`, { values: [{ name: 'red' }] })).statusCode).toBe(400);
 
     const response = await editor.put(url, {
-      fields: [{ name: 'title', kind: 'TEXT', translatable: true, extra: 1 }, { name: 'next', kind: 'REFERENCE', translatable: true }],
+      fields: [
+        { name: 'title', kind: 'TEXT', translatable: true, extra: 1 },
+        { name: 'next', kind: 'REFERENCE', translatable: true },
+      ],
     });
-    expect(response.json().fields).toEqual([{ name: 'title', kind: 'TEXT', translatable: true }, { name: 'next', kind: 'REFERENCE' }]);
+    expect(response.json().fields).toEqual([
+      { name: 'title', kind: 'TEXT', translatable: true },
+      { name: 'next', kind: 'REFERENCE' },
+    ]);
   });
 
   it('refuses fields that break a rule across fields, saying which', async () => {
@@ -107,7 +114,13 @@ describe('app API: schemas', () => {
         "field 'color' takes its options from 'page', which is not an ENUM schema",
     );
     expect((await editor.get(url)).json().fields).toEqual(before);
-    const ok = await editor.put(url, { previewField: 'title', fields: [{ name: 'title', kind: 'TEXT' }, { name: 'color', kind: 'OPTION', source: 'colors' }] });
+    const ok = await editor.put(url, {
+      previewField: 'title',
+      fields: [
+        { name: 'title', kind: 'TEXT' },
+        { name: 'color', kind: 'OPTION', source: 'colors' },
+      ],
+    });
     expect(ok.statusCode).toBe(200);
     await editor.put(url, { fields: [{ name: 'title', kind: 'TEXT', translatable: true }] });
   });
@@ -140,33 +153,25 @@ describe('app API: schemas', () => {
     expect((await editor.get(`${base}/${ids['page']}`)).json().name).toBe('article');
   });
 
-  it('applies a template all or nothing; templates name schemas by `id`, as exports do', async () => {
-    const template = {
-      schemas: [
-        { id: 'hero', type: 'NODE', fields: [{ name: 'heading', kind: 'TEXT' }] },
-        { id: 'colors', type: 'ENUM', values: [] },
-      ],
-    };
-    expect((await editor.post(`${base}/template`, template)).statusCode).toBe(409);
-    expect((await editor.get(base)).json().map((s: { name: string }) => s.name)).not.toContain('hero');
-    const broken = { schemas: [{ id: 'hero', type: 'NODE', fields: [{ name: 'size', kind: 'OPTION', source: 'gone' }] }] };
-    const refused = await editor.post(`${base}/template`, broken);
-    expect(refused.statusCode).toBe(400);
-    expect(refused.json().message).toBe("Schema 'hero' is not valid: field 'size' takes its options from 'gone', which does not exist");
-    template.schemas[1].id = 'sizes';
-    template.schemas[0].fields!.push({ name: 'size', kind: 'OPTION', source: 'sizes' } as never);
-    const created = (await editor.post(`${base}/template`, template)).json();
-    expect(created.map((s: { name: string }) => s.name)).toEqual(['hero', 'sizes']);
-    for (const schema of created) expect(schema.id).toMatch(UUID_V7);
-    ids['hero'] = created[0].id;
+  it('creates a schema to delete later', async () => {
+    const created = (await editor.post(base, { name: 'hero', type: 'NODE' })).json();
+    expect(created.id).toMatch(UUID_V7);
+    ids['hero'] = created.id;
   });
 
-  describe('in use: referred to by another schema\'s fields, or the schema of contents', () => {
+  describe("in use: referred to by another schema's fields, or the schema of contents", () => {
     let card: string;
     let blocks: string;
     const docsFolder = newUuid();
     const doc = (name: string) => ({
-      spaceId: S1, id: newUuid(), parentId: docsFolder, kind: 'DOCUMENT' as const, name, slug: name, schema: 'blocks', data: { _id: name, _schema: 'blocks' },
+      spaceId: S1,
+      id: newUuid(),
+      parentId: docsFolder,
+      kind: 'DOCUMENT' as const,
+      name,
+      slug: name,
+      schema: 'blocks',
+      data: { _id: name, _schema: 'blocks' },
     });
 
     beforeAll(async () => {
@@ -183,10 +188,12 @@ describe('app API: schemas', () => {
       await editor.put(`${base}/${card}`, { fields: [{ name: 'children', kind: 'SCHEMAS', schemas: ['card'] }] });
       // Blocks inside content data are not looked at: only `contents.schema`.
       await t.db.insert(contents).values({ spaceId: S1, id: docsFolder, kind: 'FOLDER', name: 'Docs', slug: 'docs' });
-      await t.db.insert(contents).values([
-        ...['f', 'b', 'e', 'a', 'd', 'c'].map(doc),
-        { ...doc('nested'), schema: 'other', data: { _id: 'n', _schema: 'other', items: [{ _id: 'n1', _schema: 'card' }] } },
-      ]);
+      await t.db
+        .insert(contents)
+        .values([
+          ...['f', 'b', 'e', 'a', 'd', 'c'].map(doc),
+          { ...doc('nested'), schema: 'other', data: { _id: 'n', _schema: 'other', items: [{ _id: 'n1', _schema: 'card' }] } },
+        ]);
     });
 
     it('reports the fields that refer to a schema and the contents using it, the first five by full slug', async () => {
@@ -216,7 +223,9 @@ describe('app API: schemas', () => {
       expect(rename.json().message).toBe("Schema 'card' is in use: referenced by 'blocks' field 'items'");
       const removal = await editor.delete(`${base}/${blocks}`);
       expect(removal.statusCode).toBe(409);
-      expect(removal.json().message).toBe("Schema 'blocks' is in use: used by 6 contents: a (docs/a), b (docs/b), c (docs/c), d (docs/d), e (docs/e) and 1 more");
+      expect(removal.json().message).toBe(
+        "Schema 'blocks' is in use: used by 6 contents: a (docs/a), b (docs/b), c (docs/c), d (docs/d), e (docs/e) and 1 more",
+      );
       expect((await editor.delete(`${base}/${ids['colors']}`)).json().message).toBe(
         "Schema 'colors' is in use: referenced by 'blocks' field 'color', 'blocks' field 'tint'",
       );
@@ -237,12 +246,12 @@ describe('app API: schemas', () => {
   });
 
   it('writes no field that refers to a schema gone since the service checked it', async () => {
-    const repository = t.app.get(SchemasRepository);
+    const repository = t.app.get(SchemaRepository);
     const gone = await repository.create(S1, { name: 'gone', type: 'NODE' });
     const stale = { fields: [{ name: 'hero', kind: SchemaFieldKind.SCHEMA, schemas: ['gone'] }] as SchemaField[] };
-    await repository.delete(S1, gone.id);
-    // As if the service checked while `gone` still existed.
-    expect(await repository.update(S1, ids['page'], stale)).toEqual({ lost: ['gone'] });
+    await repository.delete(S1, gone);
+    // As if the service checked while `gone` still existed: the same check again under the lock, a 409.
+    await expect(repository.update(S1, ids['page'], stale)).rejects.toThrow("Schema 'gone' was renamed or deleted meanwhile");
     expect((await editor.get(`${base}/${ids['page']}`)).json().fields).toEqual([{ name: 'title', kind: 'TEXT', translatable: true }]);
   });
 

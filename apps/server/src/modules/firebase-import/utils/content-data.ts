@@ -3,8 +3,8 @@ import { zContentValue } from '@localess/shared/zod';
 
 /*
  * Firestore stored a document's data unchecked. The `contents.data` column holds blocks of known values
- * (`zContentData`), so an imported document's data is brought to that shape: a block's legacy `schema` key moves to
- * `_schema` (as the editor's `normalizeContent` does), a root without `_id`/`_schema` gets them, `null`s and empty
+ * (`zContentData`), so an imported document's data is brought to that shape: a block's legacy `schema` key is removed,
+ * its value becoming `_schema` when the block has none (as the editor's `normalizeContent` does) or repeating it, a root without `_id`/`_schema` gets them, `null`s and empty
  * arrays go (the editor drops them too), a link without a target gets the editor's default (`_self`), and a value of
  * no known shape is dropped with a warning naming its path.
  */
@@ -17,11 +17,17 @@ const isObject = (value: unknown): value is Raw => typeof value === 'object' && 
 const isBlockLike = (value: unknown): value is Raw =>
   isObject(value) && typeof value['_id'] === 'string' && (typeof value['_schema'] === 'string' || typeof value['schema'] === 'string');
 
-/** The block with its legacy `schema` key as `_schema`. */
+/**
+ * The block without its legacy `schema` key: `_schema` is taken from it when the block has none, and it is removed
+ * when it repeats `_schema` (older blocks carry both); the app reads `_schema` alone. A `schema` that differs from the
+ * block's `_schema` is a field of that name (only `_id` and `_schema` are reserved) and stays.
+ */
 function withSchemaKey(block: Raw): Raw {
-  if (block['_schema'] !== undefined || typeof block['schema'] !== 'string' || !('_id' in block)) return block;
+  if (typeof block['schema'] !== 'string') return block;
   const { schema, ...rest } = block;
-  return { ...rest, _schema: schema };
+  const own = typeof rest['_schema'] === 'string' && rest['_schema'] ? rest['_schema'] : undefined;
+  if (own === undefined) return { ...rest, _schema: schema };
+  return own === schema ? rest : block;
 }
 
 function cleanBlock(block: Raw, path: string, warn: (message: string) => void): ContentData {

@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { text } from 'node:stream/consumers';
+
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import { FsStorageDriver } from './fs-storage.driver.js';
 
 describe('FsStorageDriver', () => {
@@ -26,6 +28,11 @@ describe('FsStorageDriver', () => {
     const streamed = await storage.put('spaces/s1/assets/a2/original', Readable.from([Buffer.from('a'), Buffer.from('b')]));
     expect(streamed.size).toBe(2);
     expect((await storage.read('spaces/s1/assets/a2/original')).toString()).toBe('ab');
+  });
+
+  it('gives the file of a key, and refuses a key outside the root', async () => {
+    expect(storage.localPath('spaces/s1/assets/a1/logo.png')).toBe(join(root, 'spaces', 's1', 'assets', 'a1', 'logo.png'));
+    expect(() => storage.localPath('../outside')).toThrow('Invalid storage key');
   });
 
   it('leaves no temp files behind', async () => {

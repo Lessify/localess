@@ -1,205 +1,211 @@
+import { HttpParams } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { Locale, Translation } from '@localess/shared';
-import { LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { NotificationService } from '@core/services/notification.service';
+import { TranslationService } from '@core/services/translation.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { Locale, Page, Translation } from '@localess/shared';
+import { of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { TranslationListComponent } from './translation-list.component';
+import { LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
+import { TranslationTreeRow } from '../../models/translation-tree';
+import { firstShownKey, TranslationListComponent } from './translation-list.component';
 
 const en: Locale = { id: 'en', name: 'English' };
 const de: Locale = { id: 'de', name: 'German' };
 
-function translation(overrides: Partial<Translation> = {}): Translation {
-  // The key follows the id unless given, so tests can name translations by either.
-  return { id: 't1', key: overrides.id ?? 't1', locales: { en: 'Hello' }, ...overrides } as Translation;
+function translation(key: string, locales: Record<string, string> = { en: 'Hello' }): Translation {
+  return { id: `id-${key}`, key, locales } as Translation;
 }
 
+const keys = (count: number) => Array.from({ length: count }, (_, i) => translation(`key${String(i).padStart(3, '0')}`));
+
 describe('TranslationListComponent', () => {
-  function setup(translations: Translation[] = [], availableLocales: Locale[] = [en, de]) {
+  async function setup(items: Translation[] = []) {
+    const events = new Subject<ChangeEvent>();
+    const findAll = vi.fn((_spaceId: string, params: HttpParams) => {
+      const page = Number(params.get('page'));
+      const size = Number(params.get('size'));
+      return of<Page<Translation>>({ items: items.slice(page * size, (page + 1) * size), page, size, total: items.length });
+    });
+    localStorage.clear();
     TestBed.overrideComponent(TranslationListComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: TranslationService, useValue: { findAll, findNodes: vi.fn() } },
+        { provide: ChangeEventsService, useValue: { changes: () => events } },
+        { provide: NotificationService, useValue: { error: vi.fn() } },
+      ],
+    });
+    TestBed.inject(LocalSettingsStore).setTranslationLayout('list');
     const fixture = TestBed.createComponent(TranslationListComponent);
-    fixture.componentRef.setInput('translations', translations);
-    fixture.componentRef.setInput('availableLocales', availableLocales);
+    fixture.componentRef.setInput('spaceId', 'space-1');
+    fixture.componentRef.setInput('availableLocales', [en, de]);
+    fixture.componentRef.setInput('currentLocale', 'en');
     fixture.detectChanges();
-    return { component: fixture.componentInstance, fixture };
+    await fixture.whenStable();
+    return { component: fixture.componentInstance, fixture, findAll, events };
   }
 
-  it('emits translationSelect when a translation is selected', () => {
-    const { component } = setup();
-    const t = translation({ id: 't1' });
-    const spy = vi.fn();
-    component.translationSelect.subscribe(spy);
+  /** The pages read so far. */
+  const pagesRead = (findAll: Awaited<ReturnType<typeof setup>>['findAll']) => findAll.mock.calls.map(it => it[1].get('page'));
 
-    component.translationSelect.emit(t);
+  it('reads the first 50 keys with the locale; the rows end with the marker while there are more', async () => {
+    const { component, findAll } = await setup(keys(120));
 
-    expect(spy).toHaveBeenCalledWith(t);
+    expect(findAll.mock.calls.at(-1)?.[1].toString()).toBe('page=0&size=50&locale=en');
+    expect(component.listRows()).toHaveLength(51);
+    expect(component.listRows().at(-1)).toEqual({ kind: 'end' });
+    expect(component.pages.total()).toBe(120);
   });
 
-  describe('filterTranslations', () => {
-    it('returns all items when no filter is active', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'a' }), translation({ id: 'b' })];
+  it('loads the next keys when the marker is rendered and on screen, until every key is shown', async () => {
+    const { component, fixture, findAll } = await setup(keys(120));
 
-      expect(component.filterTranslations(items, 'en', '', [], [], [])).toEqual(items);
+    // On screen, but not rendered by the virtual list (an old report): nothing.
+    component.onListEndInView(true);
+    await fixture.whenStable();
+    expect(pagesRead(findAll)).toEqual(['0']);
+
+    for (let i = 0; i < 3; i++) {
+      component.onListRendered(component.listRows().length);
+      await fixture.whenStable();
+    }
+
+    expect(pagesRead(findAll)).toEqual(['0', '1', '2']);
+    expect(component.listRows()).toHaveLength(120);
+    expect(component.listRows().some(row => row.kind === 'end')).toBe(false);
+  });
+
+  it('sends the filter as the server names it, and starts again from the first keys', async () => {
+    const { component, fixture, findAll } = await setup(keys(120));
+    component.onListEndInView(true);
+    component.onListRendered(component.listRows().length);
+    await fixture.whenStable();
+
+    fixture.componentRef.setInput('filterCriteria', {
+      locale: 'en',
+      search: 'home',
+      labels: ['ui'],
+      states: [TranslationStatus.PARTIALLY_TRANSLATED, LocaleStatus.UNTRANSLATED],
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(findAll.mock.calls.at(-1)?.[1].toString()).toBe(
+      'page=0&size=50&locale=en&search=home&label=ui&status=PARTIALLY_TRANSLATED&localeStatus=UNTRANSLATED',
+    );
+    expect(component.isFiltering()).toBe(true);
+  });
+
+  it('reads again every page loaded after a change', async () => {
+    const { component, fixture, findAll, events } = await setup(keys(120));
+    component.onListEndInView(true);
+    component.onListRendered(component.listRows().length);
+    await fixture.whenStable();
+    findAll.mockClear();
+    vi.useFakeTimers();
+
+    events.next({ spaceId: 'space-1', entity: 'translations', id: 'x', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(pagesRead(findAll)).toEqual(['0', '1']);
+    expect(component.pages.items()).toHaveLength(100);
+    vi.useRealTimers();
+  });
+
+  it('emits the selection', async () => {
+    const first = translation('home.title');
+    const { component } = await setup([first]);
+    const selectSpy = vi.fn();
+    component.translationSelect.subscribe(selectSpy);
+
+    component.onListSelect(first);
+
+    expect(selectSpy).toHaveBeenCalledWith(first);
+  });
+
+  it('emits the first key shown, again when it changes', async () => {
+    const items = keys(3);
+    const { component, fixture, events } = await setup(items);
+    const firstSpy = vi.fn();
+    component.firstTranslation.subscribe(firstSpy);
+    // Subscribed after the first load: the next change shows.
+    items.shift();
+    vi.useFakeTimers();
+    events.next({ spaceId: 'space-1', entity: 'translations', id: 'x', op: 'deleted' });
+    await vi.advanceTimersByTimeAsync(300);
+    vi.useRealTimers();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(firstSpy).toHaveBeenLastCalledWith(items[0]);
+  });
+
+  describe('selected key and the filter', () => {
+    async function outside(items: Translation[], filter: boolean) {
+      const ctx = await setup(items);
+      const outsideSpy = vi.fn();
+      ctx.component.selectedOutsideFilter.subscribe(outsideSpy);
+      if (filter) ctx.fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
+      ctx.fixture.componentRef.setInput('selectedKey', 'about.title');
+      ctx.fixture.detectChanges();
+      await ctx.fixture.whenStable();
+      return { ...ctx, outsideSpy };
+    }
+
+    it('asks the server for the key with the filter, one row', async () => {
+      const { findAll, outsideSpy } = await outside([], true);
+
+      expect(findAll.mock.calls.at(-1)?.[1].toString()).toBe('page=0&size=1&locale=en&search=home&key=about.title');
+      expect(outsideSpy).toHaveBeenLastCalledWith(true);
     });
 
-    it('filters by id substring match', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'home.title' }), translation({ id: 'footer.text' })];
+    it('is not outside when the server finds it', async () => {
+      const { outsideSpy } = await outside([translation('about.title')], true);
 
-      const result = component.filterTranslations(items, 'en', 'home', [], [], []);
-
-      expect(result).toEqual([items[0]]);
+      expect(outsideSpy).toHaveBeenLastCalledWith(false);
     });
 
-    it('falls back to matching the locale value when the id does not match', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'home.title', locales: { en: 'Welcome home' } })];
+    it('asks nothing when no filter narrows the keys', async () => {
+      const { findAll, outsideSpy } = await outside([], false);
 
-      const result = component.filterTranslations(items, 'en', 'welcome', [], [], []);
-
-      expect(result).toEqual(items);
-    });
-
-    it('filters by label', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'a', labels: ['ui'] }), translation({ id: 'b', labels: ['marketing'] })];
-
-      const result = component.filterTranslations(items, 'en', '', ['ui'], [], []);
-
-      expect(result).toEqual([items[0]]);
-    });
-
-    it('filters by translation status', () => {
-      const { component } = setup();
-      const translated = translation({ id: 'a', locales: { en: 'Hi', de: 'Hallo' } });
-      const untranslated = translation({ id: 'b', locales: {} });
-
-      const result = component.filterTranslations([translated, untranslated], 'en', '', [], [TranslationStatus.UNTRANSLATED], []);
-
-      expect(result).toEqual([untranslated]);
-    });
-
-    it('filters by locale status', () => {
-      const { component } = setup();
-      const translatedInEn = translation({ id: 'a', locales: { en: 'Hi' } });
-      const untranslatedInEn = translation({ id: 'b', locales: { en: '' } });
-
-      const result = component.filterTranslations([translatedInEn, untranslatedInEn], 'en', '', [], [], [LocaleStatus.TRANSLATED]);
-
-      expect(result).toEqual([translatedInEn]);
+      expect(findAll.mock.calls.some(it => it[1].has('key'))).toBe(false);
+      expect(outsideSpy).toHaveBeenLastCalledWith(false);
     });
   });
 
-  describe('buildTranslationTree', () => {
-    it('builds the tree from keys, not from the row ids', () => {
-      const { component } = setup();
-      const items = [translation({ id: '0190a3b4-0000-7000-8000-000000000001', key: 'nav.home' })];
+  it('identifies the translation status over the available locales', async () => {
+    const { component } = await setup();
 
-      expect(component.buildTranslationTree(items)).toEqual([{ name: 'nav', key: 'nav', children: [{ name: 'home', key: 'nav.home' }] }]);
-    });
+    expect(component.identifyTranslationStatus(translation('a', {}))).toBe(TranslationStatus.UNTRANSLATED);
+    expect(component.identifyTranslationStatus(translation('a', { en: 'Hi' }))).toBe(TranslationStatus.PARTIALLY_TRANSLATED);
+    expect(component.identifyTranslationStatus(translation('a', { en: 'Hi', de: 'Hallo' }))).toBe(TranslationStatus.TRANSLATED);
+  });
+});
 
-    it('groups dotted ids into a nested tree', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'home.title' }), translation({ id: 'home.subtitle' }), translation({ id: 'footer' })];
-
-      const tree = component.buildTranslationTree(items);
-
-      expect(tree).toEqual([
-        {
-          name: 'home',
-          key: 'home',
-          children: [
-            { name: 'title', key: 'home.title' },
-            { name: 'subtitle', key: 'home.subtitle' },
-          ],
-        },
-        { name: 'footer', key: 'footer' },
-      ]);
-    });
+describe('firstShownKey', () => {
+  const node = (key: string, extra: Partial<TranslationTreeRow> = {}): TranslationTreeRow => ({
+    key,
+    name: key,
+    kind: 'node',
+    count: 1,
+    ...extra,
   });
 
-  describe('translationsFiltered / translationTreeFiltered', () => {
-    it('applies the filterCriteria input to build the filtered list and tree', () => {
-      const { component, fixture } = setup([translation({ id: 'home.title' }), translation({ id: 'footer' })]);
+  it('skips the keys of a closed group', () => {
+    const rows = [node('about', { children: [node('about.title', { translation: translation('about.title') })] }), node('home')];
 
-      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
-      fixture.detectChanges();
-
-      expect(component.translationsFiltered().map(it => it.id)).toEqual(['home.title']);
-      expect(component.translationTreeFiltered()).toEqual([
-        { name: 'home', key: 'home', children: [{ name: 'title', key: 'home.title' }] },
-      ]);
-    });
+    expect(firstShownKey(rows, new Set())).toBeUndefined();
   });
 
-  describe('identifyTranslationStatus / identifyLocaleStatus', () => {
-    it('is UNTRANSLATED when there are no locale values at all', () => {
-      const { component } = setup();
+  it('finds the first key in an open group, or a group that is a key itself', () => {
+    const title = translation('about.title');
+    const rows = [node('about', { children: [node('about.title', { translation: title })] })];
+    const both = translation('home');
 
-      expect(component.identifyTranslationStatus(translation({ locales: {} }))).toBe(TranslationStatus.UNTRANSLATED);
-    });
-
-    it('is TRANSLATED when every available locale has a value', () => {
-      const { component } = setup();
-
-      expect(component.identifyTranslationStatus(translation({ locales: { en: 'Hi', de: 'Hallo' } }))).toBe(TranslationStatus.TRANSLATED);
-    });
-
-    it('identifyLocaleStatus treats an empty/whitespace value as untranslated', () => {
-      const { component } = setup();
-
-      expect(component.identifyLocaleStatus(translation({ locales: { en: '  ' } }), 'en')).toBe(LocaleStatus.UNTRANSLATED);
-      expect(component.identifyLocaleStatus(translation({ locales: { en: 'Hi' } }), 'en')).toBe(LocaleStatus.TRANSLATED);
-    });
-  });
-
-  describe('tree expansion', () => {
-    const items = [translation({ id: 'home.title' }), translation({ id: 'home.nav.back' }), translation({ id: 'footer' })];
-
-    it('starts with nothing expanded', () => {
-      const { component } = setup(items);
-
-      expect(component.expandedKeys()).toEqual(new Set());
-    });
-
-    it('remembers manual expansion while no filter is active', () => {
-      const { component } = setup(items);
-
-      component.onExpandedKeysChange(new Set(['home']));
-
-      expect(component.expandedKeys()).toEqual(new Set(['home']));
-    });
-
-    it('expands every group when a filter becomes active', () => {
-      const { component, fixture } = setup(items);
-
-      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
-      fixture.detectChanges();
-
-      expect(component.expandedKeys()).toEqual(new Set(['home', 'home.nav']));
-    });
-
-    it('restores the manual expansion state when the filter clears', () => {
-      const { component, fixture } = setup(items);
-      component.onExpandedKeysChange(new Set(['home']));
-
-      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
-      fixture.detectChanges();
-      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: '', labels: [], states: [] });
-      fixture.detectChanges();
-
-      expect(component.expandedKeys()).toEqual(new Set(['home']));
-    });
-
-    it('allows collapsing a group while a filter is active', () => {
-      const { component, fixture } = setup(items);
-      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
-      fixture.detectChanges();
-
-      component.onExpandedKeysChange(new Set(['home']));
-
-      expect(component.expandedKeys()).toEqual(new Set(['home']));
-    });
+    expect(firstShownKey(rows, new Set(['about']))).toBe(title);
+    expect(firstShownKey([node('home', { translation: both, children: [] }), ...rows], new Set(['about']))).toBe(both);
   });
 });

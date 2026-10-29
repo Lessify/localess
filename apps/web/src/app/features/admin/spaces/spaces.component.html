@@ -14,7 +14,13 @@
 <div class="mx-auto mt-3 px-2">
   <ll-filter-toolbar class="mb-3" (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort llTableSortActive="name" llTableSortDirection="asc">
+    <table
+      ll-table
+      [dataSource]="dataSource"
+      llTableSort
+      llTableSortActive="name"
+      llTableSortDirection="asc"
+      (sortChange)="onSortChange($event)">
       <ng-container llColumnDef="id">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="id">ID</th>
         <td llCell *llCellDef="let element">{{ element.id }}</td>
@@ -24,12 +30,20 @@
         <td llCell *llCellDef="let element">
           {{ element.name }}
           @if (importLabel(element); as label) {
-            <span hlmBadge [variant]="element.importStatus === 'FAILED' ? 'destructive' : 'secondary'" [hlmTooltip]="importHint(element)">{{
-              label
-            }}</span>
-            @if (element.importStatus === 'FAILED') {
+            <span
+              hlmBadge
+              [variant]="element.firebaseImport?.status === 'FAILED' ? 'destructive' : 'secondary'"
+              [hlmTooltip]="importHint(element)"
+              >{{ label }}</span
+            >
+            @if (element.firebaseImport?.status === 'FAILED') {
               <span class="text-muted-foreground block text-xs">{{ importHint(element) }}</span>
             }
+          }
+          @if (element.firebaseImport; as run) {
+            <span class="text-muted-foreground block text-xs"
+              >Imported from Firebase: <code>{{ run.sourceSpaceId }}</code></span
+            >
           }
         </td>
       </ng-container>
@@ -48,13 +62,14 @@
             variant="ghost"
             [cdkCopyToClipboard]="element.id"
             (cdkCopyToClipboardCopied)="copied()"
-            hlmTooltip="Copy Space ID">
+            hlmTooltip="Copy Space ID"
+            aria-label="Copy Space ID">
             <ng-icon hlm size="sm" name="lucideCopy" />
           </button>
-          <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit">
+          <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit" aria-label="Edit">
             <ng-icon hlm size="sm" name="lucidePencil" />
           </button>
-          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltip="Delete">
+          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltip="Delete" aria-label="Delete">
             <ng-icon hlm size="sm" name="lucideTrash" />
           </button>
         </td>
@@ -67,5 +82,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

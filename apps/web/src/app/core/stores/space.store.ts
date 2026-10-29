@@ -1,10 +1,26 @@
 import { computed, inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { AssetService } from '@core/services/asset.service';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { SpaceService } from '@core/services/space.service';
-import { ContentDocument, Schema, Space, SpaceEnvironment } from '@localess/shared';
+import { SpaceEnvironmentService } from '@core/services/space-environment.service';
+import { ContentDocumentWithPath, ContentFolderWithPath, withFullSlugs } from '@core/utils/content-summaries';
+import {
+  ANY_ROLE,
+  AssetFileSummary,
+  AssetFolderSummary,
+  ContentDocumentSummary,
+  ContentFolderSummary,
+  ContentKind,
+  hasRole,
+  IdName,
+  IdNameUrl,
+  Locale,
+  Schema,
+  Space,
+} from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
@@ -27,7 +43,8 @@ import { UserStore } from './user.store';
 
 const LS_KEY = 'LL-SPACE-STATE';
 export type SpaceState = {
-  spaces: Space[];
+  /** Every space the user can open, by name: the sidebar's list (`GET /spaces/names`). */
+  spaces: IdName[];
   /**
    * Whether `load()` has resolved at least once, however it resolved.
    *
@@ -42,9 +59,31 @@ export type SpaceState = {
   contentFolderId: string | null;
   /** The asset folder the editor shows; `null`: the root. */
   assetFolderId: string | null;
-  environment: SpaceEnvironment | undefined;
+  environment: IdNameUrl | undefined;
+  /** The selected space with its default locale and its locales (`GET /spaces/:spaceId`), once it arrived. */
+  currentSpace: Space | undefined;
+  /** The selected space's environments, every one in its order, with its URL (`GET /spaces/:spaceId/environments/names`). */
+  environments: IdNameUrl[];
   schemas: Schema[];
-  documents: ContentDocument[];
+  /** Whether `schemas` arrived for the selected space (an empty list is then "no schemas", not "loading"). */
+  schemasLoaded: boolean;
+  /** Every content folder of the selected space, light (`GET …/contents/folders`). */
+  contentFolderSummaries: ContentFolderSummary[];
+  /** Every document of the selected space, light (`GET …/contents/documents`). */
+  contentDocumentSummaries: ContentDocumentSummary[];
+  /** Whether the content folders and documents arrived for the selected space. */
+  contentFoldersLoaded: boolean;
+  contentDocumentsLoaded: boolean;
+  /** Every asset folder of the selected space, light (`GET …/assets/folders`): breadcrumbs, paths, move targets. */
+  assetFolders: AssetFolderSummary[];
+  assetFoldersLoaded: boolean;
+  /**
+   * Every file of the selected space, light (`GET …/assets/files`): what the Asset and Assets fields show. Read only once
+   * an editor asks for it (`loadAssetFiles()`, `assetFilesWanted`): the Assets page never needs it.
+   */
+  assetFiles: AssetFileSummary[];
+  assetFilesWanted: boolean;
+  assetFilesLoaded: boolean;
 };
 
 const initialState: SpaceState = {
@@ -55,30 +94,29 @@ const initialState: SpaceState = {
   contentFolderId: null,
   assetFolderId: null,
   environment: undefined,
+  currentSpace: undefined,
+  environments: [],
   schemas: [],
-  documents: [],
+  schemasLoaded: false,
+  contentFolderSummaries: [],
+  contentDocumentSummaries: [],
+  contentFoldersLoaded: false,
+  contentDocumentsLoaded: false,
+  assetFolders: [],
+  assetFoldersLoaded: false,
+  assetFiles: [],
+  assetFilesWanted: false,
+  assetFilesLoaded: false,
 };
 
-const resolveEnvironmentForSpace = (
-  space: Space | undefined,
+/** The remembered environment of the space (by id: names may repeat), else its first; none when it has none. */
+const resolveEnvironment = (
+  spaceId: string,
+  environments: IdNameUrl[],
   selectedEnvironmentBySpaceId: Record<string, string>,
-): SpaceEnvironment | undefined => {
-  if (!space) {
-    return undefined;
-  }
-  const environments = space.environments ?? [];
-  if (environments.length === 0) {
-    return undefined;
-  }
-  // Remembered by id: names may repeat. A name stored by an older version matches no id and falls back to the first.
-  const selectedEnvironmentId = selectedEnvironmentBySpaceId[space.id];
-  if (selectedEnvironmentId) {
-    const foundEnvironment = environments.find(environment => environment.id === selectedEnvironmentId);
-    if (foundEnvironment) {
-      return foundEnvironment;
-    }
-  }
-  return environments[0];
+): IdNameUrl | undefined => {
+  const selectedEnvironmentId = selectedEnvironmentBySpaceId[spaceId];
+  return environments.find(environment => environment.id === selectedEnvironmentId) ?? environments[0];
 };
 
 const persistSpaceState = (selectedSpaceId: string | undefined, selectedEnvironmentBySpaceId: Record<string, string>): void => {
@@ -90,6 +128,12 @@ const persistSpaceState = (selectedSpaceId: string | undefined, selectedEnvironm
     }),
   );
 };
+
+/**
+ * Whether a live refetch answered what the store already holds: then it keeps the object it has, so nothing bound to
+ * it re-renders (a re-rendered row closes the menu a user has open on it).
+ */
+const sameContent = <T>(previous: T, next: T): boolean => JSON.stringify(previous) === JSON.stringify(next);
 
 /** Retries re-run the (deferred) query rather than resubscribing to one that already failed. */
 const retryWithBackoff = <T>(
@@ -130,103 +174,145 @@ export const SpaceStore = signalStore(
   })),
   withMethods(state => {
     const spaceService = inject(SpaceService);
+    const spaceEnvironmentService = inject(SpaceEnvironmentService);
     const contentService = inject(ContentService);
+    const assetService = inject(AssetService);
     const schemaService = inject(SchemaService);
     const notificationService = inject(NotificationService);
+    const userStore = inject(UserStore);
+    // The server's rule for the two lists (`ANY_ROLE`): without a role every request is a 403, retried forever with a
+    // "Lost connection" toast.
+    const canRead = (): boolean => hasRole({ role: userStore.role() }, ANY_ROLE);
 
     const listen = <T>(query: () => Observable<T>, logMessage: string, notification: string): Observable<T> =>
       defer(query).pipe(retryWithBackoff<T>(notificationService, logMessage, notification));
 
     return {
       /**
-       * Keeps `schemas` and `documents` on the given space. switchMap closes the previous space's
-       * listeners, and the data is dropped first so nothing renders the new space against the old
+       * Keeps the selected space, its environments, `schemas`, the content folders and documents and the asset folders
+       * on the given space. switchMap closes the
+       * previous space's listeners, and its data is dropped first so nothing renders the new space against the old
        * one's. `undefined` (no space, or signed out) stops listening altogether.
        */
       _syncSpaceData: rxMethod<string | undefined>(
         pipe(
           distinctUntilChanged(),
-          tap(() => patchState(state, { schemas: [], documents: [] })),
+          tap(() =>
+            patchState(state, {
+              currentSpace: undefined,
+              environments: [],
+              environment: undefined,
+              schemas: [],
+              schemasLoaded: false,
+              contentFolderSummaries: [],
+              contentDocumentSummaries: [],
+              contentFoldersLoaded: false,
+              contentDocumentsLoaded: false,
+              assetFolders: [],
+              assetFoldersLoaded: false,
+              assetFilesWanted: false,
+            }),
+          ),
           switchMap(spaceId =>
             spaceId
               ? merge(
                   listen(
-                    () => contentService.findAllDocuments(spaceId),
-                    'findAllDocuments listener failed',
-                    'Lost connection to content updates. Retrying…',
-                  ).pipe(map(documents => ({ documents }))),
+                    () => spaceService.findOne(spaceId),
+                    'spaceService.findOne listener failed',
+                    'Lost connection to space updates. Retrying…',
+                  ).pipe(
+                    distinctUntilChanged(sameContent),
+                    map(currentSpace => ({ currentSpace })),
+                  ),
                   listen(
-                    () => schemaService.findAll(spaceId),
-                    'schemaService.findAll listener failed',
-                    'Lost connection to schema updates. Retrying…',
-                  ).pipe(map(schemas => ({ schemas }))),
+                    () => spaceEnvironmentService.findAllNames(spaceId),
+                    'spaceEnvironmentService.findAllNames listener failed',
+                    'Lost connection to space updates. Retrying…',
+                  ).pipe(
+                    distinctUntilChanged(sameContent),
+                    map(environments => ({
+                      environments,
+                      environment: resolveEnvironment(spaceId, environments, state.selectedEnvironmentBySpaceId()),
+                    })),
+                  ),
+                  canRead()
+                    ? listen(
+                        () => contentService.findFolders(spaceId),
+                        'contentService.findFolders listener failed',
+                        'Lost connection to content updates. Retrying…',
+                      ).pipe(map(contentFolderSummaries => ({ contentFolderSummaries, contentFoldersLoaded: true })))
+                    : EMPTY,
+                  canRead()
+                    ? listen(
+                        () => contentService.findDocuments(spaceId),
+                        'contentService.findDocuments listener failed',
+                        'Lost connection to content updates. Retrying…',
+                      ).pipe(map(contentDocumentSummaries => ({ contentDocumentSummaries, contentDocumentsLoaded: true })))
+                    : EMPTY,
+                  canRead()
+                    ? listen(
+                        () => assetService.findFolders(spaceId),
+                        'assetService.findFolders listener failed',
+                        'Lost connection to asset updates. Retrying…',
+                      ).pipe(map(assetFolders => ({ assetFolders, assetFoldersLoaded: true })))
+                    : EMPTY,
+                  canRead()
+                    ? listen(
+                        () => schemaService.findAll(spaceId),
+                        'schemaService.findAll listener failed',
+                        'Lost connection to schema updates. Retrying…',
+                      ).pipe(map(schemas => ({ schemas, schemasLoaded: true })))
+                    : EMPTY,
                 )
               : EMPTY,
           ),
           tap(patch => patchState(state, patch)),
         ),
       ),
+      /**
+       * Keeps every file of the given space, once an editor asked for them (`loadAssetFiles()`); `undefined` (not asked,
+       * no space, or signed out) drops them and stops listening.
+       */
+      _syncAssetFiles: rxMethod<string | undefined>(
+        pipe(
+          distinctUntilChanged(),
+          tap(() => patchState(state, { assetFiles: [], assetFilesLoaded: false })),
+          switchMap(spaceId =>
+            spaceId
+              ? listen(
+                  () => assetService.findFiles(spaceId),
+                  'assetService.findFiles listener failed',
+                  'Lost connection to asset updates. Retrying…',
+                ).pipe(map(assetFiles => ({ assetFiles, assetFilesLoaded: true })))
+              : EMPTY,
+          ),
+          tap(patch => patchState(state, patch)),
+        ),
+      ),
+      /** The Asset and Assets fields show their files from `assetFiles`: read them (live) for the selected space. */
+      loadAssetFiles: (): void => {
+        if (!state.assetFilesWanted()) patchState(state, { assetFilesWanted: true });
+      },
       load: rxMethod<void>(
         pipe(
-          // A space being imported from Firebase, or whose import failed, cannot be opened (Admin → Spaces shows it).
-          switchMap(() => spaceService.findAll().pipe(map(spaces => spaces.filter(space => !space.importStatus)))),
+          // The server leaves out a space being imported from Firebase, or whose import failed: it cannot be opened
+          // (Admin → Spaces shows it).
+          switchMap(() => spaceService.findAllNames()),
           tapResponse({
-            next: response => {
-              console.log('Loaded spaces', response);
-              if (response.length === 0) {
-                const selectedEnvironmentBySpaceId = state.selectedEnvironmentBySpaceId();
-                patchState(state, {
-                  spaces: [],
-                  loaded: true,
-                  selectedSpaceId: undefined,
-                  assetFolderId: null,
-                  contentFolderId: null,
-                  environment: undefined,
-                });
-                persistSpaceState(undefined, selectedEnvironmentBySpaceId);
-              } else {
-                const selectedSpaceId = state.selectedSpaceId();
-                const selectedEnvironmentBySpaceId = state.selectedEnvironmentBySpaceId();
-                if (selectedSpaceId) {
-                  const foundSpace = response.find(space => space.id === selectedSpaceId);
-                  if (foundSpace) {
-                    const environment = resolveEnvironmentForSpace(foundSpace, selectedEnvironmentBySpaceId);
-                    patchState(state, {
-                      spaces: response,
-                      loaded: true,
-                      selectedSpaceId: selectedSpaceId,
-                      assetFolderId: null,
-                      contentFolderId: null,
-                      environment,
-                    });
-                    persistSpaceState(selectedSpaceId, selectedEnvironmentBySpaceId);
-                  } else {
-                    const space = response[0];
-                    const environment = resolveEnvironmentForSpace(space, selectedEnvironmentBySpaceId);
-                    patchState(state, {
-                      spaces: response,
-                      loaded: true,
-                      selectedSpaceId: space.id,
-                      assetFolderId: null,
-                      contentFolderId: null,
-                      environment,
-                    });
-                    persistSpaceState(space.id, selectedEnvironmentBySpaceId);
-                  }
-                } else {
-                  const defaultSpace = response[0];
-                  const environment = resolveEnvironmentForSpace(defaultSpace, selectedEnvironmentBySpaceId);
-                  patchState(state, {
-                    spaces: response,
-                    loaded: true,
-                    selectedSpaceId: defaultSpace.id,
-                    assetFolderId: null,
-                    contentFolderId: null,
-                    environment,
-                  });
-                  persistSpaceState(defaultSpace.id, selectedEnvironmentBySpaceId);
-                }
-              }
+            next: spaces => {
+              const selectedEnvironmentBySpaceId = state.selectedEnvironmentBySpaceId();
+              const selectedSpaceId = state.selectedSpaceId();
+              // The list is live: it reloads whenever any space changes. The same space stays selected with its open
+              // content and asset folders; a space no longer listed (deleted, new install) falls back to the first.
+              const stillListed = spaces.some(space => space.id === selectedSpaceId);
+              const nextSpaceId = stillListed ? selectedSpaceId : spaces[0]?.id;
+              patchState(
+                state,
+                stillListed
+                  ? { spaces, loaded: true }
+                  : { spaces, loaded: true, selectedSpaceId: nextSpaceId, assetFolderId: null, contentFolderId: null },
+              );
+              persistSpaceState(nextSpaceId, selectedEnvironmentBySpaceId);
             },
             error: error => {
               console.error('Error loading spaces', error);
@@ -238,30 +324,11 @@ export const SpaceStore = signalStore(
         ),
       ),
       spaceById: (id: string) => computed(() => state.spaces().find(space => space.id === id)),
-      changeSpace: (space: Space) => {
-        console.log('changeSpace', space);
+      changeSpace: (space: IdName) => {
         const selectedEnvironmentBySpaceId = state.selectedEnvironmentBySpaceId();
-        const foundSpace = state.spaces().find(it => it.id === space.id);
-        if (foundSpace) {
-          const environment = resolveEnvironmentForSpace(foundSpace, selectedEnvironmentBySpaceId);
-          patchState(state, {
-            selectedSpaceId: space.id,
-            assetFolderId: null,
-            contentFolderId: null,
-            environment,
-          });
-          persistSpaceState(space.id, selectedEnvironmentBySpaceId);
-        } else {
-          const fallbackSpace = state.spaces()[0];
-          const environment = resolveEnvironmentForSpace(fallbackSpace, selectedEnvironmentBySpaceId);
-          patchState(state, {
-            selectedSpaceId: fallbackSpace?.id,
-            assetFolderId: null,
-            contentFolderId: null,
-            environment,
-          });
-          persistSpaceState(fallbackSpace?.id, selectedEnvironmentBySpaceId);
-        }
+        const spaceId = state.spaces().some(it => it.id === space.id) ? space.id : state.spaces()[0]?.id;
+        patchState(state, { selectedSpaceId: spaceId, assetFolderId: null, contentFolderId: null });
+        persistSpaceState(spaceId, selectedEnvironmentBySpaceId);
       },
       changeContentFolder: (contentFolderId: string | null) => {
         patchState(state, { contentFolderId });
@@ -269,7 +336,7 @@ export const SpaceStore = signalStore(
       changeAssetFolder: (assetFolderId: string | null) => {
         patchState(state, { assetFolderId });
       },
-      changeEnvironment: (environment: SpaceEnvironment) => {
+      changeEnvironment: (environment: IdNameUrl) => {
         console.log('changeEnvironment', environment);
         const selectedSpaceId = state.selectedSpaceId();
         if (!selectedSpaceId) {
@@ -289,13 +356,33 @@ export const SpaceStore = signalStore(
     };
   }),
   withComputed(state => {
+    /** The selected space (with its locales) once it arrived, and only while it is the selected one. */
+    const selectedSpace = computed((): Space | undefined => {
+      const space = state.currentSpace();
+      return space && space.id === state.selectedSpaceId() ? space : undefined;
+    });
+    /** Every folder and document of the selected space, light, with its path (worked out from the folder chain). */
+    const contents = computed(() => withFullSlugs([...state.contentFolderSummaries(), ...state.contentDocumentSummaries()]));
     return {
       spaces: computed(() => state.spaces()),
       contentFolderId: computed(() => state.contentFolderId()),
       assetFolderId: computed(() => state.assetFolderId()),
       environment: computed(() => state.environment()),
-      selectedSpace: computed(() => state.spaces().find(space => space.id === state.selectedSpaceId())),
-      documents: computed(() => state.documents()),
+      selectedSpace,
+      /** The selected space's locales, in its order: the one place the web reads them from `spaceLocales`. */
+      locales: computed((): Locale[] => (selectedSpace()?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : []))),
+      defaultLocale: computed((): Locale | undefined => selectedSpace()?.defaultLocale),
+      contents,
+      /** Every folder of the selected space, with its path: breadcrumbs and move targets. */
+      contentFolders: computed(() => contents().filter((it): it is ContentFolderWithPath => it.kind === ContentKind.FOLDER)),
+      /** Every document of the selected space, with its path: the Link field's choices. */
+      contentDocuments: computed(() => contents().filter((it): it is ContentDocumentWithPath => it.kind === ContentKind.DOCUMENT)),
+      /** Every folder and document by id: the References fields show their documents from it. */
+      contentById: computed(() => new Map(contents().map(it => [it.id, it]))),
+      /** Whether the content folders and documents arrived for the selected space. */
+      contentsLoaded: computed(() => state.contentFoldersLoaded() && state.contentDocumentsLoaded()),
+      /** Every file by id, once asked for (`loadAssetFiles()`): the Asset and Assets fields show theirs from it. */
+      assetFileById: computed(() => new Map(state.assetFiles().map(it => [it.id, it]))),
       /**
        * This account has no spaces, and we know that for a fact rather than by not having asked.
        *
@@ -313,7 +400,15 @@ export const SpaceStore = signalStore(
       // sign-out would fail on the rules and retry forever. And only a space in the loaded list:
       // the id restored from localStorage may name a space that no longer exists (deleted, new
       // install), which would answer 404 and show "Lost connection" toasts until the list arrives.
-      store._syncSpaceData(computed(() => (userStore.isAuthenticated() ? store.selectedSpace()?.id : undefined)));
+      // `loaded` too: `isAuthenticated` comes from localStorage at first, before the role and
+      // permissions that decide which lists may be read are known.
+      const syncedSpaceId = computed(() => {
+        const spaceId = store.selectedSpaceId();
+        const listed = spaceId !== undefined && store.spaces().some(space => space.id === spaceId);
+        return userStore.loaded() && userStore.isAuthenticated() && listed ? spaceId : undefined;
+      });
+      store._syncSpaceData(syncedSpaceId);
+      store._syncAssetFiles(computed(() => (store.assetFilesWanted() ? syncedSpaceId() : undefined)));
     },
     onDestroy: store => {
       console.log('onDestroy', store);

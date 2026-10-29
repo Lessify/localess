@@ -1,5 +1,6 @@
 @if (selectedSpace(); as space) {
-  <div class="flex items-center justify-end gap-2 p-2">
+  <div class="flex shrink-0 items-center justify-end gap-2 p-2">
+    <ll-active-tasks [spaceId]="space.id" [kinds]="translationTaskKinds" />
     <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.translationLayout()">
       <button
         hlmToggleGroupItem
@@ -18,13 +19,13 @@
         <ng-icon hlm size="sm" name="lucideListTree" />
       </button>
     </hlm-toggle-group>
-    @if ('TRANSLATION_CREATE' | canUserPerform | async) {
+    @if ('CONTENT_WRITERS' | hasRole | async) {
       <button hlmBtn (click)="openAddDialog()">
         <ng-icon hlm size="sm" name="lucidePlus" />
         Add Translation
       </button>
     }
-    @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
+    @if ('CONTENT_WRITERS' | hasRole | async) {
       <button
         hlmBtn
         variant="outline"
@@ -39,30 +40,30 @@
         Publish
       </button>
     }
-    <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
+    <button hlmBtn size="icon" variant="ghost" aria-label="More" [hlmDropdownMenuTrigger]="extraMenu">
       <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
     </button>
     <ng-template #extraMenu>
       <hlm-dropdown-menu class="text-nowrap">
-        @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
+        @if ('TRANSLATORS' | hasRole | async) {
           <hlm-dropdown-menu-group>
-            <button hlmDropdownMenuItem (click)="openTranslateLocaleDialog(space.locales)">
+            <button hlmDropdownMenuItem (click)="openTranslateLocaleDialog(spaceStore.locales())">
               <ng-icon hlm size="sm" name="lucideLanguages" />
               Translate Locale
             </button>
           </hlm-dropdown-menu-group>
           <hlm-dropdown-menu-separator />
         }
-        @if (importExportEnabled && (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async)) {
+        @if ('CONTENT_WRITERS' | hasRole | async) {
           <hlm-dropdown-menu-group>
-            @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
-              <button hlmDropdownMenuItem (click)="openImportDialog(space.locales)">
+            @if ('CONTENT_WRITERS' | hasRole | async) {
+              <button hlmDropdownMenuItem (click)="openImportDialog(spaceStore.locales())">
                 <ng-icon hlm size="sm" name="lucideUploadCloud" />
                 Import
               </button>
             }
-            @if ('TRANSLATION_EXPORT' | canUserPerform | async) {
-              <button hlmDropdownMenuItem (click)="openExportDialog(space.locales)">
+            @if ('CONTENT_WRITERS' | hasRole | async) {
+              <button hlmDropdownMenuItem (click)="openExportDialog(spaceStore.locales())">
                 <ng-icon hlm size="sm" name="lucideCloudDownload" />
                 Export
               </button>
@@ -76,7 +77,7 @@
             <ng-icon hlm size="sm" name="lucidePencil" />
             <span>Draft</span>
           </hlm-dropdown-menu-label>
-          @for (locale of space.locales; track locale.id) {
+          @for (locale of spaceStore.locales(); track locale.id) {
             <button hlmDropdownMenuItem (click)="openDraftV1InNewTab(locale.id)">
               <ll-locale-icon [locale]="locale.id" />
               <span>Draft {{ locale.name }} JSON</span>
@@ -106,33 +107,45 @@
       <hlm-progress-indicator />
     </hlm-progress>
   } @else {
-    <div class="mx-auto mt-3 px-2">
+    <!-- The columns follow the width the page has (a container query), so the sidebar's state counts too. -->
+    <div class="@container flex min-h-0 flex-1 flex-col px-2 pt-3 pb-2">
       <ll-translation-filter
         [availableLocales]="availableLocales()"
         [defaultLocaleId]="selectedSpace()?.defaultLocale?.id"
         [allLabels]="allLabels()"
         (localeChange)="currentLocale.set($event)"
         (filterChange)="filterCriteria.set($event)" />
-      <div class="grid grid-cols-4 gap-2">
+      <!-- The rest of the window, whatever the toolbar and filter take. Narrow: the list above the editor, half each.
+           Medium: the list beside the editor. Wide: list, editor (2 columns), info. -->
+      <div class="grid min-h-0 flex-1 grid-cols-1 grid-rows-2 gap-2 @xl:grid-cols-[minmax(14rem,1fr)_2fr] @xl:grid-rows-1 @4xl:grid-cols-4">
         <ll-translation-list
-          [translations]="translations()"
+          [spaceId]="spaceId()"
           [availableLocales]="availableLocales()"
           [currentLocale]="currentLocale()"
           [filterCriteria]="filterCriteria()"
           [selectedId]="selectedTranslation()?.id"
+          [selectedKey]="selectedTranslation()?.key"
           [isLocaleUpdateLoading]="isLocaleUpdateLoading()"
           [translationUpdateId]="translationUpdateId()"
-          (translationSelect)="selectTranslation($event)" />
+          (translationSelect)="selectTranslation($event)"
+          (firstTranslation)="onFirstTranslation($event)"
+          (selectedOutsideFilter)="selectedOutsideFilter.set($event)" />
         @if (selectedTranslation(); as translation) {
           <ll-translation-detail
             [translation]="translation"
             [spaceId]="spaceId()"
             [availableLocales]="availableLocales()"
             [defaultLocale]="selectedSpace()?.defaultLocale"
-            [reservedKeys]="translationKeys()"
+            [isKeyTaken]="isKeyTaken"
             [selectedLabels]="filterCriteria()?.labels || []"
             [isLocaleUpdateLoading]="isLocaleUpdateLoading()"
+            [outsideFilter]="selectedOutsideFilter()"
             (save)="updateLocale($event.translation, $event.locale, $event.value)" />
+        } @else {
+          <!-- Nothing selected: the tree with every group closed shows no key, or the list matched none. -->
+          <div class="text-muted-foreground flex h-full items-center justify-center border p-4 text-sm @4xl:col-span-3" role="status">
+            {{ settingsStore.translationLayout() === 'tree' ? 'Select a translation in the tree.' : 'Select a translation in the list.' }}
+          </div>
         }
       </div>
     </div>

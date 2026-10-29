@@ -1,0 +1,63 @@
+@if (current(); as current) {
+  <hlm-popover sideOffset="5" align="end">
+    <button
+      hlmPopoverTrigger
+      hlmBtn
+      variant="outline"
+      class="relative overflow-hidden"
+      data-testid="active-tasks"
+      [attr.aria-label]="'Active tasks: ' + current.label">
+      @if (running()) {
+        <hlm-spinner class="size-4" />
+      } @else {
+        <ng-icon hlm size="sm" name="lucideClock" />
+      }
+      <span>{{ current.label }}</span>
+      <span class="text-muted-foreground tabular-nums">{{ running() ? (current.progressText ?? 'Running') : 'Queued' }}</span>
+      @if (othersCount()) {
+        <span hlmBadge variant="secondary">+{{ othersCount() }} queued</span>
+      }
+      @if (running()) {
+        <hlm-progress class="absolute inset-x-0 bottom-0 h-0.5 rounded-none" [value]="current.percent" aria-label="Task progress">
+          <hlm-progress-indicator />
+        </hlm-progress>
+      }
+    </button>
+    <div *hlmPopoverPortal hlmPopoverContent class="grid w-96 gap-4">
+      @for (view of views(); track view.task.id) {
+        <div class="grid gap-1.5" data-testid="active-task">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-medium">{{ view.label }}</span>
+            <span hlmBadge [variant]="view.task.status === 'IN_PROGRESS' ? 'default' : 'secondary'">
+              {{ view.task.status === 'IN_PROGRESS' ? 'Running' : 'Queued' }}
+            </span>
+          </div>
+          @if (view.details) {
+            <span class="text-muted-foreground text-sm">{{ view.details }}</span>
+          }
+          @if (view.task.status === 'IN_PROGRESS') {
+            <hlm-progress class="h-1.5" [value]="view.percent" aria-label="Task progress">
+              <hlm-progress-indicator />
+            </hlm-progress>
+            <span class="text-muted-foreground text-xs tabular-nums">{{ view.progressText ?? 'Running' }}</span>
+          }
+          <span class="text-muted-foreground text-xs">
+            @if (view.startedBy) {
+              Started by {{ view.startedBy }},
+            }
+            {{ view.task.startedAt ?? view.task.createdAt | date: 'short' }}
+          </span>
+          <p
+            class="flex items-start gap-1.5 text-sm"
+            [class]="view.readsOnly ? 'text-muted-foreground' : 'text-amber-600 dark:text-amber-500'">
+            <ng-icon hlm size="sm" class="mt-0.5 shrink-0" [name]="view.readsOnly ? 'lucideInfo' : 'lucideTriangleAlert'" />
+            {{ view.warning }}
+          </p>
+          @if (view.link) {
+            <a hlmBtn variant="link" size="sm" class="justify-self-start px-0" [routerLink]="view.link">View task</a>
+          }
+        </div>
+      }
+    </div>
+  </hlm-popover>
+}

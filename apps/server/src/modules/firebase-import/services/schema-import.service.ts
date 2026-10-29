@@ -1,12 +1,14 @@
-import { Injectable } from '@nestjs/common';
 import { type SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { schemaEnumValueSchema, schemaFieldSchema } from '@localess/shared/zod';
+import { Injectable } from '@nestjs/common';
 import type { z } from 'zod';
+
 import { newUuid } from '../../../infra/database/id.js';
+import { fieldReferenceProblems, previewFieldProblem } from '../../../shared/utils/schema.utils.js';
 import { SchemaImportRepository } from '../repositories/schema-import.repository.js';
+import type { FirebaseDoc } from '../utils/firebase-client.js';
 import { str, strings, timestamps, typeOf } from '../utils/firebase-docs.js';
 import type { ImportStage } from '../utils/firebase-import.utils.js';
-import { fieldReferenceProblems, previewFieldProblem } from '../../../shared/utils/schema.utils.js';
 
 /**
  * Each item of a list that `schema` accepts, as parsed (keys it does not have dropped); the others are left out, with
@@ -63,17 +65,64 @@ function keepFieldRules(
   return { previewField: preview ? null : (previewField ?? null), fields: kept };
 }
 
+const isOptionKind = (kind: unknown) => kind === SchemaFieldKind.OPTION || kind === SchemaFieldKind.OPTIONS;
+
+/** A schema name not in `taken` (letters, digits, `-`, `_`, `.`; at most 50 characters), recorded in it. */
+function freeName(base: string, taken: Set<string>): string {
+  const clean = base.replace(/[^A-Za-z0-9_.-]/g, '').slice(0, 50);
+  let name = clean;
+  for (let n = 2; taken.has(name); n++) name = `${clean.slice(0, 50 - String(n).length)}${n}`;
+  taken.add(name);
+  return name;
+}
+
+/**
+ * Option fields that held their own values (`source: 'self'` with `options`, which this install does not have) get
+ * them from an ENUM schema made for each, `<schema><Field>`, so the field and the values contents hold keep working.
+ * The ENUM schema docs are answered; `docs` are changed in place to take their options from them.
+ */
+function inlineOptionsToEnums(docs: FirebaseDoc[], warn: (warning: string) => void): FirebaseDoc[] {
+  const taken = new Set(docs.map(doc => doc.id));
+  const enums: FirebaseDoc[] = [];
+  for (const doc of docs) {
+    if (doc['type'] === SchemaType.ENUM || !Array.isArray(doc['fields'])) continue;
+    doc['fields'] = doc['fields'].map((field: unknown) => {
+      if (typeof field !== 'object' || field === null) return field;
+      const { options, ...rest } = field as Record<string, unknown>;
+      if (!isOptionKind(rest['kind']) || !Array.isArray(options) || (rest['source'] !== 'self' && rest['source'] !== undefined))
+        return field;
+      const fieldName = typeof rest['name'] === 'string' ? rest['name'] : '';
+      const name = freeName(`${doc.id}${fieldName.charAt(0).toUpperCase()}${fieldName.slice(1)}`, taken);
+      const label = (value: unknown, fallback: string) => (typeof value === 'string' && value ? value : fallback);
+      enums.push({
+        id: name,
+        type: SchemaType.ENUM,
+        displayName: `${label(doc['displayName'], doc.id)} ${label(rest['displayName'], fieldName)}`.slice(0, 50),
+        description: `Options of the field '${fieldName}' of '${doc.id}', which held them itself in Firebase.`,
+        values: options,
+        createdAt: doc['createdAt'],
+        updatedAt: doc['updatedAt'],
+      });
+      warn(`${doc.id}: field '${fieldName}' held its own options, now taken from the ENUM schema '${name}'`);
+      return { ...rest, source: name };
+    });
+  }
+  return enums;
+}
+
 /**
  * Stage 7: the schemas (names are the references contents use). Fields and enum values are checked as the app checks
- * them; an invalid one is dropped with a warning, and a schema keeps only what its type has.
+ * them; an invalid one is dropped with a warning, and a schema keeps only what its type has. Option fields with their
+ * own values get an ENUM schema of their own (`inlineOptionsToEnums`).
  */
 @Injectable()
 export class SchemaImportService {
-  constructor(private readonly schemas: SchemaImportRepository) {}
+  constructor(private readonly schemaImportRepository: SchemaImportRepository) {}
 
   /** Answers the count. */
   async import(stage: ImportStage): Promise<number> {
-    const schemaDocs = await stage.client.list(stage.sourceSpaceId, 'schemas');
+    const sourceDocs = await stage.client.list(stage.sourceSpaceId, 'schemas');
+    const schemaDocs = [...sourceDocs, ...inlineOptionsToEnums(sourceDocs, warning => stage.warn(warning))];
     if (schemaDocs.length) {
       const rows = schemaDocs.map(doc => {
         const type = typeOf(SchemaType, SchemaType.ROOT, doc, warning => stage.warn(warning));
@@ -97,9 +146,12 @@ export class SchemaImportService {
       const types = new Map(rows.map(it => [it.name, it.type]));
       for (const row of rows) {
         if (row.type === SchemaType.ENUM) continue;
-        Object.assign(row, keepFieldRules(row.previewField ?? undefined, row.fields, types, warning => stage.warn(`${row.name}: ${warning}`)));
+        Object.assign(
+          row,
+          keepFieldRules(row.previewField ?? undefined, row.fields, types, warning => stage.warn(`${row.name}: ${warning}`)),
+        );
       }
-      await this.schemas.insertMany(rows);
+      await this.schemaImportRepository.insertMany(rows);
     }
     return schemaDocs.length;
   }

@@ -3,10 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { text } from 'node:stream/consumers';
+
 import archiver from 'archiver';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import { FsStorageDriver } from '../../../infra/storage/fs-storage.driver.js';
-import { EntryTooLargeError, openZip, writeZip } from './zip.js';
+import { EntryTooLargeError, limited, openZip } from './zip.js';
 
 describe('zip helpers', () => {
   let root: string;
@@ -18,10 +20,19 @@ describe('zip helpers', () => {
   });
   afterEach(() => rm(root, { recursive: true, force: true }));
 
-  it('round-trips inline and streamed entries through storage', async () => {
-    const size = await writeZip(storage, 'k/export.zip', [
+  /** A zip of these entries, stored under `key`. */
+  async function storeZip(key: string, entries: { name: string; content: string | Readable }[]): Promise<number> {
+    const archive = archiver('zip');
+    const done = storage.put(key, archive);
+    for (const entry of entries) archive.append(entry.content, { name: entry.name });
+    await archive.finalize();
+    return (await done).size;
+  }
+
+  it('reads inline and streamed entries back from storage', async () => {
+    const size = await storeZip('k/export.zip', [
       { name: 'metadata.json', content: JSON.stringify({ kind: 'ASSET' }) },
-      { name: 'assets/a1', content: () => Readable.from([Buffer.from('file bytes')]) },
+      { name: 'assets/a1', content: Readable.from([Buffer.from('file bytes')]) },
     ]);
     expect(size).toBe((await storage.stat('k/export.zip'))?.size);
     const zip = await openZip(storage, 'k/export.zip');
@@ -32,7 +43,7 @@ describe('zip helpers', () => {
   });
 
   it('caps entries by their actual inflated size, not the declared one', async () => {
-    await writeZip(storage, 'bomb.zip', [{ name: 'contents.json', content: JSON.stringify({ x: 'a'.repeat(100_000) }) }]);
+    await storeZip('bomb.zip', [{ name: 'contents.json', content: JSON.stringify({ x: 'a'.repeat(100_000) }) }]);
     const zip = await openZip(storage, 'bomb.zip');
     await expect(zip.readJson('contents.json', 10_000)).rejects.toBeInstanceOf(EntryTooLargeError);
   });
@@ -55,5 +66,14 @@ describe('zip helpers', () => {
   it('rejects files that are not zips', async () => {
     await storage.put('not.zip', Buffer.from('definitely not a zip'));
     await expect(openZip(storage, 'not.zip')).rejects.toThrow();
+  });
+
+  it('limited(): fails past the cap, and passes on an error of its source (an aborted upload)', async () => {
+    await expect(text(limited(Readable.from([Buffer.alloc(11)]), 10, 'up.json'))).rejects.toBeInstanceOf(EntryTooLargeError);
+    const source = new Readable({ read() {} });
+    const out = limited(source, 10, 'up.json');
+    const failed = text(out);
+    source.destroy(new Error('aborted'));
+    await expect(failed).rejects.toThrow('aborted');
   });
 });

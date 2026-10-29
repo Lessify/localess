@@ -47,6 +47,21 @@ describe('liveQueryWith', () => {
     subscription.unsubscribe();
   });
 
+  it("does not refetch on a task's progress (live state, not a change of its row)", async () => {
+    vi.useFakeTimers();
+    const { events, service, fetch } = setup();
+    const values: number[] = [];
+    const subscription = liveQueryWith(service, { spaceId: 's1', entities: ['tasks'] }, fetch).subscribe(it => values.push(it));
+    await vi.advanceTimersByTimeAsync(0);
+    events.next({ spaceId: 's1', entity: 'tasks', id: 't1', op: 'progress', progress: { step: 'Writing', done: 1 } });
+    await vi.advanceTimersByTimeAsync(200);
+    expect(values).toEqual([1]);
+    events.next({ spaceId: 's1', entity: 'tasks', id: 't1', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    expect(values).toEqual([1, 2]);
+    subscription.unsubscribe();
+  });
+
   it('treats events without an id (bulk changes) as matching a detail query', async () => {
     vi.useFakeTimers();
     const { events, service, fetch } = setup();

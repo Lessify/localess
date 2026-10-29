@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject, Injector } from '@angular/core';
 import { Router } from '@angular/router';
@@ -20,7 +21,9 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
         (request.url.startsWith('/api/app/') || request.url === '/api/auth/me')
       ) {
         injector.get(UserStore).signedOut();
-        void injector.get(Router).navigate(['/auth/login']);
+        // Not from a sign-in page: the login page's own session check answers 401, and navigating would drop the
+        // `?error=` an OAuth sign-in came back with (the reason was never shown).
+        if (!injector.get(Location).path().startsWith('/auth/')) void injector.get(Router).navigate(['/auth/login']);
       }
       return throwError(() => error);
     }),

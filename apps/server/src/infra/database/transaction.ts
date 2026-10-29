@@ -3,7 +3,7 @@ import type { Database } from './database.module.js';
 export type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 /**
- * How a repository method runs its work (docs/server-architecture.md#transactions): in its own transaction, or, given
+ * How a repository method runs its work (docs/server/architecture.md#transactions): in its own transaction, or, given
  * the caller's `tx`, as a savepoint inside it, so an action across repositories commits or rolls back as a whole.
  */
 export function transaction<T>(db: Database, tx: Transaction | undefined, work: (tx: Transaction) => Promise<T>): Promise<T> {

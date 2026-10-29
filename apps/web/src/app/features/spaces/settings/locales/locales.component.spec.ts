@@ -1,25 +1,43 @@
 import { TestBed } from '@angular/core/testing';
-import { Locale, Space } from '@localess/shared';
+import { Locale, Page, Space, SpaceLocale } from '@localess/shared';
 import { LocaleService } from '@core/services/locale.service';
 import { NotificationService } from '@core/services/notification.service';
+import { SpaceService } from '@core/services/space.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { LocalesComponent } from './locales.component';
+import { SpaceLocaleService } from './space-locale.service';
 
+/** The space's locales as `GET …/locales` answers them, each with its locale. */
+const spaceLocales = (locales: Locale[]): SpaceLocale[] =>
+  locales.map((locale, position) => ({ spaceId: 'space-1', localeId: locale.id, position, createdAt: '', locale }));
+
+/** One page holding `locales`. */
+const pageOf = (locales: Locale[]): Page<SpaceLocale> => ({ items: spaceLocales(locales), page: 0, size: 20, total: locales.length });
+
+/** The selected space with its locales (`spaceLocales`, as `GET /spaces/:id` answers them); the first the default. */
 function space(locales: Locale[]): Space {
-  return { id: 'space-1', name: 'Space 1', locales, defaultLocale: locales[0] } as Space;
+  return {
+    id: 'space-1',
+    name: 'Space 1',
+    defaultLocaleId: locales[0]?.id,
+    defaultLocale: locales[0],
+    spaceLocales: spaceLocales(locales),
+  } as Space;
 }
 
 describe('LocalesComponent', () => {
-  function setup(selectedSpace: Space | undefined) {
+  function setup(space: Space | undefined) {
+    const selectedSpace = signal(space);
+    const findAll = vi.fn().mockReturnValue(of(pageOf((space?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : [])))));
     const create = vi.fn().mockReturnValue(of(undefined));
     const deleteLocale = vi.fn().mockReturnValue(of(undefined));
     const setDefault = vi.fn().mockReturnValue(of(undefined));
-    const reorder = vi.fn().mockReturnValue(of(undefined));
+    const move = vi.fn().mockReturnValue(of(undefined));
     const isLocaleTranslatableFrom = vi.fn().mockReturnValue(true);
     const isLocaleTranslatableTo = vi.fn().mockReturnValue(false);
     const success = vi.fn();
@@ -33,23 +51,32 @@ describe('LocalesComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        {
-          provide: LocaleService,
-          useValue: { create, delete: deleteLocale, setDefault, reorder, isLocaleTranslatableFrom, isLocaleTranslatableTo },
-        },
+        { provide: SpaceLocaleService, useValue: { findAll, create, remove: deleteLocale, move } },
+        { provide: SpaceService, useValue: { setDefaultLocale: setDefault } },
+        { provide: LocaleService, useValue: { isLocaleTranslatableFrom, isLocaleTranslatableTo } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open: openDialog } },
-        { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },
+        {
+          provide: SpaceStore,
+          useValue: {
+            selectedSpace,
+            selectedSpaceId: computed(() => selectedSpace()?.id),
+            locales: computed(() => (selectedSpace()?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : []))),
+            defaultLocale: computed(() => selectedSpace()?.defaultLocale),
+          },
+        },
       ],
     });
     const fixture = TestBed.createComponent(LocalesComponent);
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
+      fixture,
+      findAll,
       create,
       deleteLocale,
       setDefault,
-      reorder,
+      move,
       isLocaleTranslatableFrom,
       isLocaleTranslatableTo,
       success,
@@ -67,19 +94,56 @@ describe('LocalesComponent', () => {
     expect(component.isLoading()).toBe(true);
   });
 
-  it('loads the space locales once the space arrives', () => {
-    const { component } = setup(space([en, de]));
+  it("loads the first page of the space's locales once the space arrives", () => {
+    const { component, findAll } = setup(space([en, de]));
 
+    expect(findAll.mock.lastCall![0]).toBe('space-1');
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20');
     expect(component.dataSource.filteredData()).toEqual([en, de]);
+    expect(component.total()).toBe(2);
     expect(component.isLoading()).toBe(false);
   });
 
-  it('onFilterChange() serializes the filter value onto the data source', () => {
-    const { component } = setup(space([en]));
+  it('loads nothing until a space is selected', () => {
+    const { findAll } = setup(undefined);
+
+    expect(findAll).not.toHaveBeenCalled();
+  });
+
+  it('onFilterChange() searches on the server from the first page', () => {
+    const { component, fixture, findAll } = setup(space([en, de]));
+    component.list.page.set(1);
+    fixture.detectChanges();
+
+    component.onFilterChange({ search: ' ger ' });
+    fixture.detectChanges();
+
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20&search=ger');
+  });
+
+  it('onSortChange() sorts on the server; cleared, back to the space order', () => {
+    const { component, fixture, findAll } = setup(space([en, de]));
+
+    component.onSortChange({ active: 'name', direction: 'desc' });
+    fixture.detectChanges();
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20&sort=name&direction=desc');
+
+    component.onSortChange({ active: 'name', direction: '' });
+    fixture.detectChanges();
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20');
+  });
+
+  it('notifies a failed load, and loads again on the next query change', () => {
+    const { component, fixture, findAll, error } = setup(undefined);
+    findAll.mockReturnValue(of(pageOf([en]))).mockReturnValueOnce(throwError(() => new Error('boom')));
+    // The space arrives: its first load fails.
+    (TestBed.inject(SpaceStore).selectedSpace as ReturnType<typeof signal<Space | undefined>>).set(space([en]));
+    fixture.detectChanges();
+    expect(error).toHaveBeenCalledWith('Locales can not be loaded.');
 
     component.onFilterChange({ search: 'en' });
-
-    expect(component.dataSource.filter).toBe(JSON.stringify({ search: 'en' }));
+    fixture.detectChanges();
+    expect(component.dataSource.filteredData()).toEqual([en]);
   });
 
   it('openAddDialog() creates the locale and notifies success when confirmed', () => {
@@ -111,14 +175,13 @@ describe('LocalesComponent', () => {
     expect(error).toHaveBeenCalledWith('Locale can not be added.');
   });
 
-  it('openDeleteDialog() deletes, removes it locally, and notifies success when confirmed', () => {
+  it('openDeleteDialog() deletes and notifies success when confirmed (the page reloads on the change event)', () => {
     const { component, openDialog, deleteLocale, success } = setup(space([en, de]));
     openDialog.mockReturnValue({ closed$: of(true) });
 
     component.openDeleteDialog(de);
 
     expect(deleteLocale).toHaveBeenCalledWith('space-1', de);
-    expect(component.dataSource.filteredData()).toEqual([en]);
     expect(success).toHaveBeenCalledWith("Locale 'German' has been deleted.");
   });
 
@@ -173,31 +236,31 @@ describe('LocalesComponent', () => {
     expect(error).toHaveBeenCalledWith("Locale 'German' can not be made the default locale.");
   });
 
-  it('move() swaps a locale with its neighbour in the space order', () => {
+  it('move() takes a locale one place up or down in the space order', () => {
     const fr: Locale = { id: 'fr', name: 'French' };
-    const { component, reorder } = setup(space([en, de, fr]));
+    const { component, move } = setup(space([en, de, fr]));
 
     component.move(fr, -1);
-    expect(reorder).toHaveBeenLastCalledWith('space-1', ['en', 'fr', 'de']);
+    expect(move).toHaveBeenLastCalledWith('space-1', fr, 1);
 
     component.move(en, 1);
-    expect(reorder).toHaveBeenLastCalledWith('space-1', ['de', 'en', 'fr']);
+    expect(move).toHaveBeenLastCalledWith('space-1', en, 1);
   });
 
   it('canMove() is false at the ends, and move() then sends nothing', () => {
-    const { component, reorder } = setup(space([en, de]));
+    const { component, move } = setup(space([en, de]));
 
     expect(component.canMove(en, -1)).toBe(false);
     expect(component.canMove(en, 1)).toBe(true);
     expect(component.canMove(de, 1)).toBe(false);
     component.move(de, 1);
 
-    expect(reorder).not.toHaveBeenCalled();
+    expect(move).not.toHaveBeenCalled();
   });
 
   it('move() notifies an error on failure', () => {
-    const { component, reorder, error } = setup(space([en, de]));
-    reorder.mockReturnValue(throwError(() => new Error('boom')));
+    const { component, move, error } = setup(space([en, de]));
+    move.mockReturnValue(throwError(() => new Error('boom')));
 
     component.move(de, -1);
 

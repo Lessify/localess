@@ -1,6 +1,6 @@
 <div class="flex items-center justify-between gap-2 p-2">
   <div class="flex items-center gap-2">
-    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Schemas">
+    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Schemas" aria-label="Back to Schemas">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
     <div>
@@ -8,7 +8,7 @@
       <div class="text-muted-foreground line-clamp-1">#{{ entity?.name }}</div>
     </div>
   </div>
-  @if ('SCHEMA_UPDATE' | canUserPerform | async) {
+  @if ('DEVELOPERS' | hasRole | async) {
     <button hlmBtn hlmTooltip="Save the changes" [disabled]="!form.valid || isSaveLoading()" (click)="save()">
       @if (isSaveLoading()) {
         <hlm-spinner class="size-4" />
@@ -49,7 +49,7 @@
                 </div>
               </div>
             </div>
-            <div hlmItemGroup class="gap-2 overflow-y-auto" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+            <div hlmItemGroup role="list" class="gap-2 overflow-y-auto" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
               @for (field of values.controls; track field.value.name; let index = $index) {
                 <div
                   hlmItem
@@ -69,10 +69,23 @@
                   </div>
 
                   <div hlmItemActions>
-                    <button hlmBtn size="icon" variant="outline" (click)="removeComponent($event, index)" hlmTooltip="Delete">
+                    <button
+                      hlmBtn
+                      size="icon"
+                      variant="outline"
+                      (click)="removeComponent($event, index)"
+                      hlmTooltip="Delete"
+                      aria-label="Delete">
                       <ng-icon hlm size="sm" name="lucideTrash" />
                     </button>
-                    <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+                    <button
+                      hlmBtn
+                      size="icon"
+                      variant="ghost"
+                      cdkDragHandle
+                      class="cursor-grab active:cursor-grabbing"
+                      hlmTooltip="Move"
+                      aria-label="Move">
                       <ng-icon hlm size="sm" name="lucideGripVertical" />
                     </button>
                   </div>
@@ -86,8 +99,8 @@
             <fieldset hlmFieldSet>
               <div hlmFieldGroup>
                 <div hlmField>
-                  <label hlmFieldLabel for="displayName"> Display Name </label>
-                  <input #displayName hlmInput id="displayName" formControlName="displayName" autocomplete="off" />
+                  <label hlmFieldLabel for="schema-display-name"> Display Name </label>
+                  <input #displayName hlmInput id="schema-display-name" formControlName="displayName" autocomplete="off" />
                   @if (form.controls['displayName']?.errors; as errors) {
                     <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
                   } @else {
@@ -95,8 +108,14 @@
                   }
                 </div>
                 <div hlmField>
-                  <label hlmFieldLabel for="description"> Description </label>
-                  <textarea hlmTextarea class="resize-none" #description id="description" formControlName="description" autocomplete="off">
+                  <label hlmFieldLabel for="schema-description"> Description </label>
+                  <textarea
+                    hlmTextarea
+                    class="resize-none"
+                    #description
+                    id="schema-description"
+                    formControlName="description"
+                    autocomplete="off">
                   </textarea>
                   @if (form.controls['description']?.errors; as errors) {
                     <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
@@ -112,7 +131,10 @@
                     id="labels"
                     autocomplete="off"
                     placeholder="Enter new label name"
-                    (keydown.enter)="$event.preventDefault(); addLabel(labelName.value); labelName.value = ''" />
+                    (keydown.enter)="$event.preventDefault(); addLabel(labelName)" />
+                  @if (labelError(); as error) {
+                    <hlm-field-error forceShow>{{ error }}</hlm-field-error>
+                  }
                   <div class="flex w-full flex-wrap gap-2">
                     @for (label of form.controls['labels'].value; track label) {
                       <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">
@@ -133,7 +155,7 @@
 @if (settingsStore.debugEnabled()) {
   <hlm-accordion type="multiple">
     <hlm-accordion-item>
-      <hlm-accordion-trigger>Form : {{ form?.valid }}</hlm-accordion-trigger>
+      <hlm-accordion-trigger>Form : {{ form.valid }}</hlm-accordion-trigger>
       <hlm-accordion-content>
         <pre>{{ form.value | json }}</pre>
         <pre>{{ form.errors | json }}</pre>

@@ -23,7 +23,7 @@ Both trees move to a parent reference the database enforces:
 | 2 | Contents: **slugs unique per parent**, `unique (space_id, parent_id, slug) nulls not distinct` (Postgres 15+; we ship 18). It replaces the unique `full_slug`. |
 | 3 | `contents.parent_slug`, `contents.full_slug` and `assets.parent_path` are **dropped**. `fullSlug` / `parentSlug` stay in API responses and snapshots, computed. |
 | 4 | Assets keep allowing duplicate names in a folder (roadmap). |
-| 5 | The editor navigates by folder id. It loads **every folder of the space once** (`GET …/folders`, live) into a map `id → folder`, and builds breadcrumbs, paths and the move dialog's tree from it. |
+| 5 | The editor navigates by folder id. It loads **every folder of the space once** (assets: `GET …/folders`; contents: `GET …/contents/folders`; both in `SpaceStore`, live) into a map `id → folder`, and builds breadcrumbs, paths and the move dialog's tree from it. |
 | 6 | Folder moves check for cycles under a per-space lock (`lockContents`, and `lockAssets` for assets). Nothing else needs a lock: the foreign key and the unique index do the work. |
 | 7 | Export and import tasks are redesigned later, once these decisions are stable; until then the content and asset transfer tasks are switched off (see [Export and import tasks](#export-and-import-tasks)). The Firebase import is the migration path that must work. |
 | 8 | Firebase import: an item whose parent folder is missing is imported at the root, with a warning. |
@@ -121,10 +121,9 @@ stage keeps a single pass over the Firebase pages:
 
 ### Export and import tasks
 
-Hidden behind `FEATURE_FLAGS.importExport` and redesigned later, once these decisions are stable
-([Import / Export](import-export.md)). Until then `CONTENT_EXPORT` and `CONTENT_IMPORT` (and in phase 2 `ASSET_EXPORT`
-and `ASSET_IMPORT`) end at once as `ERROR` ("Content import and export are being redesigned"), writing nothing; their
-tests go with them and come back with the redesign.
+Removed (2026-10-23): contents and assets move with the full export, not per module ([Import / Export](import-export.md),
+[Space export and backups](space-export-backup.md)). `CONTENT_EXPORT`, `CONTENT_IMPORT`, `ASSET_EXPORT` and
+`ASSET_IMPORT` can no longer be created; old rows still read.
 
 ### Tests
 

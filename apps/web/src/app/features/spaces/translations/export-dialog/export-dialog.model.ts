@@ -4,13 +4,5 @@ export interface ExportDialogContext {
   locales: Locale[];
 }
 
-export type ExportDialogResult = ExportFullDialogResult | ExportFlatDialogResult;
-
-export interface ExportFullDialogResult {
-  kind: 'FULL';
-}
-
-export interface ExportFlatDialogResult {
-  kind: 'FLAT';
-  locale: string;
-}
+/** Every translation as a `.localess.zip` (a task), or one locale as key-value JSON (a direct download). */
+export type ExportDialogResult = { kind: 'FULL' } | { kind: 'LOCALE'; locale: string };

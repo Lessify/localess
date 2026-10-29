@@ -1,47 +1,95 @@
 @if (settingsStore.translationLayout() === 'list') {
-  <cdk-virtual-scroll-viewport [itemSize]="55" class="overlay border">
-    <div
-      role="listitem"
-      hlmItem
-      class="border-b-border cursor-pointer rounded-b-none p-2"
-      *cdkVirtualFor="let translation of translationsFiltered()"
-      [variant]="translation.id === selectedId() ? 'muted' : 'default'"
-      (click)="translationSelect.emit(translation)"
-      (keyup.enter)="translationSelect.emit(translation)">
-      <div hlmItemContent>
-        <div hlmItemTitle class="break-all">
-          @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
-            <hlm-spinner class="size-6 items-center" />
-          } @else {
-            <ll-translation-status [status]="identifyTranslationStatus(translation)" />
-          }
-          {{ translation.key }}
+  <!-- Every row is one height (rowHeight: a line of key, a line of value): the virtual list places rows by it. -->
+  <cdk-virtual-scroll-viewport [itemSize]="rowHeight" class="min-h-0 flex-1 border" role="list" aria-label="Translations">
+    <ng-container *cdkVirtualFor="let row of listRows(); trackBy: trackListRow">
+      @if (row.kind === 'end') {
+        <!-- The end marker: rendered only once the list is scrolled to its end, where it loads the next keys. -->
+        <div
+          class="text-muted-foreground flex h-16 items-center justify-center gap-2 text-sm"
+          aria-hidden="true"
+          (llInView)="onListEndInView($event)">
+          <hlm-spinner class="size-4" /> Loading more…
         </div>
-        <p hlmItemDescription class="break-all">
-          <ll-translation-string-view [value]="translation.locales[currentLocale() || '']" />
-        </p>
-      </div>
-    </div>
+      } @else {
+        <div
+          role="listitem"
+          [attr.aria-label]="row.translation.key"
+          [title]="row.translation.key"
+          hlmItem
+          class="border-b-border h-16 cursor-pointer flex-nowrap overflow-hidden rounded-b-none p-2"
+          [variant]="row.translation.id === selectedId() ? 'muted' : 'default'"
+          (click)="onListSelect(row.translation)"
+          (keyup.enter)="onListSelect(row.translation)">
+          <div hlmItemContent class="min-w-0">
+            <div hlmItemTitle class="w-full min-w-0 flex-nowrap">
+              @if (isLocaleUpdateLoading() && translationUpdateId() === row.translation.id) {
+                <hlm-spinner class="size-6 shrink-0 items-center" />
+              } @else {
+                <ll-translation-status class="shrink-0" [status]="identifyTranslationStatus(row.translation)" />
+              }
+              <span class="truncate">{{ row.translation.key }}</span>
+            </div>
+            <p hlmItemDescription class="truncate">
+              <ll-translation-string-view [value]="row.translation.locales[currentLocale() || '']" />
+            </p>
+          </div>
+        </div>
+      }
+    </ng-container>
+    @if (!pages.loading() && pages.items().length === 0) {
+      <p class="text-muted-foreground p-4 text-sm">{{ isFiltering() ? 'No translations match.' : 'No translations yet.' }}</p>
+    }
   </cdk-virtual-scroll-viewport>
+  <p class="text-muted-foreground shrink-0 pt-2 text-sm" role="status" data-testid="list-count">
+    {{ pages.total() }} {{ isFiltering() ? (pages.total() === 1 ? 'match' : 'matches') : pages.total() === 1 ? 'key' : 'keys' }}
+  </p>
 } @else {
-  <div class="overlay overflow-auto border p-2">
+  <div class="min-h-0 flex-1 overflow-auto border p-2" role="region" aria-label="Translation tree">
+    @if (tree.matches() !== undefined && tree.mode() === 'lazy' && tree.matches()! > 0) {
+      <p class="text-muted-foreground px-2 pb-2 text-xs" data-testid="tree-matches">
+        {{ tree.matches() }} matches: open a group to see them.
+      </p>
+    }
     <ll-tree
-      [nodes]="translationTreeFiltered()"
-      [expandedKeys]="expandedKeys()"
+      [nodes]="tree.rows()"
+      [expandedKeys]="tree.expandedKeys()"
       (expandedKeysChange)="onExpandedKeysChange($event)"
-      [selectedKey]="selectedId()"
+      [selectedKey]="selectedKey()"
       [guides]="true"
       (nodeSelect)="onNodeSelect($event)">
       <ng-template llTreeNodeDef let-node>
-        @if (translationMap().get(node.key); as translation) {
-          @if (isLocaleUpdateLoading() && translationUpdateId() === node.key) {
-            <hlm-spinner class="size-4" />
-          } @else {
-            <ll-translation-status [status]="identifyTranslationStatus(translation)" />
+        @switch (node.kind) {
+          @case ('loading') {
+            <span class="text-muted-foreground flex items-center gap-2"><hlm-spinner class="size-3" /> Loading…</span>
+          }
+          @case ('more') {
+            <!-- Loads when scrolled into view; clicking it does the same. -->
+            <span class="text-primary flex items-center gap-2" (llInView)="onTreeMoreInView(node.parent ?? '', $event)">
+              @if (tree.loadingMore().has(node.parent ?? '')) {
+                <hlm-spinner class="size-3" /> Loading…
+              } @else {
+                Load more ({{ node.count }})
+              }
+            </span>
+          }
+          @default {
+            @if (node.translation; as translation) {
+              @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
+                <hlm-spinner class="size-4" />
+              } @else {
+                <ll-translation-status [status]="identifyTranslationStatus(translation)" />
+              }
+            }
+            <span class="break-all">{{ node.name }}</span>
+            @if (node.count > 0) {
+              <span class="text-muted-foreground text-xs" [attr.aria-label]="node.count + ' keys'">({{ node.count }})</span>
+            }
           }
         }
-        <span class="break-all">{{ node.name }}</span>
       </ng-template>
     </ll-tree>
+    @if (!tree.loading() && tree.rows().length === 0) {
+      <p class="text-muted-foreground p-2 text-sm">{{ isFiltering() ? 'No translations match.' : 'No translations yet.' }}</p>
+    }
   </div>
 }

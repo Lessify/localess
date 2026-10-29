@@ -1,16 +1,16 @@
-import { createWriteStream } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { pipeline } from 'node:stream/promises';
+import { readFile } from 'node:fs/promises';
+
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { exiftool } from 'exiftool-vendored';
 import sharp from 'sharp';
+
+import { withLocalFile } from '../../infra/storage/local-file.js';
+import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { pickEmbeddedAlt } from '../utils/embedded-alt.js';
+import { errorMessage } from '../utils/error-message.js';
 import { normaliseDuration } from '../utils/media-duration.js';
 import { resolveOrientedDimensions, resolveRotatedDimensions } from '../utils/media-orientation.js';
 import { isAnimatedPages } from '../utils/media-pages.js';
-import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 
 export interface ExtractedMetadata {
   metadata?: Record<string, unknown>;
@@ -35,16 +35,12 @@ export class AssetMetadataService implements OnApplicationShutdown {
 
   async extract(key: string, type: string, currentAlt: string | null | undefined): Promise<ExtractedMetadata> {
     if (!type.startsWith('image/') && !type.startsWith('video/')) return {};
-    const dir = await mkdtemp(join(tmpdir(), 'localess-meta-'));
     try {
-      const file = join(dir, 'original');
-      await pipeline(this.storage.createReadStream(key), createWriteStream(file));
-      return type.startsWith('image/') ? await this.image(file, currentAlt) : await this.video(file);
+      // The stored file itself where the storage keeps one: no copy of every upload.
+      return await withLocalFile(this.storage, key, file => (type.startsWith('image/') ? this.image(file, currentAlt) : this.video(file)));
     } catch (error) {
-      this.logger.warn(`Could not read metadata of ${key}: ${error}`);
+      this.logger.warn(`Could not read metadata of ${key}: ${errorMessage(error)}`);
       return {};
-    } finally {
-      await rm(dir, { recursive: true, force: true });
     }
   }
 
@@ -60,7 +56,9 @@ export class AssetMetadataService implements OnApplicationShutdown {
     if (width !== undefined && height !== undefined) Object.assign(metadata, { width, height, orientation });
     // `pages` lets the delivery route reject an oversized animation before reading it.
     try {
-      const { pages, hasAlpha } = await sharp(file).metadata();
+      // The bytes, not the path: sharp keeps a WebP it opened by path open, and on Windows the temporary copy could then
+      // not be removed (EBUSY), failing the upload.
+      const { pages, hasAlpha } = await sharp(await readFile(file)).metadata();
       if (isAnimatedPages(pages)) metadata['pages'] = pages;
       if (hasAlpha !== undefined) metadata['hasAlpha'] = hasAlpha;
     } catch {

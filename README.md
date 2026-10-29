@@ -106,6 +106,7 @@ A pnpm workspace; every command runs from the root (see `package.json` scripts).
 |---|---|---|
 | [`apps/web`](apps/web/README.md) | `@localess/web` | Angular admin UI (`core/` app-wide state and API, `shared/` reusable UI, `features/` lazy routes) |
 | [`apps/server`](apps/server/README.md) | `@localess/server` | NestJS server: App API, public API, auth, tasks, CLI; Drizzle migrations in `apps/server/drizzle` |
+| [`apps/e2e`](apps/e2e/README.md) | `@localess/e2e` | Playwright end-to-end tests: `pnpm e2e` builds the app and the server and runs them on a fresh database |
 | [`packages/shared`](packages/shared/README.md) | `@localess/shared` | Domain contract used by both apps: models, enums, permissions, locales, zod validators |
 | [`packages/ui`](packages/ui/README.md) | `@localess/ui` | Spartan/Helm UI components (source), imported as `@spartan-ng/helm/*` |
 | [`packages/visual-editor-sync`](packages/visual-editor-sync/README.md) | `@localess/visual-editor-sync` | `sync-v1.js`, loaded by customer sites inside the Visual Editor |

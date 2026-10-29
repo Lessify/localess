@@ -1,6 +1,15 @@
-import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, linkedSignal, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
 import { LocaleService } from '@core/services/locale.service';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
@@ -10,7 +19,7 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 import { translateErrorMessage } from '@core/utils/translate-error';
 import { DEFAULT_LOCALE, Locale, Translation, TranslationUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
-import { lucideArrowRight, lucideCopy, lucideLanguages, lucidePencil, lucideReplace, lucideSave, lucideTrash } from '@ng-icons/lucide';
+import { lucideArrowRight, lucideInfo, lucideLanguages, lucideSave } from '@ng-icons/lucide';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
   ConfirmationDialogComponent,
@@ -19,8 +28,7 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { HlmBadgeImports } from '@spartan-ng/helm/badge';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
@@ -28,14 +36,17 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { Observable } from 'rxjs';
 import { filter, switchMap, take } from 'rxjs/operators';
 
 import { EditDialogComponent, EditDialogContext, EditDialogResult } from '../../../edit-dialog';
 import { EditIdDialogComponent, EditIdDialogContext, EditIdDialogResult } from '../../../edit-id-dialog';
 import { identifyTranslationStatus } from '../../models/translation.model';
-import { TRANSLATION_STATUS_LABELS, TranslationStatus } from '../../models/translation-status.model';
+import { TranslationStatus } from '../../models/translation-status.model';
+import { TranslationInfoComponent } from '../translation-info/translation-info.component';
 import { TranslationStringEditComponent } from '../translation-string-edit/translation-string-edit.component';
 import { TranslationStringViewComponent } from '../translation-string-view/translation-string-view.component';
 
@@ -49,17 +60,17 @@ import { TranslationStringViewComponent } from '../translation-string-view/trans
   },
   imports: [
     CommonModule,
-    ClipboardModule,
-    CanUserPerformPipe,
+    HasRolePipe,
     TranslationStringViewComponent,
+    TranslationInfoComponent,
     TranslationStringEditComponent,
     HlmButtonImports,
     HlmIconImports,
     HlmTooltipImports,
     HlmSpinnerImports,
     HlmSelectImports,
+    HlmSheetImports,
     HlmFieldImports,
-    HlmBadgeImports,
     HlmSeparatorImports,
     HlmKbdImports,
     LocaleIconComponent,
@@ -67,11 +78,8 @@ import { TranslationStringViewComponent } from '../translation-string-view/trans
   providers: [
     provideIcons({
       lucideArrowRight,
+      lucideInfo,
       lucideLanguages,
-      lucideReplace,
-      lucidePencil,
-      lucideTrash,
-      lucideCopy,
       lucideSave,
     }),
   ],
@@ -81,6 +89,10 @@ export class TranslationDetailComponent {
   private readonly localeService = inject(LocaleService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(HlmDialogService);
+  /** Whether the details sheet is open (narrow pages, where the info panel is hidden). */
+  readonly detailsOpen = signal(false);
+  /** The action waiting for the details sheet to close. */
+  private afterDetailsClosed?: () => void;
   private readonly cd = inject(ChangeDetectorRef);
   private readonly translateService = inject(TranslateService);
   private readonly translationService = inject(TranslationService);
@@ -91,33 +103,45 @@ export class TranslationDetailComponent {
   readonly availableLocales = input.required<Locale[]>();
   readonly defaultLocale = input<Locale | undefined>(undefined);
   /** Keys already taken, for the rename dialog. */
-  readonly reservedKeys = input<string[]>([]);
+  /** Whether the space has a key (the rename dialog's check). */
+  readonly isKeyTaken = input.required<(key: string) => Observable<boolean>>();
   readonly selectedLabels = input<string[]>([]);
   readonly isLocaleUpdateLoading = input(false);
+  /** The key doesn't match the list's filter: it stays here, with a note saying so. */
+  readonly outsideFilter = input(false);
 
   // Outputs
   readonly save = output<{ translation: Translation; locale: Locale; value: string }>();
 
-  selectedSourceLocale = linkedSignal(() => this.defaultLocale() ?? DEFAULT_LOCALE);
-  selectedTargetLocale = linkedSignal(() => this.defaultLocale() ?? DEFAULT_LOCALE);
-  selectedTranslationLocaleValue = linkedSignal(() => {
-    return this.translation()?.locales[this.selectedTargetLocale().id] || '';
+  // Live data arrives as new objects on every refresh (a change to any space or any translation), so the selection and
+  // the value being typed follow their inputs by value, not by identity. By identity, a refresh reset the target to
+  // the default locale mid-edit, and the text typed for German was saved over English.
+  private readonly initialLocale = computed(() => this.defaultLocale() ?? DEFAULT_LOCALE, {
+    equal: (a, b) => a.id === b.id,
   });
+  private readonly storedValue = computed(
+    () => {
+      const translation = this.translation();
+      const locale = this.selectedTargetLocale().id;
+      return { id: translation?.id, locale, value: translation?.locales[locale] || '' };
+    },
+    { equal: (a, b) => a.id === b.id && a.locale === b.locale && a.value === b.value },
+  );
+
+  selectedSourceLocale = linkedSignal(() => this.initialLocale());
+  selectedTargetLocale = linkedSignal(() => this.initialLocale());
+  selectedTranslationLocaleValue = linkedSignal(() => this.storedValue().value);
 
   isTranslateLoading = signal(false);
 
   localeToString = (locale: Locale): string => locale?.name ?? '';
 
-  compareLocale = (a: Locale, b: Locale | null): boolean => {
+  compareLocale = (a: Locale, b: Locale | null | undefined): boolean => {
     return a.id === b?.id;
   };
 
   identifyTranslationStatus(translate: Translation): TranslationStatus {
     return identifyTranslationStatus(translate, this.availableLocales());
-  }
-
-  statusLabel(translate: Translation): string {
-    return TRANSLATION_STATUS_LABELS[this.identifyTranslationStatus(translate)];
   }
 
   translate(): void {
@@ -137,14 +161,18 @@ export class TranslationDetailComponent {
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error(translateErrorMessage(err, 'Could not be translated.'));
+          this.stopTranslateLoading();
         },
-        complete: () => {
-          setTimeout(() => {
-            this.isTranslateLoading.set(false);
-            this.cd.detectChanges();
-          }, 1000);
-        },
+        complete: () => this.stopTranslateLoading(),
       });
+  }
+
+  /** After a translation, failed or not (an error ends the request without `complete`): Translate works again. */
+  private stopTranslateLoading(): void {
+    setTimeout(() => {
+      this.isTranslateLoading.set(false);
+      this.cd.detectChanges();
+    }, 1000);
   }
 
   isLocaleTranslatable(sourceLocale: Locale, targetLocale: Locale): boolean {
@@ -185,12 +213,43 @@ export class TranslationDetailComponent {
     return 'Translate';
   }
 
+  /** The details (key, status, labels, dates and their actions) in a sheet from the right: the panel is hidden on a
+   * narrow page. */
+  openDetails(): void {
+    this.detailsOpen.set(true);
+  }
+
+  /**
+   * An action of the details sheet opens its own dialog: only once the sheet has closed (the sheet is a dialog too, and
+   * two open at once collide). From the panel, at once.
+   */
+  fromDetails(action: 'editKey' | 'edit' | 'remove', translation: Translation): void {
+    const run = () => {
+      if (action === 'editKey') this.openEditIdDialog(translation);
+      else if (action === 'edit') this.openEditDialog(translation);
+      else this.openDeleteDialog(translation);
+    };
+    if (!this.detailsOpen()) {
+      run();
+      return;
+    }
+    this.afterDetailsClosed = run;
+    this.detailsOpen.set(false);
+  }
+
+  onDetailsClosed(): void {
+    this.detailsOpen.set(false);
+    const action = this.afterDetailsClosed;
+    this.afterDetailsClosed = undefined;
+    action?.();
+  }
+
   openEditIdDialog(translation: Translation): void {
     this.dialog
       .open<EditIdDialogResult, EditIdDialogContext>(EditIdDialogComponent, {
         context: {
           key: translation.key,
-          reservedKeys: this.reservedKeys(),
+          isKeyTaken: this.isKeyTaken(),
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -198,7 +257,7 @@ export class TranslationDetailComponent {
         take(1),
         filter(it => it !== undefined),
         switchMap(it => {
-          return this.translationService.updateKey(this.spaceId(), translation, it!);
+          return this.translationService.rename(this.spaceId(), translation, it!);
         }),
       )
       .subscribe({
@@ -252,7 +311,7 @@ export class TranslationDetailComponent {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.translationService.delete(this.spaceId(), element.id)),
+        switchMap(() => this.translationService.remove(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
@@ -262,10 +321,6 @@ export class TranslationDetailComponent {
           this.notificationService.error('Translation can not be deleted.');
         },
       });
-  }
-
-  copied() {
-    this.notificationService.success(`Translation ID copied to clipboard.`);
   }
 
   captureKeyboard(event: KeyboardEvent): void {

@@ -12,7 +12,7 @@
 <div class="mx-auto px-2">
   <ll-filter-toolbar class="mb-3" [filters]="filters" (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort>
+    <table ll-table [dataSource]="dataSource" llTableSort (sortChange)="onSortChange($event)">
       <ng-container llColumnDef="name">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
         <td llCell *llCellDef="let element">
@@ -29,6 +29,16 @@
             <span hlmBadge>Enabled</span>
           } @else {
             <span hlmBadge variant="secondary">Disabled</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="signing">
+        <th llHeaderCell *llHeaderCellDef>Signing</th>
+        <td llCell *llCellDef="let element">
+          @if (element.hasSecret) {
+            <span hlmBadge variant="outline">Signed</span>
+          } @else {
+            <span hlmBadge variant="secondary">Not signed</span>
           }
         </td>
       </ng-container>
@@ -49,7 +59,13 @@
       <ng-container llColumnDef="actions">
         <th llHeaderCell *llHeaderCellDef>Actions</th>
         <td llCell *llCellDef="let element">
-          <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+          <button
+            hlmBtn
+            size="icon"
+            variant="ghost"
+            aria-label="Actions"
+            [hlmDropdownMenuTrigger]="actionsMenu"
+            (click)="$event.stopPropagation()">
             <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
           </button>
           <ng-template #actionsMenu>
@@ -88,5 +104,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

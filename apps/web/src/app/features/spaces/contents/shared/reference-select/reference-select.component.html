@@ -3,7 +3,14 @@
     <fieldset hlmFieldSet class="gap-2">
       <legend hlmFieldLegend class="flex w-full justify-between">
         {{ component().displayName || component().name }}
-        <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add Reference" [disabled]="locked()" (click)="openReferenceSelectDialog()">
+        <button
+          hlmBtn
+          variant="ghost"
+          size="sm"
+          hlmTooltip="Add Reference"
+          aria-label="Add Reference"
+          [disabled]="locked()"
+          (click)="openReferenceSelectDialog()">
           <ng-icon hlm size="sm" name="lucideFileSymlink" />
         </button>
       </legend>
@@ -11,7 +18,7 @@
         <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
       }
       <hlm-field-separator />
-      <div hlmItemGroup class="gap-2">
+      <div hlmItemGroup role="list" class="gap-2">
         @if (content(); as content) {
           @if (content.kind === 'DOCUMENT') {
             <div hlmItem variant="outline" role="listitem">
@@ -25,7 +32,14 @@
                 <p hlmItemDescription class="line-clamp-1 truncate"> {{ content.fullSlug }} </p>
               </div>
               <div role="none" hlmItemActions>
-                <button hlmBtn size="icon" variant="outline" [disabled]="locked()" (click)="deleteReference()" hlmTooltip="Delete">
+                <button
+                  hlmBtn
+                  size="icon"
+                  variant="outline"
+                  [disabled]="locked()"
+                  (click)="deleteReference()"
+                  hlmTooltip="Delete"
+                  aria-label="Delete">
                   <ng-icon hlm size="sm" name="lucideTrash" />
                 </button>
               </div>

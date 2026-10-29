@@ -29,6 +29,7 @@ import {
   lucideType,
 } from '@ng-icons/lucide';
 import { tablerMarkdown, tablerNumber } from '@ng-icons/tabler-icons';
+import { ChipRemoveLabelDirective } from '@shared/directives/chip-remove-label.directive';
 import { assetFileTypeDescriptions, schemaFieldKindDescriptions, sortSchema } from '@shared/models/schema.model';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
@@ -59,6 +60,7 @@ import { SchemaValidator } from '../schema.validator';
     HlmInputGroupImports,
     HlmSelectImports,
     HlmComboboxImports,
+    ChipRemoveLabelDirective,
     HlmSwitchImports,
     HlmTextareaImports,
   ],
@@ -117,8 +119,9 @@ export class EditFieldComponent {
   fieldKinds = Object.values(SchemaFieldKind);
   assetTypes = Object.values(AssetFileType);
 
-  schemaFieldKindDescriptions = schemaFieldKindDescriptions;
-  assetFileTypeDescriptions = assetFileTypeDescriptions;
+  /** A field kind's and an asset file type's name, icon and description (typed keys: form values are untyped). */
+  protected readonly fieldKindDescription = (kind: SchemaFieldKind) => schemaFieldKindDescriptions[kind];
+  protected readonly fileTypeDescription = (type: AssetFileType) => assetFileTypeDescriptions[type];
   nameReadonly = true;
   // Schemas
   nodeSchemas = computed(() =>
@@ -426,7 +429,8 @@ export class EditFieldComponent {
       }
       case SchemaFieldKind.SCHEMA: {
         // ADD
-        this.form().addControl('schemas', this.fb.control<string[] | undefined>(undefined, Validators.required));
+        // [], not undefined: the multi-select adds to the array, and could pick nothing (required still fails on []).
+        this.form().addControl('schemas', this.fb.control<string[]>([], Validators.required));
         // REMOVE
         this.form().removeControl('translatable');
         // Text & TextArea & RichTex & Markdown
@@ -448,7 +452,8 @@ export class EditFieldComponent {
       }
       case SchemaFieldKind.SCHEMAS: {
         // ADD
-        this.form().addControl('schemas', this.fb.control<string[] | undefined>(undefined, Validators.required));
+        // [], not undefined: the multi-select adds to the array, and could pick nothing (required still fails on []).
+        this.form().addControl('schemas', this.fb.control<string[]>([], Validators.required));
         // REMOVE
         this.form().removeControl('translatable');
         // Text & TextArea & RichTex & Markdown

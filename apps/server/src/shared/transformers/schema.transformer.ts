@@ -1,8 +1,7 @@
 import { type Schema, SchemaType } from '@localess/shared';
-import type { schemas } from '../../infra/database/schema.js';
-import { present } from '../../infra/database/without-nulls.js';
 
-type SchemaEntity = typeof schemas.$inferSelect;
+import { present } from '../../infra/database/without-nulls.js';
+import type { SchemaEntity } from '../entities/schema.entity.js';
 
 /**
  * A `schemas` row as the shared model, the App API's DTO: `id` the UUID, `name` the reference key, `null` columns

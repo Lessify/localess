@@ -1,0 +1,124 @@
+<section hlmCard [attr.aria-label]="definition().name">
+  <div hlmCardHeader>
+    <h3 hlmCardTitle>{{ definition().name }}</h3>
+    <p hlmCardDescription>{{ definition().description }}</p>
+    <div hlmCardAction class="flex items-center gap-3">
+      <span hlmBadge [variant]="badge().variant">{{ badge().label }}</span>
+      @if (integration().source !== 'none') {
+        <hlm-switch
+          [inputId]="definition().id + '-enabled'"
+          [attr.aria-label]="'Turn ' + definition().name + ' on or off'"
+          [checked]="integration().enabled"
+          [disabled]="envLocked() || integration().status === 'unreadable'"
+          (checkedChange)="setEnabled($event)" />
+      }
+    </div>
+  </div>
+
+  <div hlmCardContent class="flex flex-col gap-4 text-sm">
+    @if (envLocked()) {
+      <p class="text-muted-foreground">
+        Set by {{ integration().envVars.join(', ') }} in the server environment. Edit it there and restart to change it.
+      </p>
+    } @else if (integration().status === 'unreadable' && !form()) {
+      <p class="text-destructive">
+        The saved key can't be read on this server. Enter it again, or set LOCALESS_SECRET_KEY so it survives restarts.
+      </p>
+    } @else if (saved() && !form()) {
+      <div class="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
+        @for (hint of hints(); track hint.label) {
+          <span>
+            {{ hint.label }}: <code class="font-mono">{{ hint.value }}</code>
+          </span>
+        }
+        @if (integration().updatedBy) {
+          <span>saved by {{ integration().updatedBy }}</span>
+        }
+      </div>
+      @if (integration().statusMessage) {
+        <p class="text-destructive">{{ integration().statusMessage }}</p>
+      }
+    }
+
+    @if (form(); as f) {
+      <form [formGroup]="f" (ngSubmit)="submit()">
+        <fieldset hlmFieldSet>
+          <div hlmFieldGroup>
+            @for (field of definition().fields; track field.key) {
+              <div hlmField>
+                <label hlmFieldLabel [for]="inputId(field)">{{ field.label }}</label>
+                @switch (field.type) {
+                  @case ('secret') {
+                    <input hlmInput type="password" autocomplete="off" [id]="inputId(field)" [formControl]="control(field)" />
+                  }
+                  @case ('file') {
+                    <textarea
+                      hlmTextarea
+                      class="font-mono"
+                      rows="4"
+                      placeholder="Paste the file's contents, or choose the file below"
+                      [id]="inputId(field)"
+                      [formControl]="control(field)"></textarea>
+                    <input type="file" [attr.accept]="field.accept ?? null" (change)="readFile(field, $event)" />
+                  }
+                  @default {
+                    <input hlmInput type="text" autocomplete="off" [id]="inputId(field)" [formControl]="control(field)" />
+                  }
+                }
+              </div>
+            }
+          </div>
+        </fieldset>
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <a class="text-primary text-sm underline" target="_blank" rel="noopener" [href]="definition().helpUrl">How do I get one?</a>
+          <span class="flex-1"></span>
+          <button hlmBtn variant="outline" type="button" (click)="cancel()">Cancel</button>
+          <button hlmBtn type="submit" [disabled]="busy()">
+            @if (busy()) {
+              <hlm-spinner />
+            }
+            Test & enable
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (result(); as r) {
+      <div
+        role="status"
+        class="rounded-md p-3"
+        [class]="r.ok ? 'bg-muted' : r.reason === 'unreachable' ? 'bg-muted text-foreground' : 'bg-destructive/10 text-destructive'">
+        <p>{{ r.ok ? '✓' : r.reason === 'unreachable' ? '⚠' : '✕' }} {{ r.message }}</p>
+        @if (r.details) {
+          <p class="text-muted-foreground">{{ r.details }}</p>
+        }
+        @if (r.fixUrl) {
+          <a class="underline" target="_blank" rel="noopener" [href]="r.fixUrl">{{ r.ok ? 'Learn more' : 'Fix it' }}</a>
+        }
+        @if (r.reason === 'unreachable' && form()) {
+          <div class="mt-2 flex gap-2">
+            <button hlmBtn size="sm" variant="outline" type="button" (click)="submit()">Try again</button>
+            <button hlmBtn size="sm" variant="outline" type="button" (click)="submit(true)">Save without testing</button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  @if (!form()) {
+    <div hlmCardFooter class="flex flex-wrap justify-end gap-2">
+      @if (envLocked()) {
+        <button hlmBtn size="sm" variant="outline" type="button" [disabled]="busy()" (click)="test()">Test connection</button>
+      } @else if (integration().source === 'none') {
+        <button hlmBtn size="sm" type="button" (click)="open()">Connect</button>
+      } @else if (integration().status === 'unreadable') {
+        <button hlmBtn size="sm" type="button" (click)="open()">Enter again</button>
+        <button hlmBtn size="sm" variant="outline" type="button" (click)="disconnect()">Disconnect</button>
+      } @else {
+        <button hlmBtn size="sm" variant="outline" type="button" [disabled]="busy()" (click)="test()">Test</button>
+        <button hlmBtn size="sm" variant="outline" type="button" (click)="open()">Replace</button>
+        <button hlmBtn size="sm" variant="destructive" type="button" (click)="disconnect()">Disconnect</button>
+      }
+    </div>
+  }
+</section>

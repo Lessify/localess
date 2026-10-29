@@ -1,16 +1,29 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FEATURE_FLAGS } from '@core/feature-flags';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  OnInit,
+  signal,
+  untracked,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NotificationService } from '@core/services/notification.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { TaskService } from '@core/services/task.service';
-import { TokenService } from '@core/services/token.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
 import { TranslateService } from '@core/services/translate.service';
 import { TranslationService } from '@core/services/translation.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
+import { apiErrorMessage } from '@core/utils/api-error';
 import { translateErrorMessage } from '@core/utils/translate-error';
-import { CONTENT_DEFAULT_LOCALE, Locale, TokenType, Translation, TranslationCreate } from '@localess/shared';
+import { CONTENT_DEFAULT_LOCALE, Locale, TaskKind, TokenType, Translation, TranslationCreate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -25,6 +38,7 @@ import {
   lucideUpload,
   lucideUploadCloud,
 } from '@ng-icons/lucide';
+import { ActiveTasksComponent } from '@shared/components/active-tasks';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
 import {
@@ -33,7 +47,7 @@ import {
   TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
 import { TOKEN_TYPE_INFO } from '@shared/models/token.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -42,7 +56,8 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { EMPTY, forkJoin, of } from 'rxjs';
+import { saveAs } from 'file-saver-es';
+import { forkJoin, of } from 'rxjs';
 import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 
 import { AddDialogComponent, AddDialogContext, AddDialogResult } from './add-dialog';
@@ -59,9 +74,11 @@ import { TranslationListComponent } from './shared/components/translation-list/t
   templateUrl: './translations.component.html',
   styleUrls: ['./translations.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // The window below the app header (h-12): the columns take what the toolbar and filter leave.
+  host: { class: 'flex h-[calc(100svh-3rem)] flex-col' },
   imports: [
     CommonModule,
-    CanUserPerformPipe,
+    HasRolePipe,
     TranslationFilterComponent,
     TranslationListComponent,
     TranslationDetailComponent,
@@ -73,6 +90,7 @@ import { TranslationListComponent } from './shared/components/translation-list/t
     HlmProgressImports,
     HlmSpinnerImports,
     LocaleIconComponent,
+    ActiveTasksComponent,
   ],
   providers: [
     provideIcons({
@@ -91,14 +109,20 @@ import { TranslationListComponent } from './shared/components/translation-list/t
   ],
 })
 export class TranslationsComponent implements OnInit {
-  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
+  /** The tasks that change (or read) the translations shown: told in the action bar while queued or running. */
+  readonly translationTaskKinds: readonly TaskKind[] = [
+    TaskKind.TRANSLATION_IMPORT,
+    TaskKind.TRANSLATION_EXPORT,
+    TaskKind.TRANSLATION_TRANSLATE,
+  ];
   private readonly translationService = inject(TranslationService);
+  private readonly taskNotifier = inject(TaskNotifierService);
   private readonly taskService = inject(TaskService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(HlmDialogService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly translateService = inject(TranslateService);
-  private readonly tokenService = inject(TokenService);
+  private readonly spaceTokenService = inject(SpaceTokenService);
 
   // Input
   spaceId = input.required<string>();
@@ -106,10 +130,9 @@ export class TranslationsComponent implements OnInit {
   selectedSpace = computed(() => this.spaceStore.selectedSpace());
   // Locales
   availableLocales = computed(() => {
-    const space = this.selectedSpace();
-    if (space) {
-      const { locales, defaultLocale } = space;
-      return locales.map(locale => {
+    const defaultLocale = this.spaceStore.defaultLocale();
+    if (defaultLocale) {
+      return this.spaceStore.locales().map(locale => {
         if (locale.id === defaultLocale.id) {
           return {
             id: locale.id,
@@ -122,20 +145,10 @@ export class TranslationsComponent implements OnInit {
     return [];
   });
 
-  // Translations
-  translations = signal<Translation[]>([]);
-  /** Keys already taken, for the add and rename dialogs. */
-  translationKeys = computed(() => this.translations().map(it => it.key));
-
-  // Labels
-  allLabels = computed(() => {
-    const tmp = this.translations()
-      .map(it => it.labels)
-      .flat()
-      .filter(it => it != undefined)
-      .map(it => it!);
-    return [...new Set<string>(tmp)];
-  });
+  /** Every label of the space's translations (the filter's choices), from the server. */
+  allLabels = signal<string[]>([]);
+  /** Whether a key is taken, for the add and rename dialogs (exactly: the server's rule). */
+  readonly isKeyTaken = (key: string) => this.translationService.isKeyTaken(this.spaceId(), key);
 
   // Filter state, fed by TranslationFilterComponent
   currentLocale = signal('');
@@ -155,28 +168,55 @@ export class TranslationsComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
   spaceStore = inject(SpaceStore);
 
+  /** The selected translation's id: the detail panel reads it again whenever it changes. */
+  private readonly selectedId = signal<string | undefined>(undefined);
+  private readonly selectedId$ = toObservable(this.selectedId);
+  /** The first key the list or tree shows: selected whenever nothing is (at the start, after a delete). */
+  private readonly firstShown = signal<Translation | undefined>(undefined);
+  /** The key that was selected and is gone (deleted): not selected again while the list still shows it. */
+  private readonly missingId = signal<string | undefined>(undefined);
+  /** The selected key doesn't match the filter: it stays in the editor, which says so. */
+  readonly selectedOutsideFilter = signal(false);
+
+  constructor() {
+    effect(() => {
+      const first = this.firstShown();
+      if (this.selectedId() !== undefined || !first || first.id === this.missingId()) return;
+      untracked(() => this.selectTranslation(first));
+    });
+  }
+
   ngOnInit(): void {
     this.translationService
-      .findAll(this.spaceId())
+      .findLabels(this.spaceId())
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: translations => {
-          this.translations.set(translations);
-          if (translations.length > 0) {
-            if (this.selectedTranslation()) {
-              const tr = translations.find(it => it.id === this.selectedTranslation()?.id);
-              if (tr) {
-                this.selectTranslation(tr);
-              } else {
-                this.selectTranslation(translations[0]);
-              }
-            } else {
-              this.selectTranslation(translations[0]);
-            }
-          }
-          this.isLoading.set(false);
-        },
+      .subscribe({ next: labels => this.allLabels.set(labels), error: () => this.allLabels.set([]) });
+    // The detail panel follows the selected translation: an edit (here or by someone else) shows at once; a deleted one
+    // clears the panel.
+    this.selectedId$
+      .pipe(
+        switchMap(id =>
+          id === undefined
+            ? of({ id, translation: undefined })
+            : this.translationService.findOne(this.spaceId(), id).pipe(
+                map(translation => ({ id, translation })),
+                catchError(() => of({ id, translation: undefined })),
+              ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ id, translation }) => {
+        this.selectedTranslation.set(translation);
+        if (translation || id === undefined) return;
+        this.missingId.set(id);
+        this.selectedId.set(undefined);
       });
+    this.isLoading.set(false);
+  }
+
+  /** The first key the list or tree shows changed: it is selected when nothing is. */
+  onFirstTranslation(translation: Translation | undefined): void {
+    this.firstShown.set(translation);
   }
 
   publish(): void {
@@ -187,25 +227,30 @@ export class TranslationsComponent implements OnInit {
       },
       error: () => {
         this.notificationService.error('Translations can not be published.');
+        this.stopPublishLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isPublishLoading.set(false);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopPublishLoading(),
     });
   }
 
+  /** After a publish, failed or not (an error ends the request without `complete`): Publish works again. */
+  private stopPublishLoading(): void {
+    setTimeout(() => {
+      this.isPublishLoading.set(false);
+      this.cd.markForCheck();
+    }, 1000);
+  }
+
   openAddDialog(): void {
-    const space = this.selectedSpace();
-    if (!space) return;
+    const defaultLocale = this.spaceStore.defaultLocale();
+    if (!defaultLocale) return;
+    const spaceLocales = this.spaceStore.locales();
     // A locale that could not be auto-translated is left empty; the first reason is reported once, after the save.
     let autoTranslateError: unknown;
     this.dialog
       .open<AddDialogResult, AddDialogContext>(AddDialogComponent, {
         context: {
-          reservedKeys: this.translationKeys(),
+          isKeyTaken: this.isKeyTaken,
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -216,8 +261,8 @@ export class TranslationsComponent implements OnInit {
         // BEFORE writing anything, so `create()` performs a single request with all
         // required locale fields already populated — no follow-up per-locale saves.
         switchMap(it => {
-          const locales: Record<string, string> = { [space.defaultLocale.id]: it!.value };
-          const otherLocales = space.locales.filter(locale => locale.id !== space.defaultLocale.id);
+          const locales: Record<string, string> = { [defaultLocale.id]: it!.value };
+          const otherLocales = spaceLocales.filter(locale => locale.id !== defaultLocale.id);
           if (!it!.autoTranslate || otherLocales.length === 0) {
             return of({ it: it!, locales });
           }
@@ -226,7 +271,7 @@ export class TranslationsComponent implements OnInit {
               this.translateService
                 .translate({
                   content: it!.value,
-                  sourceLocale: space.defaultLocale.id,
+                  sourceLocale: defaultLocale.id,
                   targetLocale: locale.id,
                 })
                 .pipe(
@@ -272,75 +317,35 @@ export class TranslationsComponent implements OnInit {
 
   openImportDialog(locales: Locale[]): void {
     this.dialog
-      .open<ImportDialogResult, ImportDialogContext>(ImportDialogComponent, {
-        context: {
-          locales: locales,
-        },
-        contentClass: DIALOG_WIDTH_SM,
-      })
+      .open<ImportDialogResult, ImportDialogContext>(ImportDialogComponent, { context: { locales }, contentClass: DIALOG_WIDTH_SM })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => {
-          if (it?.kind === 'FLAT') {
-            return this.taskService.createTranslationImportTask(this.spaceId(), it.file, it.locale);
-          } else if (it?.kind === 'FULL') {
-            return this.taskService.createTranslationImportTask(this.spaceId(), it.file);
-          }
-          return EMPTY;
-        }),
+        switchMap(it => this.taskService.createTranslationImport(this.spaceId(), it.file, it.locale)),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Translation Import Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: () => {
-          this.notificationService.error('Translation Import Task can not be created.');
-        },
+        next: task => this.taskNotifier.watch(this.spaceId(), task),
+        error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Translations can not be imported.')),
       });
   }
 
+  /** All translations: a task that ends in a download. One locale: downloaded at once. */
   openExportDialog(locales: Locale[]): void {
     this.dialog
-      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, {
-        context: {
-          locales: locales,
-        },
-        contentClass: DIALOG_WIDTH_SM,
-      })
+      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, { context: { locales }, contentClass: DIALOG_WIDTH_SM })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => {
-          console.log(it);
-          if (it?.kind === 'FLAT') {
-            return this.taskService.createTranslationExportTask(this.spaceId(), it.locale);
-          } else if (it?.kind === 'FULL') {
-            return this.taskService.createTranslationExportTask(this.spaceId());
-          }
-          return EMPTY;
-        }),
       )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Translation Export Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: (err: unknown) => {
-          console.error(err);
-          this.notificationService.error('Translation Export Task can not be created.');
-        },
+      .subscribe(it => {
+        if (it.kind === 'LOCALE') {
+          saveAs(this.translationService.exportLocaleUrl(this.spaceId(), it.locale), `${it.locale}.json`);
+          return;
+        }
+        this.taskService.createTranslationExport(this.spaceId()).subscribe({
+          next: task => this.taskNotifier.watch(this.spaceId(), task),
+          error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Translations can not be exported.')),
+        });
       });
   }
 
@@ -348,33 +353,33 @@ export class TranslationsComponent implements OnInit {
     this.dialog
       .open<TranslateLocaleDialogResult, TranslateLocaleDialogContext>(TranslateLocaleDialogComponent, {
         context: {
-          locales: locales,
+          mode: 'save',
+          locales,
+          defaultLocale: this.spaceStore.defaultLocale(),
+          selectedLocale: this.currentLocale() || undefined,
         },
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.translationService.translateLocale(this.spaceId(), it.sourceLocale, it.targetLocale, it.overwrite)),
+        switchMap(it =>
+          this.taskService.createTranslationTranslate(this.spaceId(), {
+            sourceLocale: it.sourceLocale,
+            targetLocale: it.targetLocale,
+            overwrite: it.overwrite,
+          }),
+        ),
       )
       .subscribe({
-        next: ({ translated, failed }) => {
-          if (failed > 0) {
-            this.notificationService.error(`Translated ${translated} keys; ${failed} failed and were left unchanged.`);
-          } else if (translated === 0) {
-            this.notificationService.success('Nothing to translate.');
-          } else {
-            this.notificationService.success(`Translated ${translated} keys.`);
-          }
-        },
-        error: (err: unknown) => {
-          this.notificationService.error(translateErrorMessage(err, 'Locale Translate failed.'));
-        },
+        next: task => this.taskNotifier.watch(this.spaceId(), task),
+        error: (err: unknown) => this.notificationService.error(translateErrorMessage(err, 'Locale Translate failed.')),
       });
   }
 
   selectTranslation(translation: Translation): void {
     this.selectedTranslation.set(translation);
+    this.selectedId.set(translation.id);
   }
 
   updateLocale(transaction: Translation, locale: Locale, value: string): void {
@@ -386,15 +391,19 @@ export class TranslationsComponent implements OnInit {
       },
       error: () => {
         this.notificationService.error('Translation can not be updated.');
+        this.stopLocaleUpdateLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isLocaleUpdateLoading.set(false);
-          this.translationUpdateId.set(undefined);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopLocaleUpdateLoading(),
     });
+  }
+
+  /** After a value save, failed or not (an error ends the request without `complete`). */
+  private stopLocaleUpdateLoading(): void {
+    setTimeout(() => {
+      this.isLocaleUpdateLoading.set(false);
+      this.translationUpdateId.set(undefined);
+      this.cd.markForCheck();
+    }, 1000);
   }
 
   openApiV1InNewTab(locale: string, token: string, version?: 'draft'): void {
@@ -416,7 +425,7 @@ export class TranslationsComponent implements OnInit {
 
   /** Opens `open` with the current value of the first of `types` the space has; a toast when it has none or the lookup fails. */
   private withApiToken(types: TokenType[], open: (token: string) => void): void {
-    this.tokenService.firstValue(this.spaceId(), types).subscribe({
+    this.spaceTokenService.firstValue(this.spaceId(), types).subscribe({
       next: token => {
         if (token) open(token);
         else this.notificationService.error(`Please create a ${TOKEN_TYPE_INFO[types[0]].label} Token in your Space Settings`);

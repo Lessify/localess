@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { Schema, SchemaType, TokenType } from '@localess/shared';
+import { describe, expect, it } from 'vitest';
+
 import { parseApiToken } from '../../../shared/utils/api-token-format.js';
 import { generateOpenApi } from './open-api.js';
 
@@ -38,7 +39,9 @@ describe('generateOpenApi', () => {
 
   it('documents the token parameter as a public or preview token, with a real-looking example', () => {
     const tokenParams = Object.values(doc.paths ?? {})
-      .flatMap(item => Object.values(item as Record<string, { parameters?: { name?: string; description?: string; schema?: { example?: unknown } }[] }>))
+      .flatMap(item =>
+        Object.values(item as Record<string, { parameters?: { name?: string; description?: string; schema?: { example?: unknown } }[] }>),
+      )
       .flatMap(operation => operation.parameters ?? [])
       .filter(param => param.name === 'token');
 

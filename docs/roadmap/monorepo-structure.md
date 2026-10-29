@@ -154,7 +154,7 @@ Turborepo and Nx were compared; Turborepo is deferred, Nx rejected for this size
 - The CLI ignores a leading `--`: `pnpm localess -- <command>` forwards it, npm used to swallow it.
 - Found while testing shutdown: the SSE event listener released its pooled connection twice when Postgres closed
   it during shutdown (`Release called on client which has already been released`), an uncaught error in 3 of 5
-  stops. Not caused by pnpm; release is now idempotent (`events.service.test.ts`); 6 of 6 stops clean afterwards.
+  stops. Not caused by pnpm; release is now idempotent (`event.service.test.ts`); 6 of 6 stops clean afterwards.
 - CLAUDE.md listed CLI commands that don't exist (`user:create`, `user:reset-password`, `migrate`); now
   `db:migrate`, `check`, `admin:create`, `import:firebase`.
 
@@ -164,7 +164,7 @@ Turborepo and Nx were compared; Turborepo is deferred, Nx rejected for this size
   their sources); (2) split the public API by feature; (3) one Nest module per feature.
 - `infra/`: config, database, storage, mail, events, static, health, and `http/` (App API helpers `dto`,
   `space-access`, `zod`, the zod pipe; `v1/` with the public API plumbing). `auth/` gained `users/` (users, me,
-  first admin), `api-tokens/` (the v1 token check, its own `ApiTokensModule`) and the `/api/config` controller.
+  first admin), `api-tokens/` (the v1 token check, its own `ApiTokenModule`) and the `/api/config` controller.
   `cli/` holds the Firebase importer.
 - Public API: `cdn`, `dev-tools` and `manage` controllers became `spaces`, `schemas`, `contents`, `translations`
   and `assets` `*.public.controller.ts`, route methods moved verbatim. Shared plumbing (`validIdParams`, `cv`
@@ -173,11 +173,11 @@ Turborepo and Nx were compared; Turborepo is deferred, Nx rejected for this size
   instead of a private copy per controller (later replaced by the token guards `@CdnToken` / `@ManagementToken`, the
   `*.cdn.controller.ts` / `*.management.controller.ts` split and `/api/manage/v1`, see [Auth Tokens](../auth-tokens.md)).
   `PublicContentService` split into `ContentDeliveryService`,
-  `TranslationDeliveryService` and `SpacesService.findSpace`. `domain/` is gone: its helpers live with the feature
+  `TranslationDeliveryService` and `SpaceService.findSpace`. `domain/` is gone: its helpers live with the feature
   that uses them; `row-mappers` became `schema-row.ts` / `translation-row.ts` over `infra/database/without-nulls.ts`.
-- Nest: `AppApiModule` and `PublicApiModule` replaced by `SpacesModule`, `SettingsModule`, `SchemasModule`,
-  `ContentsModule`, `TranslationsModule`, `AssetsModule`, `TokensModule`, `TasksModule` (now with its controller,
-  importing `AssetsModule` for metadata), `PluginsModule`; `WebhooksModule` (global) gained its controller.
+- Nest: `AppApiModule` and `PublicApiModule` replaced by `SpaceModule`, `SettingsModule`, `SchemaModule`,
+  `ContentModule`, `TranslationModule`, `AssetModule`, `TokenModule`, `TaskModule` (now with its controller,
+  importing `AssetModule` for metadata), `PluginModule`; `WebhookModule` (global) gained its controller.
 - Verified: the registered route table is identical to the previous commit (105 routes, diffed from boot logs);
   server type-check, 52 files / 815 tests, Drizzle schema check; docs and the version-bump script follow the paths.
 

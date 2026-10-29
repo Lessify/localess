@@ -45,7 +45,7 @@ import { LlTreeNodeDef } from './tree-node-def';
           [parent]="parent"
           [value]="node.key"
           [label]="node.name"
-          [selectable]="!hasChildren(node)"
+          [selectable]="selectGroups() || !hasChildren(node)"
           [expanded]="expandedKeys().has(node.key)"
           (expandedChange)="onExpandedChange(node.key, $event)">
           <div
@@ -157,6 +157,11 @@ export class LlTree<T extends LlTreeNode> {
   readonly indent = input(16);
   /** Whether to draw vertical indent guide lines. */
   readonly guides = input(false);
+  /**
+   * Whether a node with children can be selected too (a folder to move into, say). Off by default: such a node only
+   * expands and collapses, and only leaves select.
+   */
+  readonly selectGroups = input(false);
 
   readonly nodeSelect = output<T>();
 

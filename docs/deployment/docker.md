@@ -11,9 +11,13 @@ both into a `node:24-slim` runtime with `ffmpeg` (video thumbnails) and `perl` (
 |----------|-------|
 | User | `node` (not root) |
 | Port | `3000` (`EXPOSE 3000`) |
-| Data | `VOLUME /data`, `LOCALESS_DATA_DIR=/data` — files in `/data/storage`, embedded Postgres in `/data/pgdata` |
+| Data | `VOLUME /data`, `LOCALESS_DATA_DIR=/data` — files in `/data/storage`, embedded Postgres in `/data/pgdata`, the generated `/data/secret.key` that encrypts integration keys saved in the app. Keep it on a persistent volume, and back `secret.key` up apart from the database (or set `LOCALESS_SECRET_KEY`) |
 | Command | `node server/dist/main.js` (the server at `/app/server`, the Angular build at `/app/web/dist/browser`) |
 | Health check | Built in: `GET /api/health` every 30 s (60 s start period) |
+
+CI builds the image and runs the end-to-end smoke suite against it, as a single container with the embedded
+Postgres (job `e2e-docker` in `.github/workflows/build.yml`; see [apps/e2e/README.md](../../apps/e2e/README.md)). The
+Compose setup's external Postgres is covered by the `e2e-postgres` job (the whole suite, the server not in a container).
 
 Build it from the repository root:
 

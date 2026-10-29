@@ -1,14 +1,15 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import type { PublicAppConfig } from '@localess/shared';
 import { firstValueFrom } from 'rxjs';
 
-import { Locale } from '@localess/shared';
+import { AppConfigService } from '@core/api/app-config.service';
+
 import { LocaleService } from './locale.service';
 
 describe('LocaleService', () => {
   let http: HttpTestingController;
-  const entity: Locale = { id: 'de', name: 'German' };
 
   function setup() {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
@@ -20,56 +21,29 @@ describe('LocaleService', () => {
     http.verify();
   });
 
-  it('setDefault() puts the locale id as the space default locale', async () => {
+  it('findAll() reads the locale list from the server', async () => {
     const service = setup();
-    const done = firstValueFrom(service.setDefault('space-1', entity));
-    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/default-locale' });
-    expect(request.request.body).toEqual({ id: 'de' });
-    request.flush({});
-    await done;
-  });
-
-  it('create() posts only the locale id to the space', async () => {
-    const service = setup();
-    const done = firstValueFrom(service.create('space-1', entity));
-    const request = http.expectOne({ method: 'POST', url: '/api/app/spaces/space-1/locales' });
-    expect(request.request.body).toEqual({ id: 'de' });
-    request.flush({});
-    await done;
-  });
-
-  it('reorder() puts the locale ids in their new order', async () => {
-    const service = setup();
-    const done = firstValueFrom(service.reorder('space-1', ['de', 'en']));
-    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/locales/order' });
-    expect(request.request.body).toEqual({ ids: ['de', 'en'] });
-    request.flush({});
-    await done;
-  });
-
-  it('delete() deletes the locale from the space', async () => {
-    const service = setup();
-    const done = firstValueFrom(service.delete('space-1', entity));
-    http.expectOne({ method: 'DELETE', url: '/api/app/spaces/space-1/locales/de' }).flush({});
-    await done;
-  });
-
-  it('findAllLocales() reads the locale list from the server', async () => {
-    const service = setup();
-    const result = firstValueFrom(service.findAllLocales());
+    const result = firstValueFrom(service.findAll());
     http.expectOne({ method: 'GET', url: '/api/app/locales' }).flush([{ id: 'en', name: 'English' }]);
     expect(await result).toEqual([{ id: 'en', name: 'English' }]);
   });
 
-  it('isLocaleTranslatableFrom() reflects the source-support set', () => {
+  const translate = (config: PublicAppConfig['translate']) =>
+    TestBed.inject(AppConfigService).config.update(it => ({ ...it, translate: config }));
+
+  it('translates from and to the locales the connected providers support', () => {
     const service = setup();
-    expect(service.isLocaleTranslatableFrom('de')).toBe(true);
-    expect(service.isLocaleTranslatableFrom('not-a-real-locale')).toBe(false);
+    translate({ enabled: true, sourceLocales: ['en', 'de'], targetLocales: ['de'] });
+    expect(service.isLocaleTranslatableFrom('en')).toBe(true);
+    expect(service.isLocaleTranslatableFrom('ka')).toBe(false);
+    expect(service.isLocaleTranslatableTo('de')).toBe(true);
+    expect(service.isLocaleTranslatableTo('ka')).toBe(false);
   });
 
-  it('isLocaleTranslatableTo() reflects the target-support set', () => {
+  it('translates nothing when no provider is connected', () => {
     const service = setup();
-    expect(service.isLocaleTranslatableTo('de')).toBe(true);
-    expect(service.isLocaleTranslatableTo('not-a-real-locale')).toBe(false);
+    translate({ enabled: false, sourceLocales: [], targetLocales: [] });
+    expect(service.isLocaleTranslatableFrom('en')).toBe(false);
+    expect(service.isLocaleTranslatableTo('de')).toBe(false);
   });
 });

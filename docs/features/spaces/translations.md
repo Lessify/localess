@@ -3,8 +3,6 @@
 > Parent: [Spaces Overview](overview.md) · Related: [Publish Flow](../../publish-flow.md) · [Tasks](tasks.md) ·
 > [Concepts — Translation](../../concepts.md)
 
-> **Hidden for now:** Import and Export are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed.
-
 ## Purpose
 
 Manage all localisation keys for a space. Supports creating, editing, and publishing translations across multiple locales. Includes
@@ -13,7 +11,7 @@ AI-powered translation, import/export, and tree or list view.
 ## Route
 
 ```
-/features/spaces/:spaceId/translations    [TRANSLATION_READ]
+/features/spaces/:spaceId/translations    [ANY_ROLE]
 ```
 
 ## Key Files
@@ -24,8 +22,8 @@ apps/web/src/app/features/spaces/translations/
   add-dialog/                            ← create new translation key
   edit-dialog/                           ← edit key metadata
   edit-id-dialog/                        ← rename a key's ID
-  export-dialog/                         ← export to file
-  import-dialog/                         ← import from file (creates Task)
+  export-dialog/                         ← all translations (a task) or one locale as key-value JSON (a direct download)
+  import-dialog/                         ← a .localess.zip / .llt.zip, or a key-value .json with its locale (a task)
   shared/components/
     translation-string-view/ translation-string-edit/  ← value view and editor (translations are plain text)
     translation-detail/                  ← per-key detail panel, locale editing, keyboard navigation
@@ -45,17 +43,31 @@ apps/web/src/app/shared/components/
 The main component is one of the most complex in the app. It renders a hierarchical tree (or flat list) of translation keys across all
 locales of the selected space.
 
-**Injected services:** `TranslationService`, `TaskService`, `TokenService`, `TranslateService`, `NotificationService`, `HlmDialogService`, `LocalSettingsStore`, `SpaceStore`
+**Injected services:** `TranslationService`, `TaskService`, `SpaceTokenService`, `TranslateService`, `NotificationService`, `HlmDialogService`, `LocalSettingsStore`, `SpaceStore`
 
 **Key behaviour:**
 
-- `ngOnInit()` — loads all translations for the space via `translationService.findAll(spaceId)` (a live query over `GET /api/app/spaces/:s/translations`, refetched on `translations` change events)
+- The action bar starts with `ll-active-tasks` for Translation Import, Translation Export and Translate Locale: while one is queued or running, everyone on the screen sees it, its progress and what it may overwrite (see [Tasks → Active tasks on a screen](tasks.md#active-tasks-on-a-screen)). Nothing is blocked.
+
+- Keys come from the server, never all at once (see [Pagination](../../server/pagination.md#translations-a-paged-list-and-a-tree-read-by-level)): the **list** view loads as you scroll (`TranslationPages`: the first 50 keys, then 50 more each time the end marker of the virtual list comes into view, `llInView`; no paginator, a count line under the list) and starts at the top on a new filter; the **tree** view reads one level at a time (`TranslationTree`, `GET …/translations/nodes`), its "Load more" row loading by itself when scrolled into view, opening every group of a filter with at most 200 matches. After a `translations` change event both read again what they show, in place
+- `ngOnInit()` — loads the labels for the filter (`findLabels`); the selected translation is read by id (`findOne`, live), so an edit elsewhere shows at once
+- Selection — whenever nothing is selected (at the start, after the selected key is deleted), the first key the view *shows* is: the list's first row, or the tree's first key at its top level or in an open group (with every group closed the editor says "Select a translation in the tree."). A new filter keeps the selected key in the editor; when it doesn't match the filter (asked of the server: `?key=` and the filter, one row) the editor says "Not in the current filter". The tree highlights the selected key whichever view selected it
+- Search — runs on Enter or the Search button inside the box, not while typing; the box is marked (amber) and the button is primary while its text is not searched yet; emptying the box shows every key again
+- Add and rename dialogs ask the server whether a key is taken (`isKeyTaken`: `?key=` in any letter case), so they work in a space of any size
 - Inline editing — clicking a row opens `TranslationDetailComponent` (see below) for the key
 - `publish()` — publishes all translations (`POST /api/app/spaces/:s/translations/publish`), which writes one published `translation_snapshots` row per locale (see [Publish Flow](../../publish-flow.md))
-- `openImportDialog()` — opens import dialog → creates a **Task** for background processing
-- `openExportDialog()` — opens export dialog → creates a **Task** for background processing
-- `openTranslateLocaleDialog()` — opens the shared `TranslateLocaleDialogComponent` → calls `translationService.translateLocale(spaceId, sourceLocale, targetLocale)` (`POST /api/app/spaces/:s/translations/translate-locale`) to bulk-translate one locale into another with the configured machine-translation provider, in a single transaction
+- `openImportDialog()` — content writers: the file only (a key-value `.json` also asks its locale, preselected from the file name, `de.json` → German) → a `TRANSLATION_IMPORT` task, shown in the action bar (`ll-active-tasks`) while it runs, a toast when it ends ([Tasks](tasks.md)). Missing keys are added, existing ones updated; nothing is deleted; all or nothing
+- `openExportDialog()` — content writers: **All translations** → a `TRANSLATION_EXPORT` task (`.localess.zip`), shown in the action bar (`ll-active-tasks`) while it runs, a toast when it ends ([Tasks](tasks.md)), its toast offering **Download**; **One locale** → downloads `{ key: value }` of the draft values at once (`TranslationService.exportLocaleUrl()`, `GET …/translations/export/:locale`), no task
+- `openTranslateLocaleDialog()` — opens the shared `TranslateLocaleDialogComponent` in `save` mode (it says every key is translated and saved at once, the button reads **Translate and Save**, and ticking Overwrite warns that it cannot be undone; source preselected as the space default locale, target as the locale the list shows) → a `TRANSLATION_TRANSLATE` task (`TaskService.createTranslationTranslate()`), shown in the action bar (`ll-active-tasks`) while it runs, a toast when it ends ([Tasks](tasks.md)); translators may start it
 - Layout toggle: **list** (flat) ↔ **tree** (hierarchical), persisted in `LocalSettingsStore.translationLayout`
+
+The page fills the window below the header; its columns follow the width the page has (container queries): list,
+editor and the info panel when wide; list beside the editor when medium; list over the editor when narrow. The info
+panel (`TranslationInfoComponent`, `shared/components/translation-info/`: key, status, description, labels, dates,
+and Edit Key / Edit / Delete) shows only when wide; narrower, the editor's **Details** button opens it in a sheet
+from the right. An action of the sheet runs once the sheet has closed, and every declared sheet has an `id` of its
+own: Spartan numbers declared and opened dialogs with two counters that both make `brn-dialog-N`, so a sheet and a
+dialog opened from it can collide.
 
 `TranslationDetailComponent` (`shared/components/translation-detail/`) owns per-key editing: it injects `PlatformService`, `LocaleService`,
 `TranslateService`, `TranslationService`, `NotificationService`, `HlmDialogService`, handles keyboard shortcuts via a `(window:keydown)` host listener
@@ -93,8 +105,8 @@ users, are gone; the Firebase import keeps such a value as the text it was store
 | `AddDialogComponent`             | Create a new translation key (Key, value, labels, description, optional client-side auto-translate to other locales)                                                  |
 | `EditDialogComponent`            | Edit key metadata (labels, description)                                                                                                                               |
 | `EditIdDialogComponent`          | Rename a translation key (`PUT …/:id/key`, addressed by the UUID `id`)                                                                                                 |
-| `ExportDialogComponent`          | Choose format and locales to export                                                                                                                                   |
-| `ImportDialogComponent`          | Upload a translation file → creates a Task                                                                                                                            |
+| `ExportDialogComponent`          | All translations (a task) or one locale as key-value JSON                                                                                                                                   |
+| `ImportDialogComponent`          | Pick a file (and a locale for a .json) → an import task                                                                                                                            |
 | `TranslateLocaleDialogComponent` | Bulk AI-translate to a target locale — shared/global component (`apps/web/src/app/shared/components/translate-locale-dialog/`), also used by Contents' `EditDocumentComponent` |
 | `ConfirmationDialogComponent`    | Delete confirmation                                                                                                                                                   |
 
@@ -102,9 +114,9 @@ users, are gone; the Firebase import keeps such a value as the text it was store
 
 | Service               | Purpose                                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------------------- |
-| `TranslationService`  | CRUD + publish + translate-locale via `/api/app/spaces/:s/translations` (reads are live)                 |
-| `TaskService`         | Create import/export tasks                                                                               |
-| `TokenService`        | Retrieve API token for CDN preview links                                                                 |
+| `TranslationService`  | CRUD + publish + the key-value export URL via `/api/app/spaces/:s/translations` (reads are live)                 |
+| `TaskService`         | Create import, export and translate-locale tasks                                                                               |
+| `SpaceTokenService`   | Retrieve API token for CDN preview links                                                                 |
 | `TranslateService`    | AI translation via `POST /api/app/translate` (`translate()` single, `translateBatch()` batch)            |
 | `NotificationService` | Snackbar feedback                                                                                        |
 | `LocaleService`       | Load space locales (used by `TranslationDetailComponent`, not the main component)                        |
@@ -119,9 +131,9 @@ a change event in the same transaction (see [Publish Flow](../../publish-flow.md
 ## Values only for the space's locales
 
 The server writes translation values only for the space's locales (`Not in space locales: …`, 400): creating a key with a
-`locales` map, `PUT …/translations/:id/locales/:locale` with a value, and Translate Locale (source and target). Removing a value
+`locales` map, `PUT …/translations/:translationId/locales/:localeId` with a value, and Translate Locale (source and target). Removing a value
 (an empty string) is allowed for any locale, so values left behind by a removed locale can be cleared. v1 push already refused
-other locales. The (hidden) import task skips other locales' values and logs how many, and refuses a single-locale import into a
+other locales. The import task skips other locales' values and logs how many, and refuses a single-locale import into a
 locale the space does not have.
 
 ## Auto-Translate on Create

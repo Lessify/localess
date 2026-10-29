@@ -1,35 +1,21 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  Injector,
-  input,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, input } from '@angular/core';
 import { Router } from '@angular/router';
-import { FEATURE_FLAGS } from '@core/feature-flags';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
-import { SchemaService } from '@core/services/schema.service';
-import { TaskService } from '@core/services/task.service';
-import { TokenService } from '@core/services/token.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
+import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
 import { breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { pagedResource } from '@core/utils/paged-resource';
 import {
   Content,
   ContentDocument,
   ContentDocumentCreate,
   ContentFolderCreate,
-  ContentFolderSummary,
   ContentKind,
   ContentUpdate,
   Schema,
@@ -63,12 +49,12 @@ import {
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { sortContent } from '@shared/models/content.model';
+import { LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { sortSchema } from '@shared/models/schema.model';
 import { TOKEN_TYPE_INFO } from '@shared/models/token.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -76,14 +62,11 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { combineLatest } from 'rxjs';
-import { filter, switchMap, take, tap } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 import { AddDocumentDialogComponent, AddDocumentDialogContext } from './add-document-dialog';
 import { AddFolderDialogComponent, AddFolderDialogContext } from './add-folder-dialog';
 import { EditDialogComponent, EditDialogContext } from './edit-dialog';
-import { ExportDialogComponent, ExportDialogContext, ExportDialogResult } from './export-dialog';
-import { ImportDialogComponent, ImportDialogResult } from './import-dialog';
 import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move-dialog';
 import { DocumentStatusComponent } from './shared/document-status/document-status.component';
 
@@ -93,11 +76,12 @@ import { DocumentStatusComponent } from './shared/document-status/document-statu
   styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     ClipboardModule,
     LlTableImports,
     LlPaginatorImports,
+    LlFilterToolbarImports,
     HlmButtonImports,
     HlmIconImports,
     HlmDropdownMenuImports,
@@ -128,40 +112,48 @@ import { DocumentStatusComponent } from './shared/document-status/document-statu
     }),
   ],
 })
-export class ContentsComponent implements AfterViewInit {
-  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
+export class ContentsComponent {
   private readonly router = inject(Router);
-  private readonly schemasService = inject(SchemaService);
   private readonly contentService = inject(ContentService);
-  private readonly tokenService = inject(TokenService);
-  private readonly taskService = inject(TaskService);
+  private readonly spaceTokenService = inject(SpaceTokenService);
   private readonly dialog = inject(HlmDialogService);
 
   private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
   // Input
   spaceId = input.required<string>();
 
   spaceStore = inject(SpaceStore);
 
-  isLoading = signal(true);
-  private readonly contents = signal<Content[]>([]);
-  readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);
+  /**
+   * The folder shown (`SpaceStore.contentFolderId`): paged, sorted and searched on the server (`GET …/contents`,
+   * without the documents' data).
+   */
+  readonly contentList = new FolderList(this.spaceStore.contentFolderId);
+  readonly filters = FOLDER_LIST_FILTERS;
+  /** The page shown, live. */
+  readonly page = pagedResource({
+    list: this.contentList.list,
+    load: params => this.contentService.findAll(this.spaceId(), params),
+    error: 'Contents can not be loaded.',
+  });
+  readonly dataSource = new TableDataSource<Content>(this.page.items, this.injector);
   displayedColumns: string[] = ['status', 'name', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
 
-  schemas: Schema[] = [];
-  schemasMapByName: Map<string, Schema> = new Map<string, Schema>();
+  /** The ROOT schemas a document can be created with, from `SpaceStore` (live). */
+  readonly schemas = computed(() =>
+    this.spaceStore
+      .schemas()
+      .filter(it => it.type === SchemaType.ROOT)
+      .sort(sortSchema),
+  );
+  /** Every schema by name: a document's schema column. */
+  readonly schemasMapByName = computed(() => new Map<string, Schema>(this.spaceStore.schemas().map(it => [it.name, it])));
 
-  /** Every folder of the space, live: breadcrumbs and paths are built from it. */
-  private readonly folders = toSignal(toObservable(this.spaceId).pipe(switchMap(spaceId => this.contentService.findAllFolders(spaceId))), {
-    initialValue: [] as ContentFolderSummary[],
-  });
-  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
+  /** Every folder of the space, from `SpaceStore` (live): the breadcrumbs are built from it. */
+  private readonly folderMap = computed(() => new Map(this.spaceStore.contentFolders().map(it => [it.id, it])));
   /** The folders from the root down to the one shown. */
   readonly trail = computed(() => breadcrumbs(this.folderMap(), this.spaceStore.contentFolderId()));
 
@@ -172,40 +164,12 @@ export class ContentsComponent implements AfterViewInit {
 
   private destroyRef = inject(DestroyRef);
 
-  constructor() {
-    toObservable(this.spaceStore.contentFolderId)
-      .pipe(
-        filter(it => it !== undefined), // Skip initial data
-        switchMap(() =>
-          combineLatest([
-            this.schemasService.findAll(this.spaceId(), SchemaType.ROOT),
-            this.contentService.findAll(this.spaceId(), this.folderId),
-          ]),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: ([schemas, contents]) => {
-          this.schemas = schemas.sort(sortSchema);
-          this.schemasMapByName = new Map(this.schemas.map(it => [it.name, it]));
-          this.contents.set(contents.sort(sortContent));
-          this.isLoading.set(false);
-        },
-      });
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
-  }
-
   openAddDocumentDialog(): void {
     this.dialog
       .open<ContentDocumentCreate, AddDocumentDialogContext>(AddDocumentDialogComponent, {
         context: {
-          schemas: this.schemas,
-          reservedNames: this.contents().map(it => it.name),
-          reservedSlugs: this.contents().map(it => it.slug),
+          schemas: this.schemas(),
+          ...this.reservedIn(this.spaceStore.contentFolderId() ?? undefined),
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -227,10 +191,7 @@ export class ContentsComponent implements AfterViewInit {
   openAddFolderDialog(): void {
     this.dialog
       .open<ContentFolderCreate, AddFolderDialogContext>(AddFolderDialogComponent, {
-        context: {
-          reservedNames: this.contents().map(it => it.name),
-          reservedSlugs: this.contents().map(it => it.slug),
-        },
+        context: this.reservedIn(this.spaceStore.contentFolderId() ?? undefined),
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
@@ -253,8 +214,7 @@ export class ContentsComponent implements AfterViewInit {
       .open<ContentUpdate, EditDialogContext>(EditDialogComponent, {
         context: {
           content: ObjectUtils.clone(element),
-          reservedNames: this.contents().map(it => it.name),
-          reservedSlugs: this.contents().map(it => it.slug),
+          ...this.reservedIn(element.parentId),
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -301,7 +261,7 @@ export class ContentsComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.contentService.delete(this.spaceId(), element)),
+        switchMap(() => this.contentService.remove(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
@@ -350,7 +310,7 @@ export class ContentsComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.contentService.cloneDocument(this.spaceId(), element)),
+        switchMap(() => this.contentService.clone(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
@@ -398,7 +358,7 @@ export class ContentsComponent implements AfterViewInit {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.success(messageError);
+          this.notificationService.error(messageError);
         },
       });
   }
@@ -439,15 +399,14 @@ export class ContentsComponent implements AfterViewInit {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.success(messageError);
+          this.notificationService.error(messageError);
         },
       });
   }
 
   onRowSelect(element: Content): void {
-    this.isLoading.set(true);
     if (element.kind === ContentKind.DOCUMENT) {
-      if (this.schemasMapByName.has(element.schema)) {
+      if (this.schemasMapByName().has(element.schema)) {
         this.router.navigate(['features', 'spaces', this.spaceId(), 'contents', element.id]);
       } else {
         this.notificationService.error(`Content Schema can not be found.`);
@@ -460,10 +419,15 @@ export class ContentsComponent implements AfterViewInit {
     }
   }
 
+  /** The names and slugs taken in a folder (`undefined`: the root), from `SpaceStore`'s list of every content. */
+  private reservedIn(parentId: string | undefined): { reservedNames: string[]; reservedSlugs: string[] } {
+    const siblings = this.spaceStore.contents().filter(it => it.parentId === parentId);
+    return { reservedNames: siblings.map(it => it.name), reservedSlugs: siblings.map(it => it.slug) };
+  }
+
   /** A breadcrumb: a folder, or `null` for the root. */
   navigateToFolder(folderId: string | null) {
     if (folderId === this.spaceStore.contentFolderId()) return;
-    this.isLoading.set(true);
     this.spaceStore.changeContentFolder(folderId);
   }
 
@@ -479,70 +443,13 @@ export class ContentsComponent implements AfterViewInit {
 
   /** Opens `open` with the current value of the first of `types` the space has; a toast when it has none or the lookup fails. */
   private withApiToken(types: TokenType[], open: (token: string) => void): void {
-    this.tokenService.firstValue(this.spaceId(), types).subscribe({
+    this.spaceTokenService.firstValue(this.spaceId(), types).subscribe({
       next: token => {
         if (token) open(token);
         else this.notificationService.error(`Please create a ${TOKEN_TYPE_INFO[types[0]].label} Token in your Space Settings`);
       },
       error: () => this.notificationService.error('Tokens could not be loaded'),
     });
-  }
-
-  openImportDialog() {
-    this.dialog
-      .open<ImportDialogResult>(ImportDialogComponent, {
-        contentClass: DIALOG_WIDTH_SM,
-      })
-      .closed$.pipe(
-        take(1),
-        filter(it => it !== undefined),
-        tap(console.log),
-        switchMap(it => this.taskService.createContentImportTask(this.spaceId(), it!.file)),
-      )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Content Import Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: () => {
-          this.notificationService.error('Content Import Task can not be created.');
-        },
-      });
-  }
-
-  openExportDialog() {
-    this.dialog
-      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, {
-        context: {
-          spaceId: this.spaceId(),
-        },
-        contentClass: DIALOG_WIDTH_SM,
-      })
-      .closed$.pipe(
-        take(1),
-        filter(it => it !== undefined),
-        switchMap(it => this.taskService.createContentExportTask(this.spaceId(), it?.path)),
-      )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Content Export Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: (err: unknown) => {
-          console.error(err);
-          this.notificationService.error('Content Export Task can not be created.');
-        },
-      });
   }
 
   copiedSlug() {

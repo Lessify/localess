@@ -1,7 +1,25 @@
 @let asset = item();
 <hlm-card class="overflow-hidden pt-0!">
-  <div class="cursor-pointer border-b" aria-hidden="true" (click)="assetSelect.emit(asset)" (keydown)="assetSelect.emit(asset)">
-    @if (asset.kind === 'FILE' && filePreview(asset.type)) {
+  <div
+    class="cursor-pointer border-b"
+    role="button"
+    tabindex="0"
+    [attr.aria-label]="'Open ' + asset.name + (asset.kind === 'FILE' ? asset.extension : '')"
+    (click)="assetSelect.emit(asset)"
+    (keydown.enter)="assetSelect.emit(asset)"
+    (keydown.space)="$event.preventDefault(); assetSelect.emit(asset)">
+    @if (asset.kind === 'FILE' && asset.missingFile) {
+      <!-- Imported from Firebase without its file: nothing to show until one is uploaded to it. -->
+      <div class="bg-primary-foreground relative aspect-square w-full">
+        @if (asset.extension; as extension) {
+          <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
+        }
+        <div class="text-muted-foreground flex h-full w-full flex-col items-center justify-center gap-2 text-sm">
+          <ng-icon hlm size="xl" name="lucideFileX" />
+          File missing
+        </div>
+      </div>
+    } @else if (asset.kind === 'FILE' && filePreview(asset.type)) {
       <div class="relative aspect-square w-full">
         @if (asset.extension; as extension) {
           <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
@@ -9,12 +27,11 @@
         <img
           class="bg-primary-foreground aspect-square w-full object-contain"
           [class.cursor-zoom-in]="zoomCursor()"
-          ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ asset.id }}"
-          alt="thumbnail"
+          src="/api/app/spaces/{{ spaceId() }}/assets/{{ asset.id }}/thumbnail"
+          alt=""
           width="600"
           height="600"
-          loading="lazy"
-          [loaderParams]="{ thumbnail: true }" />
+          loading="lazy" />
       </div>
     } @else if (asset.kind === 'FILE') {
       <div class="bg-primary-foreground relative aspect-square w-full">
@@ -38,6 +55,9 @@
       {{ asset.name }}{{ asset.kind === 'FILE' ? asset.extension : '' }}
     </h3>
     <div hlmCardDescription>
+      @if (path(); as path) {
+        <p class="line-clamp-1 break-all" [title]="path">{{ path }}</p>
+      }
       @if (asset.kind === 'FILE') {
         @if (asset.size; as size) {
           <p>{{ size | formatFileSize }}</p>
@@ -46,7 +66,7 @@
           @if (metadata.width && metadata.height) {
             W{{ metadata.width }} x H{{ metadata.height }}
           }
-          @if (metadata.duration; as duration) {
+          @if (durationOf(metadata); as duration) {
             <div> Duration: {{ duration | timeDuration }}</div>
           }
         }

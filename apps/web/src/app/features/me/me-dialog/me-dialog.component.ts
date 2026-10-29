@@ -26,7 +26,7 @@ export class MeDialogComponent implements OnInit {
 
   form: FormGroup = this.fb.group({
     displayName: this.fb.control(undefined),
-    photoURL: this.fb.control(undefined),
+    photoUrl: this.fb.control(undefined),
   });
 
   ngOnInit(): void {

@@ -27,6 +27,16 @@ Spaces move one at a time from a running Firebase-era Localess environment, from
    `Retry-After: 60` and `Cache-Control: no-store`, until the import has finished.
    A failed import is not resumed: delete the space it created (Admin → Spaces, marked *Import failed*), which also
    removes the run, then import the space again.
-6. Revoke the migration token in the Firebase environment when you are done.
+6. **What the import changes**, each listed as a warning of its stage:
+   - An option field that held its own list of values gets an ENUM schema made of them (`<schema><Field>`), so its
+     values keep being delivered. Rename it in Schemas if you like; the field follows.
+   - Content blocks lose the legacy `schema` key: the block's schema is in `_schema` only (copied from `schema` when the
+     block had no `_schema`). A site that reads `schema` must read `_schema`.
+   - Firebase Hosting carries at most 32 MB of a file. A Firebase environment with the fix refuses a larger file
+     (`413`, with its size): the import keeps the asset without its file and goes on, with a warning naming it. An
+     older one sends the file cut, also named in a warning. Download such a file from the Firebase console's Storage;
+     an asset kept without its file shows "File missing" in Assets: **Upload file** in its menu puts the file into
+     that same asset, so the contents using it keep working. (A cut file: upload it as a new asset.)
+7. Revoke the migration token in the Firebase environment when you are done.
 
 Not imported: users, global settings, published snapshots (publish again), webhook logs, tasks.

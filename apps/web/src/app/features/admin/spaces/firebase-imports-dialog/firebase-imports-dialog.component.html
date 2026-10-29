@@ -2,36 +2,73 @@
   <h2 hlmDialogTitle>Imports from Firebase</h2>
 </hlm-dialog-header>
 @if (selectedRun(); as run) {
-  <button hlmBtn variant="ghost" size="sm" class="self-start" (click)="select(undefined)">Back</button>
-  <p class="text-sm">{{ run.sourceSpaceName }} from {{ run.origin }}: {{ run.status }}</p>
-  @if (run.status === 'RUNNING') {
-    <button hlmBtn variant="outline" size="sm" class="self-start" (click)="cancel(run)">Cancel import</button>
-  }
-  @if (run.error; as error) {
-    <p class="text-destructive text-sm">Failed at {{ error.stage }}: {{ error.message }}</p>
-  }
-  @if (failureHint(run); as hint) {
-    <p class="text-muted-foreground text-sm">{{ hint }}</p>
-  }
+  <ll-firebase-import-run-header [run]="run" />
   <!-- The dialog box grows with its content and nothing scrolls it: long lists scroll on their own. -->
   <ll-firebase-import-progress class="block max-h-[50vh] overflow-y-auto" [run]="run" />
+  <div class="flex justify-end gap-2">
+    @if (run.status === 'RUNNING') {
+      <button hlmBtn variant="outline" (click)="cancel(run)">Cancel import</button>
+    }
+    <button hlmBtn variant="outline" (click)="select(undefined)">Back</button>
+  </div>
 } @else {
   @if (runs().length) {
-    <ul class="flex max-h-[60vh] flex-col gap-1 overflow-y-auto">
-      @for (run of runs(); track run.id) {
-        <li>
-          <button hlmBtn variant="ghost" class="h-auto w-full justify-between py-2 text-left" (click)="select(run)">
-            <span class="flex flex-col">
-              <span class="font-medium">{{ run.sourceSpaceName }}</span>
-              <span class="text-muted-foreground text-xs"
-                >{{ run.origin }} · {{ run.startedBy.email }} · {{ run.startedAt | date: 'medium' }}</span
-              >
-            </span>
-            <span class="text-sm">{{ run.status }}</span>
+    <!-- The dialog box grows with its content and nothing scrolls it: a long list scrolls on its own. -->
+    <div hlmItemGroup class="max-h-[60vh] gap-0! overflow-y-auto" aria-label="Imports">
+      @for (run of runs(); track run.id; let first = $first) {
+        @if (!first) {
+          <hlm-item-separator class="my-0!" />
+        }
+        <div hlmItem>
+          <!-- The row opens the run; its actions are buttons of their own beside it. -->
+          <button type="button" class="flex min-w-0 flex-1 items-center gap-3 text-left" (click)="select(run)">
+            <div hlmItemMedia variant="icon" class="size-9 rounded-md border" [class]="mediaClass(run)">
+              @switch (run.status) {
+                @case ('RUNNING') {
+                  <hlm-spinner class="size-4" />
+                }
+                @case ('FAILED') {
+                  <ng-icon hlm size="sm" name="lucideCircleX" class="text-destructive" />
+                }
+                @default {
+                  <ng-icon hlm size="sm" name="lucideCircleCheck" />
+                }
+              }
+            </div>
+            <div hlmItemContent class="min-w-0">
+              <div hlmItemTitle class="flex-wrap">
+                {{ run.sourceSpaceName }}
+                <span hlmBadge [variant]="run.status === 'FAILED' ? 'destructive' : run.status === 'RUNNING' ? 'secondary' : 'outline'">{{
+                  statusLabel(run)
+                }}</span>
+                @if (warningCount(run); as warnings) {
+                  <span hlmBadge variant="outline" class="border-transparent bg-amber-100 text-amber-900"
+                    >{{ warnings }} {{ warnings === 1 ? 'warning' : 'warnings' }}</span
+                  >
+                }
+              </div>
+              <p hlmItemDescription class="truncate">{{ host(run.origin) }} · {{ run.startedBy.email }}</p>
+              <p hlmItemDescription class="truncate" [title]="run.startedAt | date: 'medium'">
+                {{ run.startedAt | date: 'MMM d, h:mm a' }}
+                @if (duration(run); as took) {
+                  · took {{ took }}
+                }
+              </p>
+            </div>
           </button>
-        </li>
+          <div hlmItemActions>
+            @if (run.status === 'RUNNING') {
+              <button hlmBtn variant="outline" size="sm" (click)="cancel(run)">Cancel</button>
+            } @else if (run.status === 'FINISHED' && run.spaceId) {
+              <button hlmBtn variant="outline" size="sm" (click)="openSpace(run)">Open space</button>
+            }
+            <button hlmBtn variant="ghost" size="icon" aria-label="Details" (click)="select(run)">
+              <ng-icon hlm size="sm" name="lucideChevronRight" />
+            </button>
+          </div>
+        </div>
       }
-    </ul>
+    </div>
   } @else {
     <p class="text-muted-foreground text-sm">No imports yet.</p>
   }

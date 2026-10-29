@@ -1,7 +1,9 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
+
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
-import { StorageDeletionsRepository } from '../repositories/storage-deletions.repository.js';
+import { StorageDeletionRepository } from '../repositories/storage-deletion.repository.js';
+import { errorMessage } from '../utils/error-message.js';
 
 const HOUR = 60 * 60 * 1000;
 /** Entries per sweep, one at a time. */
@@ -21,7 +23,7 @@ export class StorageSweeperService implements OnApplicationBootstrap, OnApplicat
   private again = false;
 
   constructor(
-    private readonly deletions: StorageDeletionsRepository,
+    private readonly storageDeletionRepository: StorageDeletionRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
   ) {}
 
@@ -62,7 +64,7 @@ export class StorageSweeperService implements OnApplicationBootstrap, OnApplicat
     let taken = 0;
     while (taken < BATCH) {
       let failure: { prefix: string; attempts: number; error: unknown } | undefined;
-      const found = await this.deletions
+      const found = await this.storageDeletionRepository
         .next(async (entry, owned) => {
           // Its asset (or space) exists again: the files are live, only the entry goes.
           if (owned) return;
@@ -80,9 +82,9 @@ export class StorageSweeperService implements OnApplicationBootstrap, OnApplicat
       if (!found) break;
       taken++;
       if (failure) {
-        const message = failure.error instanceof Error ? failure.error.message : String(failure.error);
+        const message = errorMessage(failure.error);
         this.logger.warn(`Could not delete stored files under ${failure.prefix} (attempt ${failure.attempts + 1}): ${message}`);
-        await this.deletions.failed(failure.prefix, message, RETRY_MS[Math.min(failure.attempts, RETRY_MS.length - 1)]);
+        await this.storageDeletionRepository.failed(failure.prefix, message, RETRY_MS[Math.min(failure.attempts, RETRY_MS.length - 1)]);
       }
     }
     return taken;

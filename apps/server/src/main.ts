@@ -1,5 +1,7 @@
 import 'reflect-metadata';
+
 import { Logger } from '@nestjs/common';
+
 import { createApp } from './app.factory.js';
 import { loadConfig } from './infra/config/config.js';
 

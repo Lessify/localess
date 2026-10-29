@@ -1,4 +1,6 @@
 import { z } from 'zod';
+
+import { zLabels } from './common.zod.js';
 import { AssetFileType, SchemaFieldKind, SchemaType } from './schema.model.js';
 
 const FIELD_NAME_PATTERN = /^[a-z]+[a-zA-Z0-9_]*[a-zA-Z0-9]+$/;
@@ -215,5 +217,34 @@ export const zSchemaPushSchema = z
     });
   });
 
-/** App API `POST /api/app/spaces/{spaceId}/schemas/template` body: a space template's schemas. */
-export const zSchemaTemplateSchema = z.object({ schemas: zSchemaExportArraySchema });
+// App API requests.
+
+const zSchemaName = z.string().regex(/^[A-Za-z0-9_-]{1,120}$/, 'Schema names are letters, digits, - and _');
+
+/** `GET /api/app/spaces/:spaceId/schemas?type=`. */
+export const zSchemaTypeFilter = z.enum(SchemaType).optional();
+export type SchemaTypeFilter = z.infer<typeof zSchemaTypeFilter>;
+
+/** `POST /api/app/spaces/:spaceId/schemas`. */
+export const zSchemaCreate = z.strictObject({
+  name: zSchemaName,
+  type: z.enum(SchemaType),
+  displayName: z.string().max(200).optional(),
+});
+export type SchemaCreate = z.infer<typeof zSchemaCreate>;
+
+/** `PUT …/schemas/:schemaId`: a component's or an enum's settings. */
+export const zSchemaUpdate = z.strictObject({
+  displayName: z.string().max(200).optional(),
+  description: z.string().max(2000).optional(),
+  labels: zLabels.optional(),
+  previewField: z.string().max(200).optional(),
+  // The shapes the push and the imports check too; keys a field kind does not have are dropped.
+  fields: z.array(schemaFieldSchema).optional(),
+  values: z.array(schemaEnumValueSchema).optional(),
+});
+export type SchemaUpdate = z.infer<typeof zSchemaUpdate>;
+
+/** `PUT …/schemas/:schemaId/name`. */
+export const zSchemaRename = z.strictObject({ name: zSchemaName });
+export type SchemaRename = z.infer<typeof zSchemaRename>;

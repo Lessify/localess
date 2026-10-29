@@ -7,7 +7,6 @@ export interface FakeFirebaseSpace {
   id: string;
   name: string;
   doc: Record<string, unknown>;
-  tokens?: FirebaseDocLike[];
   webhooks?: FirebaseDocLike[];
   schemas?: FirebaseDocLike[];
   translations?: FirebaseDocLike[];
@@ -20,8 +19,19 @@ export interface FakeFirebaseSpace {
 /** Plays a Firebase environment's migration API and asset `/original` route for import tests. */
 export async function fakeFirebase(
   spaces: FakeFirebaseSpace[],
-  /** `spa`: a Firebase Hosting site without the migration API, answering every path with its app's index.html. */
-  options: { token?: string; pageSize?: number; failAfterFiles?: number; spa?: boolean } = {},
+  /**
+   * `spa`: a Firebase Hosting site without the migration API, answering every path with its app's index.html.
+   * `failingFiles`: asset ids whose `/original` answers 500, as Firebase does for a file its function cannot serve.
+   * `refusedFiles`: asset id → the status and plain-text reason its `/original` answers (413 for a file over 31 MiB).
+   */
+  options: {
+    token?: string;
+    pageSize?: number;
+    failAfterFiles?: number;
+    failingFiles?: string[];
+    spa?: boolean;
+    refusedFiles?: Record<string, { status: number; reason: string }>;
+  } = {},
 ): Promise<{ url: string; requests: string[]; close(): Promise<void> }> {
   const token = options.token ?? 'migration-secret';
   const pageSize = options.pageSize ?? 500;
@@ -30,10 +40,14 @@ export async function fakeFirebase(
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://fake');
     requests.push(url.pathname + url.search);
-    const json = (status: number, body: unknown) => response.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(body));
+    const json = (status: number, body: unknown) =>
+      response.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(body));
     const file = /^\/api\/v1\/spaces\/([^/]+)\/assets\/([^/]+)\/original$/.exec(url.pathname);
+    const refused = file && options.refusedFiles?.[file[2]];
+    if (refused) return void response.writeHead(refused.status, { 'content-type': 'text/plain; charset=utf-8' }).end(refused.reason);
     if (file) {
       if (options.failAfterFiles !== undefined && filesServed >= options.failAfterFiles) return void response.destroy();
+      if (options.failingFiles?.includes(file[2])) return void response.writeHead(500, { 'content-type': 'text/html' }).end();
       const bytes = spaces.find(it => it.id === file[1])?.files?.[file[2]];
       if (!bytes) return json(404, { message: 'Not found' });
       filesServed++;
@@ -44,12 +58,16 @@ export async function fakeFirebase(
     if (!url.pathname.startsWith('/api/migration/')) return json(404, { message: 'Not found' });
     if (request.headers.authorization !== `Bearer ${token}`) return json(401, { message: 'Missing or invalid migration token' });
     const parts = url.pathname.split('/').slice(3); // ['spaces', id?, collection?]
-    if (parts.length === 1) return json(200, spaces.map(it => ({ id: it.id, name: it.name, createdAt: it.doc['createdAt'] })));
+    if (parts.length === 1)
+      return json(
+        200,
+        spaces.map(it => ({ id: it.id, name: it.name, createdAt: it.doc['createdAt'] })),
+      );
     const space = spaces.find(it => it.id === parts[1]);
     if (!space) return json(404, { message: 'Space not found' });
     if (parts.length === 2) return json(200, { id: space.id, name: space.name, ...space.doc });
     const items = (space as unknown as Record<string, FirebaseDocLike[] | undefined>)[parts[2]] ?? [];
-    if (['tokens', 'webhooks', 'schemas'].includes(parts[2])) return json(200, items);
+    if (['webhooks', 'schemas'].includes(parts[2])) return json(200, items);
     const sorted = [...items].sort((a, b) => (a.id < b.id ? -1 : 1));
     const cursor = url.searchParams.get('cursor');
     const from = cursor ? sorted.filter(it => it.id > cursor) : sorted;

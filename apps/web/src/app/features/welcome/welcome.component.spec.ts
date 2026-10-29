@@ -1,26 +1,24 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { UserPermission } from '@localess/shared';
+import { UserRole } from '@localess/shared';
 import { SpaceStore } from '@core/stores/space.store';
 import { UserStore } from '@core/stores/user.store';
 
 import { WelcomeComponent } from './welcome.component';
 
-type Role = 'ADMIN' | 'CUSTOM' | undefined;
-
-async function setup(hasNoSpaces: boolean, role: Role = 'ADMIN', permissions: string[] = []) {
+async function setup(hasNoSpaces: boolean, role: UserRole | undefined = 'ADMIN') {
   await TestBed.configureTestingModule({
     imports: [WelcomeComponent],
     providers: [
       provideRouter([]),
       { provide: SpaceStore, useValue: { hasNoSpaces: signal(hasNoSpaces) } },
-      { provide: UserStore, useValue: { role: signal(role), permissions: signal(permissions) } },
+      { provide: UserStore, useValue: { role: signal(role) } },
     ],
   }).compileComponents();
   const fixture: ComponentFixture<WelcomeComponent> = TestBed.createComponent(WelcomeComponent);
   fixture.detectChanges();
-  // The permission pipe resolves through `toObservable`, so the async pipe needs a second pass.
+  // The role pipe resolves through `toObservable`, so the async pipe needs a second pass.
   await fixture.whenStable();
   fixture.detectChanges();
   return { fixture };
@@ -50,15 +48,10 @@ describe('WelcomeComponent', () => {
     expect(el(fixture, 'no-space-access')).toBeNull();
   });
 
-  it('offers creation to a custom user who may manage spaces', async () => {
-    const { fixture } = await setup(true, 'CUSTOM', [UserPermission.SPACE_MANAGEMENT]);
-    expect(el(fixture, 'create-first-space')).not.toBeNull();
-  });
-
   it('explains itself to a user who has no spaces and may not create one', async () => {
-    // The server requires SPACE_MANAGEMENT, so the button would fail. Hiding it without
-    // saying anything would leave this user on a blank page with no reason given.
-    const { fixture } = await setup(true, 'CUSTOM', [UserPermission.TRANSLATION_READ]);
+    // Only an admin creates spaces, so the button would fail. Hiding it without saying anything
+    // would leave this user on a blank page with no reason given.
+    const { fixture } = await setup(true, 'DEVELOPER');
 
     expect(el(fixture, 'create-first-space')).toBeNull();
     expect(el(fixture, 'no-space-access')).not.toBeNull();

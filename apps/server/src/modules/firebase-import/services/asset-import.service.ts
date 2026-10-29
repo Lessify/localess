@@ -1,9 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
+
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
+import { assetOriginalKey, toOriginalName } from '../../../shared/utils/asset-files.js';
 import { AssetImportRepository } from '../repositories/asset-import.repository.js';
-import type { FirebaseDoc } from '../utils/firebase-client.js';
+import { FirebaseConnectionError, type FirebaseDoc } from '../utils/firebase-client.js';
 import { obj, str, timestamps } from '../utils/firebase-docs.js';
 import { type ImportStage, StageFailure } from '../utils/firebase-import.utils.js';
 
@@ -16,9 +18,9 @@ import { type ImportStage, StageFailure } from '../utils/firebase-import.utils.j
 @Injectable()
 export class AssetImportService {
   constructor(
-    private readonly assets: AssetImportRepository,
+    private readonly assetImportRepository: AssetImportRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
-    private readonly metadata: AssetMetadataService,
+    private readonly assetMetadataService: AssetMetadataService,
   ) {}
 
   /** Answers the count and the Firebase id → new id map, for the reference rewrite. */
@@ -34,29 +36,57 @@ export class AssetImportService {
     for (const doc of parents.order) {
       const id = assetIds.get(doc.id)!;
       const isFile = doc['kind'] === 'FILE';
+      const extension = typeof doc['extension'] === 'string' ? doc['extension'] : '';
+      // Stored by its Firebase file name (`name` + `extension`), as an upload is.
+      const originalName = isFile ? toOriginalName(`${str(doc['name']) ?? doc.id}${extension}`) : null;
       let stored: { size: number; md5: string } | undefined;
       let extracted: { metadata?: Record<string, unknown>; alt?: string } | undefined;
       if (isFile) {
+        const name = str(doc['name']) ?? doc.id;
+        // A file Firebase cannot serve does not stop the import (the asset is kept without it): one it refuses as too
+        // large (413), or one it still answers 5xx for after three tries. Firebase being unreachable does stop it.
+        let tooLarge: string | undefined;
+        let unserved: string | undefined;
         const stream = await client.assetFile(sourceSpaceId, doc.id).catch(error => {
-          throw new StageFailure('assets', `Downloading asset '${str(doc['name']) ?? doc.id}' failed: ${(error as Error).message}`);
+          if (error instanceof FirebaseConnectionError && error.reason === 'tooLarge') {
+            tooLarge = error.message;
+            return null;
+          }
+          if (error instanceof FirebaseConnectionError && error.reason === 'server-error') {
+            unserved = error.message;
+            return null;
+          }
+          throw new StageFailure('assets', `Downloading asset '${name}' failed: ${(error as Error).message}`);
         });
-        if (stream) {
-          const key = `spaces/${sid}/assets/${id}/original`;
+        if (stream && originalName) {
+          const key = assetOriginalKey(sid, id, originalName);
           stored = await this.storage.put(key, stream);
+          // Firebase serves `/original` from a Cloud Function, whose responses stop at 32 MB: a larger file arrives cut.
+          const expected = doc['size'];
+          if (typeof expected === 'number' && expected !== stored.size) {
+            stage.warn(
+              `${originalName}: Firebase sent ${stored.size} of its ${expected} bytes (files over 32 MB are cut by Firebase), the file is incomplete: upload it again`,
+            );
+          }
           if (!obj(doc['metadata']))
-            extracted = await this.metadata.extract(key, str(doc['type']) ?? 'application/octet-stream', str(doc['alt']));
+            extracted = await this.assetMetadataService.extract(key, str(doc['type']) ?? 'application/octet-stream', str(doc['alt']));
+        } else if (tooLarge) {
+          stage.warn(`${originalName}: ${tooLarge} The asset is kept without its file: in Assets, use Upload file in its menu.`);
+        } else if (unserved) {
+          stage.warn(`${name}: Firebase could not serve its file (${unserved}), the asset is kept without it`);
         } else {
-          stage.warn(`${str(doc['name']) ?? doc.id}: no file in Firebase, the asset is kept without it`);
+          stage.warn(`${name}: no file in Firebase, the asset is kept without it`);
         }
       }
-      await this.assets.insert({
+      await this.assetImportRepository.insert({
         id,
         spaceId: sid,
         legacyId: doc.id,
         kind: isFile ? 'FILE' : 'FOLDER',
         name: str(doc['name']) ?? doc.id,
+        originalName,
         parentId: parents.parentOf.get(doc.id) ?? null,
-        extension: isFile ? (typeof doc['extension'] === 'string' ? doc['extension'] : '') : null,
+        extension: isFile ? extension : null,
         type: isFile ? str(doc['type']) : null,
         size: isFile ? (stored?.size ?? (typeof doc['size'] === 'number' ? doc['size'] : null)) : null,
         md5: stored?.md5 ?? null,

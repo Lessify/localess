@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { stableStringify } from './stable-json.js';
 
 describe('stableStringify', () => {

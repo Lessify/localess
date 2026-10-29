@@ -1,7 +1,10 @@
 import { resolve } from 'node:path';
+
+import { INSTANCE_COLORS, type InstanceLabel, type IntegrationId, type TranslatePrimary } from '@localess/shared';
+import { zBoolean } from '@localess/shared/zod';
 import type { LogLevel } from '@nestjs/common';
-import { INSTANCE_COLORS, type InstanceLabel } from '@localess/shared';
 import { z } from 'zod';
+
 import type { OAuthProviderId } from './oauth-providers.js';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -35,10 +38,7 @@ const envSchema = z.object({
   // Google: required `hd` (Workspace domain). Microsoft: the tenant (domain or id) — required for Microsoft.
   LOCALESS_AUTH_CUSTOM_DOMAIN: z.string().default(''),
   // Create an account (with no role) on first OAuth sign-in instead of requiring an existing user.
-  LOCALESS_AUTH_AUTO_REGISTER: z
-    .enum(['true', 'false'])
-    .default('false')
-    .transform(v => v === 'true'),
+  LOCALESS_AUTH_AUTO_REGISTER: zBoolean.default(false),
   LOCALESS_GOOGLE_CLIENT_ID: z.string().optional(),
   LOCALESS_GOOGLE_CLIENT_SECRET: z.string().optional(),
   LOCALESS_GOOGLE_ISSUER: z.string().url().default('https://accounts.google.com'),
@@ -53,20 +53,23 @@ const envSchema = z.object({
   // Lets webhooks reach loopback/private addresses (local development only; SSRF protection otherwise).
   // Days a webhook delivery log is kept.
   LOCALESS_WEBHOOK_LOG_DAYS: z.coerce.number().int().positive().default(30),
-  LOCALESS_WEBHOOK_ALLOW_INTERNAL: z
-    .enum(['true', 'false'])
-    .default('false')
-    .transform(v => v === 'true'),
-  // Machine translation. DeepL when DEEPL_API_KEY is set, else Google Cloud Translation when
-  // GOOGLE_CLOUD_PROJECT is set (credentials via GOOGLE_APPLICATION_CREDENTIALS / ADC).
-  // LOCALESS_TRANSLATE_PROVIDER=stub echoes inputs (development and tests).
+  LOCALESS_WEBHOOK_ALLOW_INTERNAL: zBoolean.default(false),
+  // Integrations (Admin → Settings → Integrations). Each one set here is env-locked: the UI shows it read-only.
+  // Machine translation: DeepL with DEEPL_API_KEY, Google Cloud Translation with GOOGLE_CLOUD_PROJECT (credentials via
+  // GOOGLE_APPLICATION_CREDENTIALS / ADC). LOCALESS_TRANSLATE_PROVIDER=stub echoes inputs (development and tests).
   DEEPL_API_KEY: z.string().optional(),
+  // DeepL's API origin (tests, proxies); deepl-node picks Free or Pro from the key when unset.
+  LOCALESS_DEEPL_API_URL: z.string().url().optional(),
   GOOGLE_CLOUD_PROJECT: z.string().optional(),
   LOCALESS_GOOGLE_TRANSLATE_LOCATION: z.string().default('global'),
   LOCALESS_TRANSLATE_PROVIDER: z.enum(['stub']).optional(),
-  // Unsplash plugin (asset picker); disabled without a key.
+  // Which provider is tried first when both are connected; locks the choice in the UI when set.
+  LOCALESS_TRANSLATE_PRIMARY: z.enum(['deepl', 'google']).optional(),
+  // Unsplash plugin (asset picker).
   UNSPLASH_API_KEY: z.string().optional(),
   LOCALESS_UNSPLASH_API_URL: z.string().url().default('https://api.unsplash.com'),
+  // Encrypts integration keys saved in the UI. Unset: generated once into $LOCALESS_DATA_DIR/secret.key.
+  LOCALESS_SECRET_KEY: z.string().min(32).optional(),
   // Generated image renditions (resized, re-encoded, thumbnails) kept in storage next to the original, so a repeat is
   // not transformed again: `disk` (default; for installs without a CDN), or `off` (transform on every request and
   // store nothing, for installs behind a CDN or caching proxy).
@@ -74,10 +77,11 @@ const envSchema = z.object({
   // Largest accepted asset/import upload, in megabytes.
   LOCALESS_UPLOAD_MAX_MB: z.coerce.number().int().positive().default(1024),
   // Run export/import tasks on this instance (turn off on API-only replicas).
-  LOCALESS_TASK_WORKER: z
-    .enum(['true', 'false'])
-    .default('true')
-    .transform(v => v === 'true'),
+  LOCALESS_TASK_WORKER: zBoolean.default(true),
+  // Tasks one instance runs at once; imports hold their file's entries in memory, so raise it only with the RAM.
+  LOCALESS_TASK_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(1),
+  // Test-only space templates (large generated data): development and e2e, never production.
+  LOCALESS_TEST_TEMPLATES: zBoolean.default(false),
   LOCALESS_STATIC_DIR: z.string().default(resolve(import.meta.dirname, '../../../../web/dist/browser')),
 });
 
@@ -91,15 +95,26 @@ export interface AppConfig {
   webhookAllowInternal: boolean;
   /** LOCALESS_WEBHOOK_LOG_DAYS: delivery logs older than this are deleted. */
   webhookLogDays: number;
-  translate:
-    | { provider: 'deepl'; apiKey: string }
-    | { provider: 'google'; projectId: string; location: string }
-    | { provider: 'stub' }
-    | { provider: 'none' };
-  unsplash: { apiKey: string; apiUrl: string } | undefined;
+  /**
+   * The values of env-locked integrations only (their lock variable is set): `deepl` `{ apiKey }`, `google-translate`
+   * `{ projectId, location }`, `unsplash` `{ apiKey }`.
+   */
+  integrationEnv: Partial<Record<IntegrationId, Record<string, string>>>;
+  /** LOCALESS_TRANSLATE_PROVIDER=stub: translation echoes its input, whatever is connected. */
+  translateStub: boolean;
+  /** LOCALESS_TRANSLATE_PRIMARY; undefined: the UI choice, else DeepL. */
+  translatePrimary: TranslatePrimary | undefined;
+  unsplashApiUrl: string;
+  deeplApiUrl: string | undefined;
+  /** LOCALESS_SECRET_KEY; undefined: $LOCALESS_DATA_DIR/secret.key. */
+  secretKey: string | undefined;
   uploadMaxBytes: number;
   renditionCache: 'disk' | 'off';
   taskWorker: boolean;
+  /** Tasks this instance runs at once (a space never runs two). */
+  taskConcurrency: number;
+  /** LOCALESS_TEST_TEMPLATES: offer the test-only space templates (development and e2e). */
+  testTemplates: boolean;
   staticDir: string | undefined;
   logLevels: LogLevel[];
   firstAdmin: { email: string; password: string } | undefined;
@@ -166,6 +181,17 @@ function oauthProviders(parsed: z.infer<typeof envSchema>): AppConfig['auth'] {
   return { customDomain: domain === '*' ? '' : domain, autoRegister: parsed.LOCALESS_AUTH_AUTO_REGISTER, providers, misconfigured };
 }
 
+/** Integrations whose lock variable is set, with all their values from env (never mixed with the UI's). */
+function integrationEnv(parsed: z.infer<typeof envSchema>): AppConfig['integrationEnv'] {
+  const result: AppConfig['integrationEnv'] = {};
+  if (parsed.DEEPL_API_KEY) result.deepl = { apiKey: parsed.DEEPL_API_KEY };
+  if (parsed.GOOGLE_CLOUD_PROJECT) {
+    result['google-translate'] = { projectId: parsed.GOOGLE_CLOUD_PROJECT, location: parsed.LOCALESS_GOOGLE_TRANSLATE_LOCATION };
+  }
+  if (parsed.UNSPLASH_API_KEY) result.unsplash = { apiKey: parsed.UNSPLASH_API_KEY };
+  return result;
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const parsed = envSchema.parse(env);
   const dataDir = resolve(parsed.LOCALESS_DATA_DIR);
@@ -179,17 +205,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     ffmpegPath: parsed.LOCALESS_FFMPEG_PATH,
     webhookAllowInternal: parsed.LOCALESS_WEBHOOK_ALLOW_INTERNAL,
     webhookLogDays: parsed.LOCALESS_WEBHOOK_LOG_DAYS,
-    translate: parsed.LOCALESS_TRANSLATE_PROVIDER
-      ? { provider: 'stub' }
-      : parsed.DEEPL_API_KEY
-        ? { provider: 'deepl', apiKey: parsed.DEEPL_API_KEY }
-        : parsed.GOOGLE_CLOUD_PROJECT
-          ? { provider: 'google', projectId: parsed.GOOGLE_CLOUD_PROJECT, location: parsed.LOCALESS_GOOGLE_TRANSLATE_LOCATION }
-          : { provider: 'none' },
+    integrationEnv: integrationEnv(parsed),
+    translateStub: parsed.LOCALESS_TRANSLATE_PROVIDER === 'stub',
+    translatePrimary: parsed.LOCALESS_TRANSLATE_PRIMARY === 'google' ? 'google-translate' : parsed.LOCALESS_TRANSLATE_PRIMARY,
+    unsplashApiUrl: parsed.LOCALESS_UNSPLASH_API_URL,
+    deeplApiUrl: parsed.LOCALESS_DEEPL_API_URL,
+    secretKey: parsed.LOCALESS_SECRET_KEY,
     uploadMaxBytes: parsed.LOCALESS_UPLOAD_MAX_MB * 1024 * 1024,
     renditionCache: parsed.LOCALESS_RENDITION_CACHE,
     taskWorker: parsed.LOCALESS_TASK_WORKER,
-    unsplash: parsed.UNSPLASH_API_KEY ? { apiKey: parsed.UNSPLASH_API_KEY, apiUrl: parsed.LOCALESS_UNSPLASH_API_URL } : undefined,
+    taskConcurrency: parsed.LOCALESS_TASK_CONCURRENCY,
+    testTemplates: parsed.LOCALESS_TEST_TEMPLATES,
     storageDir: resolve(parsed.LOCALESS_STORAGE_DIR ?? resolve(dataDir, 'storage')),
     staticDir: parsed.LOCALESS_STATIC_DIR ? resolve(parsed.LOCALESS_STATIC_DIR) : undefined,
     firstAdmin:

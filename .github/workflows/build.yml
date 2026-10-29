@@ -2,9 +2,11 @@ name: Build and Lint
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
+  # By hand on any branch (`gh workflow run build.yml --ref <branch>`), e.g. one whose PR targets another feature branch.
+  workflow_dispatch:
 
 jobs:
   test:
@@ -54,6 +56,268 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
-      # - run: pnpm prettier
+      - run: pnpm prettier
       - run: pnpm build
       - run: pnpm server:build
+
+  # Builds what the e2e jobs run (the production SPA and the server) once, for all of them.
+  e2e-build:
+    name: E2E Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Installs the pnpm version pinned by `packageManager`; must run before setup-node so it can cache the store.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:prod
+      - run: pnpm server:build
+
+      - name: Upload the builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-builds
+          path: |
+            apps/web/dist
+            apps/server/dist
+            packages/shared/dist
+          retention-days: 1
+
+  e2e:
+    name: E2E Tests (${{ matrix.shard }}/2)
+    needs: e2e-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm e2e:install
+
+      - name: Download the builds
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-builds
+
+      # Half of the suite against the built server on a fresh embedded Postgres. CI=true: 2 workers, 1 retry (a test
+      # that passes only on retry still fails the run), a failed test keeps its trace, video and screenshot.
+      - run: pnpm e2e:run --shard=${{ matrix.shard }}/2
+        env:
+          E2E_BLOB: '1'
+
+      - name: Upload the blob report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: apps/e2e/blob-report
+          retention-days: 1
+
+      - name: Upload traces of failed tests
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-${{ matrix.shard }}
+          path: apps/e2e/test-results
+          retention-days: 14
+
+  # One HTML report for both shards.
+  e2e-report:
+    name: E2E Report
+    needs: e2e
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download the blob reports
+        uses: actions/download-artifact@v4
+        with:
+          path: apps/e2e/all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - run: pnpm --filter @localess/e2e exec playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report
+          retention-days: 14
+
+  e2e-postgres:
+    name: E2E Tests (external Postgres)
+    needs: e2e-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The production setup of docker-compose.yml: Postgres 18 next to the server (DATABASE_URL), not the embedded one.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: localess
+          POSTGRES_PASSWORD: localess
+          POSTGRES_DB: localess
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U localess -d localess" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm e2e:install
+
+      - name: Download the builds
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-builds
+
+      # The whole suite; scripts/start-server.mjs empties the database first and passes it as DATABASE_URL.
+      - run: pnpm e2e:run
+        env:
+          E2E_DATABASE_URL: postgres://localess:localess@localhost:5432/localess
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-postgres
+          path: apps/e2e/playwright-report
+          retention-days: 14
+
+      - name: Upload traces of failed tests
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-postgres
+          path: apps/e2e/test-results
+          retention-days: 14
+
+  e2e-docker:
+    name: E2E Smoke (Docker image)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm e2e:install
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Layers cached between runs (dependencies change less often than the code).
+      - name: Build the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: localess:e2e
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # The image as shipped, with its embedded Postgres in /data. Host networking: the tests' local webhook receiver
+      # and preview site listen on 127.0.0.1. The settings are the ones the smoke tests need (apps/e2e/tests/support/env.ts).
+      - name: Start the container
+        run: |
+          docker run -d --name localess --network host \
+            -e PORT=3100 -e HOST=127.0.0.1 -e LOCALESS_EMBEDDED_PG_PORT=5544 \
+            -e LOCALESS_ADMIN_EMAIL=admin@e2e.localess.test -e LOCALESS_ADMIN_PASSWORD=e2e-admin-password \
+            -e LOCALESS_LOGIN_RATE_LIMIT=10000 -e LOCALESS_WEBHOOK_ALLOW_INTERNAL=true \
+            localess:e2e
+          for i in $(seq 1 90); do
+            curl -sf http://localhost:3100/api/health && exit 0
+            sleep 2
+          done
+          docker logs localess
+          exit 1
+
+      - run: pnpm e2e:smoke
+        env:
+          E2E_BASE_URL: http://localhost:3100
+
+      - name: Container logs
+        if: ${{ failure() }}
+        run: docker logs localess
+
+      - name: Upload traces of failed tests
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-docker
+          path: apps/e2e/test-results
+          retention-days: 14
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-docker
+          path: apps/e2e/playwright-report
+          retention-days: 14

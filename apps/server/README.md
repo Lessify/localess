@@ -13,14 +13,17 @@ pnpm build        # tsc → dist/
 pnpm start        # node dist/main.js
 pnpm dev          # watch: SWC → dist-dev/, node --watch restarts, tsc --noEmit --watch type-checks; loads .env
 pnpm test         # vitest (starts a throwaway embedded Postgres)
+pnpm lint         # ESLint, type-aware (eslint.config.js); pnpm lint:fix applies the fixes it can
 pnpm db:generate  # drizzle-kit: SQL migration from src/infra/database/schema.ts changes (commit the output)
 pnpm db:regenerate  # before the first release: rewrite 0000_init.sql + 0001_locales.sql in place, seed kept
+pnpm db:release     # when tagging a release: record the shipped migrations in drizzle/released.json (never edited again)
 pnpm cli db:migrate
 pnpm cli check
 LOCALESS_ADMIN_PASSWORD=… pnpm cli admin:create --email admin@example.com [--name "Admin"]
 ```
 
-From the repo root: `pnpm dev` (server + web), `pnpm server:dev`, `pnpm server:test`, `pnpm server:build`.
+From the repo root: `pnpm dev` (server + web), `pnpm server:dev`, `pnpm server:test`, `pnpm server:build`, `pnpm lint`
+(web + server).
 
 `dev` compiles with SWC for fast restarts, so every type referenced in a decorated signature (constructor
 injection, `@Body()` parameters) must be imported with `type` (`import { DATABASE, type Database }`);
@@ -32,7 +35,9 @@ drizzle-kit, and `drizzle/0001_locales.sql`, a drizzle custom migration that see
 gets both on its first boot (or `pnpm localess db:migrate`). Until the first release they are regenerated
 in place on a schema change with `pnpm db:regenerate` (`scripts/db-regenerate.mjs`: drizzle-kit writes
 both again and the locales seed is kept as it is), then local `.data` is recreated. After a release,
-schema changes are new migrations. Without `DATABASE_URL` it starts an embedded Postgres in
+schema changes are new migrations: tagging a release runs `pnpm db:release`, which records the shipped migrations
+with a hash of their SQL in `drizzle/released.json`; from then on `released-migrations.test.ts` fails if one is
+edited, removed or reordered, and `db:regenerate` refuses to run. Without `DATABASE_URL` it starts an embedded Postgres in
 `$LOCALESS_DATA_DIR/pgdata`.
 
 ## Layout
@@ -41,19 +46,20 @@ schema changes are new migrations. Without `DATABASE_URL` it starts an embedded 
 src/
   main.ts · cli.ts · app.module.ts · app.factory.ts
   infra/        config, database (Drizzle schema, migrations, embedded Postgres), storage,
-                events (pg_notify → SSE), static (SPA), health, http (App API helpers; v1/ public API plumbing)
+                events (pg_notify; served as SSE by modules/events), static (SPA), health, http (App API helpers; v1/ public API plumbing)
   auth/         sign-in, layered like a module (controllers/, services/, repositories/, utils/): sessions, OAuth,
-                password reset, the guard and decorators, ApiTokensModule (v1 token check)
+                password reset, the guard and decorators, ApiTokenModule (v1 token check)
   shared/       SharedModule (global): mail, webhook delivery; transformers, data rules, shared utils
   modules/      independent features, a folder per layer inside (controllers/, services/, repositories/,
-                utils/, workers/: docs/server-architecture.md) — spaces, settings, schemas (+ OpenAPI),
-                contents, translations, assets, tokens, webhooks, tasks, plugins, users (+ me, first admin),
-                firebase-import
+                utils/, workers/: docs/server/architecture.md) — spaces (+ locales, environments, API
+                tokens), settings, schemas (+ OpenAPI), contents, translations, assets, webhooks, tasks,
+                plugins, users (+ me, first admin),
+                firebase-import, events (the SSE change stream)
   cli/          commands, check
 ```
 
-Domain types, permission rules and validators come from `@localess/shared` (`packages/shared`). A feature
-module imports `ApiTokensModule` when it has a CDN or Management controller and no other feature module (a space it needs
+Domain types, role lists and validators come from `@localess/shared` (`packages/shared`). A feature
+module imports `ApiTokenModule` when it has a CDN or Management controller and no other feature module (a space it needs
 is read with its own query); infrastructure modules (database, storage, events) and `SharedModule` are global.
 
 ## Environment
@@ -68,12 +74,15 @@ is read with its own query); infrastructure modules (database, storage, events) 
 | `LOCALESS_FFMPEG_PATH` | `ffmpeg` on PATH | ffmpeg binary for video thumbnails |
 | `LOCALESS_UPLOAD_MAX_MB` | `1024` | Largest asset / import upload |
 | `LOCALESS_RENDITION_CACHE` | `disk` | `disk`: keep generated image renditions in storage; `off`: transform every request, store nothing (behind a CDN) |
-| `DEEPL_API_KEY` | – | Machine translation via DeepL (preferred) |
-| `GOOGLE_CLOUD_PROJECT` / `LOCALESS_GOOGLE_TRANSLATE_LOCATION` | – / `global` | Machine translation via Google Cloud Translation (credentials from ADC) |
+| `DEEPL_API_KEY` | – | Machine translation via DeepL; locks DeepL in Admin → Settings → Integrations |
+| `GOOGLE_CLOUD_PROJECT` / `LOCALESS_GOOGLE_TRANSLATE_LOCATION` | – / `global` | Machine translation via Google Cloud Translation (credentials from ADC); locks Google there |
+| `LOCALESS_TRANSLATE_PRIMARY` | – | `deepl` or `google`: tried first when both are connected |
 | `LOCALESS_TRANSLATE_PROVIDER` | – | `stub` echoes inputs (development) |
-| `UNSPLASH_API_KEY` | – | Enables the Unsplash asset picker |
+| `UNSPLASH_API_KEY` | – | Enables the Unsplash asset picker; locks Unsplash there |
+| `LOCALESS_SECRET_KEY` | `$LOCALESS_DATA_DIR/secret.key` (generated) | Encrypts integration keys saved in the app (32+ characters) |
 | `LOCALESS_WEBHOOK_ALLOW_INTERNAL` | `false` | Let webhooks reach private/loopback addresses (local development only) |
 | `LOCALESS_TASK_WORKER` | `true` | Run export/import tasks on this instance |
+| `LOCALESS_TASK_CONCURRENCY` | `1` | Tasks one instance runs at once (a space never runs two) |
 | `LOCALESS_STATIC_DIR` | `../web/dist/browser` (i.e. `apps/web/dist/browser`) | Angular build to serve; empty → API only |
 | `LOCALESS_LOG_LEVEL` | `log` | `fatal`…`verbose`; `debug` includes the embedded Postgres log |
 | `LOCALESS_PUBLIC_URL` | request origin | Public origin for OAuth callbacks and reset links |
@@ -90,12 +99,10 @@ is read with its own query); infrastructure modules (database, storage, events) 
 ## Authentication
 
 - Session cookie `localess_session` (HttpOnly, SameSite=Lax, Secure on https); only its SHA-256 is
-  stored. 30-day sliding expiry. Role and permissions are read from `users` on every request.
+  stored. 30-day sliding expiry. The role is read from `users` on every request.
 - Every non-GET request authenticated by the cookie must send `X-Requested-With` (CSRF).
-- Routes need a session unless `@Public()`; access rules use `@RequireAnyRole()`,
-  `@RequirePermission(...)` (any of) and `@RequireAllPermissions(...)` from `src/auth/decorators.ts`.
-- `canPerform`, `canGrant` and `canManageUser` (ported from firestore.rules and functions/src/utils) live in
-  `packages/shared/src/permissions.ts`, so the UI applies the same rules.
+- Routes need a session unless `@Public()`; `@RequireRole(role | list)` from `src/auth/decorators.ts` names who gets
+  in, with the lists of `packages/shared/src/roles.ts`, which the web's guards read too (docs/frontend-permissions.md).
 
 | Endpoint | |
 |---|---|
@@ -127,21 +134,21 @@ function, with `public`/`preview` tokens in `?token=`; the Management API (CLI, 
 ## App API (`/api/app`)
 
 What the SPA used Firestore, Storage and the callables for. Session cookie + `X-Requested-With` on
-writes; permissions as in firestore.rules (see `src/modules/*/*.controller.ts`). Responses keep the
+writes; the roles on each route (`@RequireRole`, see `src/modules/*/*.controller.ts`). Responses keep the
 Firestore document shapes plus `id`, with ISO timestamps and absent (not null) optional fields.
 
 | Area | Endpoints |
 |---|---|
-| Change events | `GET /api/app/events?spaceId=` — SSE, `event: change`, `{ spaceId, entity, id, op }`; each user gets only events for entities they may read (`shared/http/event-access.ts`, admins get all, an entity missing from its map reaches admins only) |
-| Spaces | `/api/app/spaces` CRUD, `GET …/:id/overview` (computed on request), `POST/DELETE …/:id/locales[/:locale]`, `PUT …/:id/locales/order`, `PUT …/:id/default-locale`, `POST …/:id/environments`, `PATCH/DELETE …/:id/environments/:environmentId`, `PUT …/:id/environments/order`; `GET /api/app/locales` (read-only) |
+| Change events | `GET /api/app/events` (spaces, users) and `GET /api/app/spaces/:spaceId/events` (everything in the space, the space itself included; 404 for an unknown space) — SSE, `event: change`, `{ spaceId, entity, id, op }`; each user gets only events for entities they may read (`modules/events/utils/event-access.ts`, admins get all, an entity missing from its map reaches admins only) |
+| Spaces | `/api/app/spaces` CRUD, `GET …/:id/overview` (computed on request), `GET …/:id/locales` (paged), `GET …/:id/locales/names`, `POST/DELETE …/:id/locales[/:locale]`, `POST …/:id/locales/:locale/move`, `PUT …/:id/default-locale`, `GET …/:id/environments` (paged), `GET …/:id/environments/names`, `POST …/:id/environments`, `PUT/DELETE …/:id/environments/:environmentId`, `POST …/:id/environments/:environmentId/move`; `GET /api/app/locales` (read-only) |
 | Import from Firebase (admin) | `POST /api/app/admin/firebase-import/spaces` (list a Firebase environment's spaces), `POST /api/app/admin/firebase-import` (start, 202), `GET …` (runs), `GET …/:id` (stages) |
-| Schemas | `/api/app/spaces/:s/schemas` CRUD (`:id` = UUID), `PUT …/:id/name` (rename), `POST …/template` |
-| Contents | `/api/app/spaces/:s/contents` list/`count`/get/create, `PATCH …/:id` (rename/move), `PUT …/:id/data`, `POST …/:id/clone`, `POST …/:id/publish`, `POST …/:id/unpublish`, `DELETE` |
-| Translations | `/api/app/spaces/:s/translations` CRUD, `PUT …/:id/locales/:locale`, `PUT …/:id/key` (rename; `:id` = UUID), `POST …/publish`, `POST …/translate-locale`, `DELETE` (all) |
-| Machine translation | `POST /api/app/translate` (`content` or `items`), `GET /api/app/translate/status` |
-| Assets | `/api/app/spaces/:s/assets` list/`count`/get, `POST …/folders`, `POST …/files` (multipart, fields before file), `PATCH …/:id`, `PUT …/:id/parent`, `DELETE` |
+| Schemas | `/api/app/spaces/:s/schemas` CRUD (`?type=`; `:schemaId` = UUID), `GET …/:schemaId/usage`, `PUT …/:schemaId/name` (rename); every route checks the space first |
+| Contents | `/api/app/spaces/:s/contents` list (paged: folders first; `?parentId=` (absent: root), `?deep=`, `?kind=`, `?search=`; no `data`), `GET …/folders` and `GET …/documents` (every folder, every document, light, for `SpaceStore`), `GET …/count?kind=`, get/create, `PATCH …/:contentId` (rename/move), `PUT …/:contentId/data`, `POST …/:contentId/clone`, `POST …/:contentId/publish`, `POST …/:contentId/unpublish`, `DELETE` (`:contentId` = UUID); every route checks the space first |
+| Translations | `/api/app/spaces/:s/translations` CRUD (`GET` paged and filtered), `GET …/nodes` (one level of the key tree), `GET …/labels`, `PUT …/:translationId/locales/:localeId`, `PUT …/:translationId/key` (rename; `:translationId` = UUID), `POST …/publish`, `GET …/export/:locale` (one locale as a key-value JSON download), `DELETE` (all; Translate locale is a task: `TRANSLATION_TRANSLATE`); every route checks the space first |
+| Machine translation | `POST /api/app/translate` (`content` or `items`); whether it is configured: `GET /api/config` (`translate.enabled`) |
+| Assets | `/api/app/spaces/:s/assets` list (paged: folders first; `?parentId=` (absent: root), `?deep=`, `?kind=`, `?fileType=`, `?search=`), `GET …/folders` and `GET …/files` (every folder, every file, light, for `SpaceStore`), `count?kind=`/get, `GET …/:assetId/usage`, `POST …/folders`, `POST …/files` (multipart, fields before file; an unknown field is a 400), `PATCH …/:assetId` (rename and/or move: `parentId`, null is the root, as contents), `DELETE …/:assetId`. Every route checks the space first (404 "Space not found"), then the asset (404 "Asset not found"); ids that aren't UUIDs are 404s |
 | Tokens / webhooks | `/api/app/spaces/:s/tokens` (+ `POST …/:id/regenerate`), `/api/app/spaces/:s/webhooks` (+ `PATCH …/:id/status`, `GET …/:id/logs`) |
-| Tasks | `/api/app/spaces/:s/tasks` list/get/`logs`/`download`, `POST` (exports), `POST …/import` (multipart), `DELETE` |
+| Tasks | `/api/app/spaces/:s/tasks` list/get/`logs`/`download` (each role reads the kinds it may start), `POST` (exports, Translate Locale), `POST …/import` (multipart), `DELETE` |
 | Misc | `POST /api/app/spaces/:s/open-api`, `GET /api/app/plugins/unsplash/{search,random}` |
 
 Writes are transactional; change events and the space's cache version are part of the same
@@ -149,15 +156,17 @@ transaction, and webhooks are sent only after it commits.
 
 ## Background tasks
 
-`src/modules/tasks/`: exports and imports (assets, contents, schemas, translations) and asset metadata
-regeneration, with the same archive layouts and file names as the Firebase era, so old exports import.
-The `tasks` row is the queue: `TaskWorker` claims the oldest INITIATED task with
-`FOR UPDATE SKIP LOCKED` (safe with several instances), is woken by `tasks` change events and polls
-every 30 s, and runs one task at a time. Exports stream the zip into storage; imports read only the
-expected entries from the stored zip, each size-capped, never extracting to disk. A task still
-IN_PROGRESS after an hour was interrupted and is marked ERROR (not re-run: imports may be half applied).
-`workers/` holds `TaskWorker` (the queue loop) and `TaskRunner` (dispatch by kind); each kind's job is a
-`services/*-transfer.service.ts` with its own `repositories/*-transfer.repository.ts`.
+`src/modules/tasks/`: Translations and Schemas export and import (`.localess.zip`: a manifest and JSON Lines,
+streamed both ways; old `.llt.zip` / `.lls.zip` still import; a key-value JSON into one locale), Translate Locale, and
+asset metadata regeneration ([docs/features/spaces/tasks.md](../../docs/features/spaces/tasks.md)). The `tasks` row is
+the queue: `TaskWorker` claims the oldest QUEUED task of a space with no task in progress (`FOR UPDATE SKIP LOCKED`,
+and a partial unique index stops two instances racing), is woken by `tasks` change events and polls every 30 s, and
+runs `LOCALESS_TASK_CONCURRENCY` tasks at once (default 1). Jobs publish their progress as change events (at
+most once a second, never stored) and log what they did and why they failed; imports check every line, then write in one transaction (all or nothing). A busy instance refreshes its tasks' locks
+every minute; a task IN_PROGRESS without a refresh for 5 minutes was interrupted and is marked ERROR (not re-run). A
+queued or running task can't be deleted (409). `workers/` holds `TaskWorker` (the queue slots) and
+`TaskRunner` (dispatch by kind); each kind's job is a service (`*-transfer.service.ts`,
+`translation-translate.service.ts`) with its own repository.
 
 ## Migrating from a Firebase install
 

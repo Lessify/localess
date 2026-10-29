@@ -1,22 +1,28 @@
 <hlm-dialog-header>
-  <h2 hlmDialogTitle>
+  <!-- The title, then the actions; on a narrow screen the actions wrap under it (pr-8: the close button). -->
+  <h2 hlmDialogTitle class="flex flex-wrap items-center gap-2 pr-8">
     <span>Assets</span>
-    <div class="float-right mt-1 mr-8 flex items-center gap-4">
-      @if (fileUploadQueue().length > 0) {
-        <span hlmBadge class="h-6">
-          <hlm-spinner />
-          Uploading ... ({{ fileUploadQueue().length }})
-        </span>
-      }
+    <div class="ml-auto flex flex-wrap items-center gap-2">
+      <ll-upload-queue [queue]="uploads" />
       <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.assetDialogLayout()">
-        <button hlmToggleGroupItem value="list" hlmTooltip="List Layout" (click)="settingsStore.setAssetDialogLayout('list')">
+        <button
+          hlmToggleGroupItem
+          value="list"
+          hlmTooltip="List Layout"
+          aria-label="List Layout"
+          (click)="settingsStore.setAssetDialogLayout('list')">
           <ng-icon hlm size="sm" name="lucideLayoutList" />
         </button>
-        <button hlmToggleGroupItem value="grid" hlmTooltip="Grid Layout" (click)="settingsStore.setAssetDialogLayout('grid')">
+        <button
+          hlmToggleGroupItem
+          value="grid"
+          hlmTooltip="Grid Layout"
+          aria-label="Grid Layout"
+          (click)="settingsStore.setAssetDialogLayout('grid')">
           <ng-icon hlm size="sm" name="lucideLayoutGrid" />
         </button>
       </hlm-toggle-group>
-      @if ('ASSET_CREATE' | canUserPerform | async) {
+      @if ('CONTENT_WRITERS' | hasRole | async) {
         <button hlmBtn variant="outline" (click)="fileInput.click()">
           <ng-icon hlm size="sm" name="lucideUpload" />
           Upload Assets
@@ -25,7 +31,7 @@
       }
     </div>
   </h2>
-  @if (isLoading()) {
+  @if (page.loading()) {
     <hlm-progress class="h-0.5">
       <hlm-progress-indicator />
     </hlm-progress>
@@ -33,7 +39,7 @@
   <nav hlmBreadcrumb class="px-6 py-2">
     <ol hlmBreadcrumbList>
       <li hlmBreadcrumbItem>
-        <button hlmBreadcrumbButton (click)="navigateToFolder(null)">
+        <button hlmBreadcrumbButton aria-label="Root folder" (click)="navigateToFolder(null)">
           <ng-icon hlm size="sm" name="lucideFolderRoot" />
         </button>
       </li>
@@ -49,12 +55,20 @@
       }
     </ol>
   </nav>
+  <ll-filter-toolbar class="block px-1" [filters]="filters" (filterChange)="assetList.onFilterChange($event)" />
 </hlm-dialog-header>
 <!-- The middle grid row: the table scrolls here, so the footer stays reachable. -->
 <div class="min-h-0 overflow-x-hidden overflow-y-auto">
   @if (settingsStore.assetDialogLayout() === 'list') {
     <div llTableContainer>
-      <table ll-table [dataSource]="dataSource" llTableSort>
+      <table
+        ll-table
+        [dataSource]="dataSource"
+        llTableSort
+        llTableSortActive="name"
+        llTableSortDirection="asc"
+        [llTableSortDisableClear]="true"
+        (sortChange)="assetList.onSortChange($event)">
         <!-- Checkbox Column -->
         <ng-container llColumnDef="select">
           <th llHeaderCell *llHeaderCellDef>#</th>
@@ -80,7 +94,7 @@
             }
           </td>
         </ng-container>
-        <ng-container llColumnDef="preview">
+        <ng-container llColumnDef="preview" llColumnDefClass="hidden @lg/table:table-cell">
           <th llHeaderCell *llHeaderCellDef>Preview</th>
           <td llCell *llCellDef="let element">
             @if (element.kind === 'FILE' && filePreview(element.type)) {
@@ -90,16 +104,18 @@
                 height="200"
                 alt="thumbnail"
                 loading="lazy"
-                [loaderParams]="{ thumbnail: true }"
-                ngSrc="/api/v1/spaces/{{ context.spaceId }}/assets/{{ element.id }}" />
+                src="/api/app/spaces/{{ context.spaceId }}/assets/{{ element.id }}/thumbnail" />
             }
           </td>
         </ng-container>
         <ng-container llColumnDef="name">
-          <th llHeaderCell *llHeaderCellDef>Name</th>
+          <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
           <td llCell *llCellDef="let element">
             <div>
               <div class="break-all">{{ element.name }}{{ element.extension }}</div>
+              @if (location()(element); as path) {
+                <div class="text-muted-foreground line-clamp-1 break-all">{{ path }}</div>
+              }
               @if (element.metadata; as metadata) {
                 @if (metadata.width && metadata.height) {
                   <div> W{{ metadata.width }} x H{{ metadata.height }} </div>
@@ -111,8 +127,8 @@
             </div>
           </td>
         </ng-container>
-        <ng-container llColumnDef="size">
-          <th llHeaderCell *llHeaderCellDef>File Size</th>
+        <ng-container llColumnDef="size" llColumnDefClass="hidden @lg/table:table-cell">
+          <th llHeaderCell *llHeaderCellDef llTableSortHeader="size">File Size</th>
           <td llCell *llCellDef="let element">
             @if (element.size) {
               {{ element.size | formatFileSize }}
@@ -121,8 +137,8 @@
             }
           </td>
         </ng-container>
-        <ng-container llColumnDef="type">
-          <th llHeaderCell *llHeaderCellDef>Type</th>
+        <ng-container llColumnDef="type" llColumnDefClass="hidden @md/table:table-cell">
+          <th llHeaderCell *llHeaderCellDef llTableSortHeader="type">Type</th>
           <td llCell *llCellDef="let element">
             @if (element.kind === 'FILE') {
               @if (element.type) {
@@ -135,8 +151,8 @@
             }
           </td>
         </ng-container>
-        <ng-container llColumnDef="updatedAt">
-          <th llHeaderCell *llHeaderCellDef>Updated At</th>
+        <ng-container llColumnDef="updatedAt" llColumnDefClass="hidden @md/table:table-cell">
+          <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
           <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
             {{ element.updatedAt | date: 'mediumDate' }}
           </td>
@@ -144,12 +160,25 @@
 
         <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
         <tr ll-row *llRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></tr>
+        <!-- Always declared: the table only shows a no-data row it had when the data changed; the text waits for the load. -->
+        <tr *llNoDataRow>
+          <td [attr.colspan]="displayedColumns.length">
+            @if (!page.loading()) {
+              {{ assetList.filtering() ? 'No assets match.' : 'No assets here yet.' }}
+            }
+          </td>
+        </tr>
       </table>
     </div>
   } @else {
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(192px,1fr))] gap-4 py-2">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 py-2">
       @for (item of dataSource.renderedData(); track item.id) {
-        <ll-asset-card [item]="item" [spaceId]="context.spaceId" [showFooter]="item.kind === 'FILE'" (assetSelect)="onAssetSelect($event)">
+        <ll-asset-card
+          [item]="item"
+          [spaceId]="context.spaceId"
+          [path]="location()(item)"
+          [showFooter]="item.kind === 'FILE'"
+          (assetSelect)="onAssetSelect($event)">
           @if (item.kind === 'FILE') {
             <hlm-checkbox [checked]="selection.isSelected(item)" (checkedChange)="selection.toggle(item)" />
           }
@@ -157,7 +186,7 @@
       }
     </div>
   }
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="page.total()" [(pageIndex)]="assetList.list.page" [(pageSize)]="assetList.list.size" />
 </div>
 <hlm-dialog-footer>
   <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()">

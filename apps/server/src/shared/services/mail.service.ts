@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import nodemailer, { Transporter } from 'nodemailer';
+
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 
 export interface MailMessage {

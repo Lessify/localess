@@ -754,7 +754,7 @@ Expected: PASS.
 - [ ] **Step 5: Full suite** — `pnpm server:test`. Expected: PASS. A test that counts a space's tokens or lists them right
   after creating a space through the API may now see one more; update its expected count, not the rule.
 
-- [ ] **Step 6: Add the rule to `docs/server-architecture.md`** — the `shared/data-rules/` row (line ~116): append
+- [ ] **Step 6: Add the rule to `docs/server/architecture.md`** — the `shared/data-rules/` row (line ~116): append
   "`space-tokens.ts`: `createPreviewToken`: whoever inserts a space writes its auto-generated preview token (spaces, the Firebase import)".
 
 - [ ] **Step 7: Build** (`pnpm build && pnpm lint:fix && pnpm server:build`), then **ask whether to commit** ("feat(server): every space starts with a preview token").

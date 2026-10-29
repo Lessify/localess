@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, signal, untracked } from '@angular/core';
-import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TranslateService } from '@core/services/translate.service';
@@ -55,7 +55,7 @@ export class MarkdownEditorComponent implements OnDestroy {
 
   // Input
   data = input.required<ContentData>();
-  form = input.required<AbstractControl>();
+  form = input.required<FormControl>();
   component = input.required<SchemaFieldMarkdown>();
   default = input<string>();
   selectedLocale = input.required<Locale>();

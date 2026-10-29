@@ -16,6 +16,7 @@ Project-owned, reusable components in `apps/web/src/app/shared/components/`. The
 | `ll-paginator` | [paginator.md](paginator.md) | `shared/components/paginator/`, pagination, sticky paginators |
 | `ll-tree` | [tree.md](tree.md) | `shared/components/tree/`, any tree UI, `@angular/aria` usage |
 | `ll-filter-toolbar` | [filter-toolbar.md](filter-toolbar.md) | `shared/components/filter-toolbar/`, `core/utils/filter-predicate-utils.service.ts`, table/list filtering |
+| `ll-upload-queue` | [upload-queue.md](upload-queue.md) | `shared/components/upload-queue/`, `core/utils/upload-queue.ts`, any screen that uploads files |
 
 ## When a component belongs here
 

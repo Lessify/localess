@@ -1,5 +1,6 @@
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { UserStore } from '@core/stores/user.store';
@@ -13,6 +14,7 @@ describe('apiInterceptor', () => {
   let client: HttpClient;
   const signedOut = vi.fn();
   const navigate = vi.fn();
+  const path = vi.fn(() => '/features/spaces');
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -21,6 +23,7 @@ describe('apiInterceptor', () => {
         provideHttpClientTesting(),
         { provide: UserStore, useValue: { signedOut } },
         { provide: Router, useValue: { navigate } },
+        { provide: Location, useValue: { path } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -52,5 +55,14 @@ describe('apiInterceptor', () => {
     http.expectOne('/api/auth/login').flush({}, { status: 401, statusText: 'Unauthorized' });
     await expect(call).rejects.toBeTruthy();
     expect(signedOut).not.toHaveBeenCalled();
+  });
+
+  it("stays on a sign-in page (the login page keeps its ?error=) on the session check's 401", async () => {
+    path.mockReturnValue('/auth/login?error=no-account');
+    const call = firstValueFrom(client.get('/api/auth/me'));
+    http.expectOne('/api/auth/me').flush({}, { status: 401, statusText: 'Unauthorized' });
+    await expect(call).rejects.toBeTruthy();
+    expect(signedOut).toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

@@ -1,21 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { TRANSLATION_VALUE_MAX_LENGTH, isTranslationKey } from './translation.model.js';
-import {
-  zTranslationExportArraySchema,
-  zTranslationFlatExportSchema,
-  zTranslationManageUpdateSchema,
-  zTranslationValue,
-} from './translation.zod.js';
 
-describe('zTranslationManageUpdateSchema', () => {
+import { isTranslationKey, TRANSLATION_VALUE_MAX_LENGTH } from './translation.model.js';
+import { zTranslationFile, zTranslationFlatFile, zTranslationPush, zTranslationValue } from './translation.zod.js';
+
+describe('zTranslationPush', () => {
   it.each(['add-missing', 'update-existing', 'delete-missing-key', 'delete-missing-value'])('accepts %s', type => {
-    expect(zTranslationManageUpdateSchema.safeParse({ type, values: {} }).success).toBe(true);
+    expect(zTranslationPush.safeParse({ type, values: {} }).success).toBe(true);
   });
 
   // Split into delete-missing-key (every locale) and delete-missing-value (this locale only), so a
   // caller always states the scope; the ambiguous name is gone rather than aliased.
   it('rejects the former delete-missing', () => {
-    expect(zTranslationManageUpdateSchema.safeParse({ type: 'delete-missing', values: {} }).success).toBe(false);
+    expect(zTranslationPush.safeParse({ type: 'delete-missing', values: {} }).success).toBe(false);
   });
 });
 
@@ -37,15 +33,15 @@ describe('zTranslationValue', () => {
 
   it('is the limit of every value in import files and the CLI push', () => {
     const long = 'x'.repeat(TRANSLATION_VALUE_MAX_LENGTH + 1);
-    expect(zTranslationExportArraySchema.safeParse([{ id: 'k', locales: { en: long } }]).success).toBe(false);
-    expect(zTranslationFlatExportSchema.safeParse({ k: long }).success).toBe(false);
-    expect(zTranslationManageUpdateSchema.safeParse({ type: 'add-missing', values: { k: long } }).success).toBe(false);
+    expect(zTranslationFile.safeParse([{ id: 'k', locales: { en: long } }]).success).toBe(false);
+    expect(zTranslationFlatFile.safeParse({ k: long }).success).toBe(false);
+    expect(zTranslationPush.safeParse({ type: 'add-missing', values: { k: long } }).success).toBe(false);
   });
 });
 
-describe('zTranslationExportArraySchema', () => {
+describe('zTranslationFile', () => {
   it('reads files exported with a type, which is ignored', () => {
-    const parsed = zTranslationExportArraySchema.parse([{ id: 'k', type: 'STRING', locales: { en: 'v' } }]);
+    const parsed = zTranslationFile.parse([{ id: 'k', type: 'STRING', locales: { en: 'v' } }]);
     expect(parsed).toEqual([{ id: 'k', locales: { en: 'v' } }]);
   });
 });

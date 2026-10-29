@@ -74,18 +74,11 @@ for (const group of ['apps', 'packages']) {
 const versionLinePattern = new RegExp(`(version:\\s*')[^']+(')`, 'g');
 const versionLineReplacement = `$1${newVersion}$2`;
 
-for (const rel of [
-  'apps/web/src/environments/environment.ts',
-  'apps/web/src/environments/environment.prod.ts',
-]) {
+for (const rel of ['apps/web/src/environments/environment.ts', 'apps/web/src/environments/environment.prod.ts']) {
   replaceInFile(resolve(ROOT, rel), versionLinePattern, versionLineReplacement);
 }
 
 // open-api.service.ts — match the single `version: '4.1.0'` app-version line
-replaceInFile(
-  resolve(ROOT, 'apps/server/src/modules/schemas/open-api.service.ts'),
-  versionLinePattern,
-  versionLineReplacement
-);
+replaceInFile(resolve(ROOT, 'apps/server/src/modules/schemas/open-api.service.ts'), versionLinePattern, versionLineReplacement);
 
 console.log(`\nDone. New version: ${newVersion}`);

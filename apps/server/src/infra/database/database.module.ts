@@ -1,12 +1,16 @@
 import { Global, Inject, Logger, Module, OnApplicationShutdown } from '@nestjs/common';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
+
 import { APP_CONFIG, AppConfig } from '../config/config.js';
 import { EmbeddedPostgresHandle, startEmbeddedPostgres } from './embedded-postgres.js';
 import { migrateDatabase } from './migrate.js';
+import * as relations from './relations.js';
 import * as schema from './schema.js';
 
-export type Database = NodePgDatabase<typeof schema>;
+/** The tables and their relations: what the query builder and the relational queries (`db.query`) know. */
+export const DB_SCHEMA = { ...schema, ...relations };
+export type Database = NodePgDatabase<typeof DB_SCHEMA>;
 
 export const DATABASE = Symbol('DATABASE');
 export const PG_POOL = Symbol('PG_POOL');
@@ -41,7 +45,7 @@ const EMBEDDED_POSTGRES = Symbol('EMBEDDED_POSTGRES');
     {
       provide: DATABASE,
       inject: [PG_POOL],
-      useFactory: (pool: pg.Pool): Database => drizzle(pool, { schema }),
+      useFactory: (pool: pg.Pool): Database => drizzle(pool, { schema: DB_SCHEMA }),
     },
   ],
   exports: [DATABASE, PG_POOL],

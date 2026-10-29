@@ -1,17 +1,17 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { Content, ContentDocument, ContentFolder, ContentKind, Schema, SchemaType, Token, TokenType } from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
-import { SchemaService } from '@core/services/schema.service';
-import { TaskService } from '@core/services/task.service';
-import { TokenService } from '@core/services/token.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
+
+import { withFullSlugs } from '@core/utils/content-summaries';
 
 import { ContentsComponent } from './contents.component';
 
@@ -30,14 +30,20 @@ function folder(overrides: Partial<ContentFolder> = {}): ContentFolder {
   } as unknown as ContentFolder;
 }
 
+/** Lets the page's resource take the answer (it resolves through a promise), then runs the effects. */
+const settle = async () => {
+  TestBed.tick();
+  await new Promise(resolve => setTimeout(resolve));
+  TestBed.tick();
+};
+
 describe('ContentsComponent', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   function setup(contents: Content[] = [], schemas: Schema[] = [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema]) {
-    const findAllSchemas = vi.fn().mockReturnValue(of(schemas));
-    const findAllContents = vi.fn().mockReturnValue(of(contents));
+    const findAll = vi.fn().mockReturnValue(of({ items: contents, page: 0, size: 20, total: contents.length }));
     const createDocument = vi.fn().mockReturnValue(of(undefined));
     const createFolder = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
@@ -46,8 +52,6 @@ describe('ContentsComponent', () => {
     const cloneDocument = vi.fn().mockReturnValue(of(undefined));
     const publish = vi.fn().mockReturnValue(of(undefined));
     const unpublish = vi.fn().mockReturnValue(of(undefined));
-    const createContentImportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
-    const createContentExportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
     const firstValue = vi.fn().mockReturnValue(of('token1'));
     const navigate = vi.fn();
     const success = vi.fn();
@@ -55,35 +59,50 @@ describe('ContentsComponent', () => {
     const open = vi.fn();
     const changeContentFolder = vi.fn();
     const contentFolderId = signal<string | null>(null);
-    const findAllFolders = vi.fn().mockReturnValue(of([{ id: 'f1', name: 'Blog', slug: 'blog' }, { id: 'f2', name: '2026', slug: '2026', parentId: 'f1' }]));
+    // What SpaceStore holds: two folders and the contents given.
+    const known = withFullSlugs([
+      { id: 'f1', kind: ContentKind.FOLDER, name: 'Blog', slug: 'blog' },
+      { id: 'f2', kind: ContentKind.FOLDER, name: '2026', slug: '2026', parentId: 'f1' },
+      ...contents.map(it =>
+        it.kind === ContentKind.FOLDER
+          ? { id: it.id, kind: ContentKind.FOLDER as const, parentId: it.parentId, name: it.name, slug: it.slug }
+          : { id: it.id, kind: ContentKind.DOCUMENT as const, parentId: it.parentId, name: it.name, slug: it.slug, updatedAt: '' },
+      ),
+    ]);
 
     TestBed.overrideComponent(ContentsComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SchemaService, useValue: { findAll: findAllSchemas } },
         {
           provide: ContentService,
           useValue: {
-            findAll: findAllContents,
-            findAllFolders,
+            findAll,
             createDocument,
             createFolder,
             update,
-            delete: deleteContent,
+            remove: deleteContent,
             move,
-            cloneDocument,
+            clone: cloneDocument,
             publish,
             unpublish,
           },
         },
-        { provide: TaskService, useValue: { createContentImportTask, createContentExportTask } },
-        { provide: TokenService, useValue: { firstValue } },
+        { provide: SpaceTokenService, useValue: { firstValue } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: Router, useValue: { navigate } },
-        { provide: SpaceStore, useValue: { contentFolderId, changeContentFolder } },
+        {
+          provide: SpaceStore,
+          useValue: {
+            contentFolderId,
+            changeContentFolder,
+            schemas: signal(schemas),
+            contents: signal(known),
+            contentFolders: signal(known.filter(it => it.kind === ContentKind.FOLDER)),
+          },
+        },
       ],
     });
     const fixture = TestBed.createComponent(ContentsComponent);
@@ -91,8 +110,7 @@ describe('ContentsComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
-      findAllSchemas,
-      findAllContents,
+      findAll,
       createDocument,
       createFolder,
       update,
@@ -101,8 +119,6 @@ describe('ContentsComponent', () => {
       cloneDocument,
       publish,
       unpublish,
-      createContentImportTask,
-      createContentExportTask,
       firstValue,
       navigate,
       success,
@@ -110,19 +126,58 @@ describe('ContentsComponent', () => {
       open,
       changeContentFolder,
       contentFolderId,
-      findAllFolders,
     };
   }
 
-  it('loads schemas and sorted contents on init', () => {
+  /** The query of the last page read. */
+  const lastQuery = (findAll: ReturnType<typeof setup>['findAll']) => (findAll.mock.calls.at(-1)?.[1] as HttpParams).toString();
+
+  it("loads the root's first page in the server's order, and the ROOT schemas from the store", async () => {
     const b = doc({ id: 'b', name: 'B' });
     const a = doc({ id: 'a', name: 'A' });
-    const { component, findAllSchemas, findAllContents } = setup([b, a]);
+    const { component, findAll } = setup(
+      [b, a],
+      [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema, { id: 'n1', name: 'n1', type: SchemaType.NODE } as Schema],
+    );
+    await settle();
 
-    expect(findAllSchemas).toHaveBeenCalledWith('space-1', SchemaType.ROOT);
-    expect(findAllContents).toHaveBeenCalledWith('space-1', undefined);
-    expect(component.dataSource.filteredData().map(c => c.id)).toEqual(['a', 'b']);
-    expect(component.isLoading()).toBe(false);
+    expect(findAll.mock.calls.at(-1)?.[0]).toBe('space-1');
+    expect(lastQuery(findAll)).toBe('page=0&size=20');
+    expect(component.dataSource.filteredData().map(c => c.id)).toEqual(['b', 'a']);
+    expect(component.page.total()).toBe(2);
+    expect(component.schemas().map(it => it.name)).toEqual(['s1']);
+    expect(component.page.loading()).toBe(false);
+  });
+
+  it('sends the search and the scope, and a sort, from the first page', () => {
+    const { component, findAll } = setup();
+    component.contentList.list.page.set(2);
+    TestBed.tick();
+
+    component.contentList.onFilterChange({ search: ' blog ', scope: 'deep' });
+    TestBed.tick();
+    expect(lastQuery(findAll)).toBe('page=0&size=20&search=blog&deep=true');
+    expect(component.contentList.deep()).toBe(true);
+
+    component.contentList.onSortChange({ active: 'updatedAt', direction: 'desc' });
+    TestBed.tick();
+    expect(lastQuery(findAll)).toBe('page=0&size=20&sort=updatedAt&direction=desc&search=blog&deep=true');
+
+    component.contentList.onFilterChange({ search: '', scope: 'folder' });
+    TestBed.tick();
+    expect(component.contentList.deep()).toBe(false);
+  });
+
+  it('tells a failed load, and loads again on the next change', async () => {
+    const { component, findAll, error } = setup();
+    findAll.mockReturnValueOnce(throwError(() => new Error('boom')));
+    component.contentList.onFilterChange({ search: 'x', scope: '' });
+    await settle();
+    expect(error).toHaveBeenCalledWith('Contents can not be loaded.');
+
+    component.contentList.onFilterChange({ search: 'y', scope: '' });
+    TestBed.tick();
+    expect(lastQuery(findAll)).toBe('page=0&size=20&search=y');
   });
 
   describe('openAddDocumentDialog', () => {
@@ -135,7 +190,8 @@ describe('ContentsComponent', () => {
 
       expect(open).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ context: expect.objectContaining({ reservedNames: ['Page'], reservedSlugs: ['page'] }) }),
+        // Every item in the folder (from SpaceStore), not only the page shown: the Blog folder at the root too.
+        expect.objectContaining({ context: expect.objectContaining({ reservedNames: ['Blog', 'Page'], reservedSlugs: ['blog', 'page'] }) }),
       );
       expect(createDocument).toHaveBeenCalledWith('space-1', undefined, model);
       expect(success).toHaveBeenCalledWith('Document has been created.');
@@ -153,7 +209,9 @@ describe('ContentsComponent', () => {
 
     it("shows the server's reason when the slug is taken", () => {
       const { component, open, createDocument, error } = setup();
-      createDocument.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { message: "'page' is already used" } })));
+      createDocument.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 409, error: { message: "'page' is already used" } })),
+      );
       open.mockReturnValue({ closed$: of({ name: 'New', slug: 'page', schema: 's1' }) });
 
       component.openAddDocumentDialog();
@@ -218,7 +276,7 @@ describe('ContentsComponent', () => {
         expect.anything(),
         expect.objectContaining({ context: expect.objectContaining({ title: 'Delete Folder' }) }),
       );
-      expect(deleteContent).toHaveBeenCalledWith('space-1', element);
+      expect(deleteContent).toHaveBeenCalledWith('space-1', element.id);
       expect(success).toHaveBeenCalledWith("Folder 'Folder' has been deleted.");
     });
 
@@ -229,7 +287,7 @@ describe('ContentsComponent', () => {
 
       component.openDeleteDialog(element);
 
-      expect(deleteContent).toHaveBeenCalledWith('space-1', element);
+      expect(deleteContent).toHaveBeenCalledWith('space-1', element.id);
       expect(success).toHaveBeenCalledWith("Document 'Page' has been deleted.");
     });
 
@@ -275,7 +333,7 @@ describe('ContentsComponent', () => {
 
       component.openCloneDialog(element);
 
-      expect(cloneDocument).toHaveBeenCalledWith('space-1', element);
+      expect(cloneDocument).toHaveBeenCalledWith('space-1', element.id);
       expect(success).toHaveBeenCalledWith("Document 'Page' has been cloned.");
     });
 
@@ -323,6 +381,21 @@ describe('ContentsComponent', () => {
       expect(unpublish).toHaveBeenCalledWith('space-1', 'c1');
       expect(success).toHaveBeenCalledWith("Document 'Page' has been unpublished.");
     });
+
+    it('reports a failed publish or unpublish as an error, not a success', () => {
+      const { component, open, publish, unpublish, success, error } = setup();
+      open.mockReturnValue({ closed$: of(true) });
+      publish.mockReturnValue(throwError(() => new Error('boom')));
+      unpublish.mockReturnValue(throwError(() => new Error('boom')));
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      component.openPublishDialog(doc({ name: 'Page' }));
+      component.openUnpublishDialog(doc({ name: 'Page' }));
+
+      expect(error).toHaveBeenCalledWith("Document 'Page' can not be published.");
+      expect(error).toHaveBeenCalledWith("Document 'Page' can not be unpublished.");
+      expect(success).not.toHaveBeenCalled();
+    });
   });
 
   describe('onRowSelect', () => {
@@ -335,7 +408,10 @@ describe('ContentsComponent', () => {
     });
 
     it('resolves the document schema by name, not by the schema row id', () => {
-      const { component, navigate, error } = setup([], [{ id: '0190a3b4-0000-7000-8000-000000000001', name: 'page', type: SchemaType.ROOT } as Schema]);
+      const { component, navigate, error } = setup(
+        [],
+        [{ id: '0190a3b4-0000-7000-8000-000000000001', name: 'page', type: SchemaType.ROOT } as Schema],
+      );
 
       component.onRowSelect(doc({ id: 'c1', schema: 'page' }));
 
@@ -357,14 +433,12 @@ describe('ContentsComponent', () => {
 
       component.onRowSelect(folder({ id: 'f1', name: 'Folder', fullSlug: 'folder' }));
 
-      expect(component.isLoading()).toBe(true);
       expect(changeContentFolder).toHaveBeenCalledWith('f1');
     });
   });
 
   it('builds the breadcrumbs from the folder map, and navigates by folder id', () => {
-    const { component, changeContentFolder, contentFolderId, findAllFolders } = setup();
-    expect(findAllFolders).toHaveBeenCalledWith('space-1');
+    const { component, changeContentFolder, contentFolderId } = setup();
     expect(component.trail()).toEqual([]);
 
     contentFolderId.set('f2');
@@ -376,11 +450,26 @@ describe('ContentsComponent', () => {
     expect(changeContentFolder).toHaveBeenLastCalledWith(null);
   });
 
-  it('lists the children of the folder shown', () => {
-    const { contentFolderId, findAllContents } = setup();
+  it('lists the children of the folder shown, keeping the search and the scope', () => {
+    const { component, contentFolderId, findAll } = setup();
+    component.contentList.onFilterChange({ search: 'blog', scope: 'deep' });
     contentFolderId.set('f2');
     TestBed.tick();
-    expect(findAllContents).toHaveBeenLastCalledWith('space-1', 'f2');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&search=blog&deep=true&parentId=f2');
+  });
+
+  it('asks once for a folder opened, from its first page (never for the folder left)', async () => {
+    const { component, contentFolderId, findAll } = setup();
+    await settle();
+    component.contentList.list.page.set(2);
+    await settle();
+    findAll.mockClear();
+
+    contentFolderId.set('f1');
+    await settle();
+
+    expect(findAll).toHaveBeenCalledTimes(1);
+    expect(lastQuery(findAll)).toBe('page=0&size=20&parentId=f1');
   });
 
   describe('API links', () => {
@@ -424,29 +513,6 @@ describe('ContentsComponent', () => {
       component.openLinksV1InNewTab();
 
       expect(error).toHaveBeenCalledWith('Tokens could not be loaded');
-    });
-  });
-
-  describe('openImportDialog / openExportDialog', () => {
-    it('creates an import task and notifies success', () => {
-      const { component, open, createContentImportTask, success } = setup();
-      const file = new File(['data'], 'contents.zip');
-      open.mockReturnValue({ closed$: of({ file }) });
-
-      component.openImportDialog();
-
-      expect(createContentImportTask).toHaveBeenCalledWith('space-1', file);
-      expect(success).toHaveBeenCalledWith('Content Import Task has been created.', expect.anything());
-    });
-
-    it('creates an export task and notifies success', () => {
-      const { component, open, createContentExportTask, success } = setup();
-      open.mockReturnValue({ closed$: of({ path: 'c1' }) });
-
-      component.openExportDialog();
-
-      expect(createContentExportTask).toHaveBeenCalledWith('space-1', 'c1');
-      expect(success).toHaveBeenCalledWith('Content Export Task has been created.', expect.anything());
     });
   });
 

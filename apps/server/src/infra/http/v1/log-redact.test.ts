@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { redactQuery } from './log-redact.js';
 
 describe('redactQuery', () => {

@@ -1,26 +1,33 @@
-import { SchemaFieldKind, TokenType } from '@localess/shared';
-import { newApiToken } from '../src/shared/utils/api-token-format.js';
-import { tokenRow } from './seed.js';
-import { createHmac } from 'node:crypto';
 import { createServer, IncomingMessage, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
-import { and, eq, isNull, sql } from 'drizzle-orm';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { contents, contentSnapshots, schemas, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
-import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
-import { ContentsRepository } from '../src/modules/contents/repositories/contents.repository.js';
-import { ContentsService } from '../src/modules/contents/services/contents.service.js';
-import { transaction } from '../src/infra/database/transaction.js';
-import { subtree } from '../src/shared/queries/content-tree.query.js';
-import { lockContents } from '../src/shared/data-rules/content-snapshots.js';
+
+import { SchemaFieldKind, TokenType } from '@localess/shared';
 import { ConflictException } from '@nestjs/common';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
-import { S1, UUID_V7 } from './ids.js';
+import { and, eq, isNull, sql } from 'drizzle-orm';
+import { Webhook } from 'standardwebhooks';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
 import { newUuid } from '../src/infra/database/id.js';
+import { contents, contentSnapshots, schemas, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
+import { transaction } from '../src/infra/database/transaction.js';
+import { ContentRepository } from '../src/modules/contents/repositories/content.repository.js';
+import { ContentService } from '../src/modules/contents/services/content.service.js';
+import { lockContents } from '../src/shared/data-rules/content-snapshots.js';
+import { subtree } from '../src/shared/queries/content-tree.query.js';
+import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { newWebhookSecret } from '../src/shared/utils/webhook-signature.js';
+import { S1, UUID_V7 } from './ids.js';
+import { tokenRow } from './seed.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
+
+/** The test webhook's signing secret. */
+const SECRET = newWebhookSecret();
 
 interface Received {
   headers: IncomingMessage['headers'];
   body: string;
+  url?: string;
 }
 
 describe('app API: contents', () => {
@@ -43,25 +50,28 @@ describe('app API: contents', () => {
       ],
       defaultLocale: { id: 'en', name: 'English' },
     });
-    await t.db
-      .insert(schemas)
-      .values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }] });
+    await t.db.insert(schemas).values({
+      id: newUuid(),
+      spaceId: S1,
+      name: 'page',
+      type: 'ROOT',
+      fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }],
+    });
     await t.db.insert(tokens).values(tokenRow(S1, TokenType.PREVIEW, TOKEN, 't'));
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
-        role: 'CUSTOM',
-        permissions: ['CONTENT_READ', 'CONTENT_CREATE', 'CONTENT_UPDATE', 'CONTENT_DELETE', 'CONTENT_PUBLISH'],
+        role: 'EDITOR',
       }),
     );
-    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
+    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' }));
 
     received = [];
     receiver = createServer((request, response) => {
       let body = '';
       request.on('data', chunk => (body += chunk));
       request.on('end', () => {
-        received.push({ headers: request.headers, body });
+        received.push({ headers: request.headers, body, url: request.url });
         response.writeHead(200).end('ok');
       });
     });
@@ -71,9 +81,10 @@ describe('app API: contents', () => {
       spaceId: S1,
       name: 'site',
       enabled: true,
-      url: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}/hook`,
+      url: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}/hook?token=site-key`,
       events: ['content.published', 'content.unpublished', 'content.changed'],
-      secret: 'shh',
+      secret: SECRET,
+      headers: { Authorization: 'Bearer site-token' },
     });
   });
 
@@ -127,7 +138,7 @@ describe('app API: contents', () => {
     });
 
     it('refuses a path a concurrent write took after the check (unique index)', async () => {
-      const repository = t.app.get(ContentsRepository);
+      const repository = t.app.get(ContentRepository);
       let release!: () => void;
       const held = new Promise<void>(resolve => (release = resolve));
       let inserted!: () => void;
@@ -140,7 +151,7 @@ describe('app API: contents', () => {
       });
       await insertedYet;
       // The second one's check does not see the uncommitted row; its insert waits on the index, then fails.
-      const second = t.app.get(ContentsService).create(S1, { kind: 'FOLDER', name: 'Race 2', slug: 'race' });
+      const second = t.app.get(ContentService).create(S1, { kind: 'FOLDER', name: 'Race 2', slug: 'race' });
       const settled = second.then(
         () => 'created',
         (error: unknown) => error,
@@ -182,10 +193,15 @@ describe('app API: contents', () => {
       await editor.delete(`${base}/${other.id}`);
     });
 
-    it('lists every folder of the space for the editor', async () => {
-      const response = await reader.get(`${base}/folders`);
-      expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual([{ id: blog.id, name: 'Blog', slug: 'blog' }]);
+    it('lists every folder, and every document, of the space, light, for the editor', async () => {
+      const folders = await reader.get(`${base}/folders`);
+      expect(folders.statusCode).toBe(200);
+      expect(folders.json()).toEqual([{ id: blog.id, kind: 'FOLDER', name: 'Blog', slug: 'blog' }]);
+      const documents = await reader.get(`${base}/documents`);
+      expect(documents.statusCode).toBe(200);
+      expect(documents.json()).toEqual([
+        { id: post.id, kind: 'DOCUMENT', parentId: blog.id, name: 'Post', slug: 'post', updatedAt: expect.any(String) },
+      ]);
     });
 
     it('creates a document only for a ROOT schema of the space', async () => {
@@ -197,34 +213,64 @@ describe('app API: contents', () => {
       await t.db.delete(schemas).where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'hero')));
     });
 
-    it('lists by parent (folders first, then by name), by name prefix, by ids, and counts', async () => {
+    it('lists by parent (folders first, then by name), by search, and counts', async () => {
       await create({ kind: 'DOCUMENT', name: 'About', slug: 'about', schema: 'page' });
-      expect((await reader.get(`${base}?parentId=`)).json().map((c: { name: string }) => c.name)).toEqual(['Blog', 'About']);
-      expect((await reader.get(`${base}?name=ab`)).json().map((c: { name: string }) => c.name)).toEqual(['About']);
-      expect((await reader.get(`${base}?ids=${post.id},missing`)).json().map((c: { id: string }) => c.id)).toEqual([post.id]);
-      expect((await reader.get(`${base}?kind=DOCUMENT&limit=1`)).json()).toHaveLength(1);
+      expect((await reader.get(base)).json().items.map((c: { name: string }) => c.name)).toEqual(['Blog', 'About']);
+      expect((await reader.get(`${base}?search=ab`)).json().items.map((c: { name: string }) => c.name)).toEqual(['About']);
+      expect((await reader.get(`${base}?kind=DOCUMENT&deep=true&size=1`)).json()).toMatchObject({ total: 2, items: [expect.anything()] });
       expect((await reader.get(`${base}/count?kind=DOCUMENT`)).json()).toEqual({ count: 2 });
       expect((await reader.get(`${base}/missing`)).statusCode).toBe(404);
     });
 
-    it('gives documents UUIDv7 ids; `?ids=` matches ids exactly', async () => {
+    it('gives documents UUIDv7 ids', async () => {
       expect(post.id).toMatch(UUID_V7);
-      expect((await reader.get(`${base}?ids=not-a-uuid,${post.id}`)).json().map((c: { id: string }) => c.id)).toEqual([post.id]);
     });
   });
 
   describe('editing', () => {
-    it('saves data with its references and fires content.changed after commit', async () => {
+    it('saves data and fires content.changed after commit', async () => {
       const response = await editor.put(`${base}/${post.id}/data`, {
         data: { _id: 'r', _schema: 'page', title: 'Hello', title_i18n_de: 'Hallo' },
-        assets: ['a1'],
-        links: [],
-        references: [],
       });
-      expect(response.json()).toMatchObject({ data: { title: 'Hello' }, assets: ['a1'] });
+      expect(response.json()).toMatchObject({ data: { title: 'Hello' } });
       expect(await deliveries()).toEqual([
         { event: 'content.changed', spaceId: S1, timestamp: expect.any(String), data: { id: post.id, fullSlug: 'blog/post' } },
       ]);
+    });
+
+    it('works out what the data points to itself, whatever lists the request sends (every locale, every block)', async () => {
+      const data = {
+        _id: 'r',
+        _schema: 'page',
+        title: 'Hello',
+        title_i18n_de: 'Hallo',
+        image: { kind: 'ASSET', uri: 'asset-en' },
+        image_i18n_de: { kind: 'ASSET', uri: 'asset-de' },
+        related: { kind: 'REFERENCE', uri: 'doc-ref' },
+        blocks: [
+          {
+            _id: 'b1',
+            _schema: 'card',
+            gallery: [
+              { kind: 'ASSET', uri: 'asset-block' },
+              { kind: 'ASSET', uri: 'asset-en' },
+            ],
+            more: { kind: 'LINK', type: 'content', target: '_self', uri: 'doc-link' },
+            web: { kind: 'LINK', type: 'url', target: '_blank', uri: 'https://example.com' },
+          },
+        ],
+      };
+      // Lists that do not match the data: ignored.
+      const response = await editor.put(`${base}/${post.id}/data`, { data, assets: ['wrong'], links: [], references: ['wrong'] });
+      expect(response.statusCode).toBe(200);
+      expect(await row(post.id)).toMatchObject({
+        assets: ['asset-block', 'asset-de', 'asset-en'],
+        links: ['doc-link'],
+        references: ['doc-ref'],
+      });
+      // None sent: the same.
+      await editor.put(`${base}/${post.id}/data`, { data: { ...data, related: undefined } });
+      expect(await row(post.id)).toMatchObject({ assets: ['asset-block', 'asset-de', 'asset-en'], links: ['doc-link'], references: [] });
     });
 
     it('refuses data that is not blocks of known values, naming where', async () => {
@@ -238,22 +284,30 @@ describe('app API: contents', () => {
       ] as const) {
         const response = await save(data);
         expect(response.statusCode).toBe(400);
-        expect(response.json().issues.map((it: { path: string }) => it.path)).toContain(path);
+        expect((response.json().message as string[]).map(it => it.slice(0, it.indexOf(': ')))).toContain(path);
       }
       expect((await row(post.id)).data).toEqual(before);
     });
 
-    it('signs deliveries with the webhook secret over the exact body, and logs them', async () => {
+    it('signs deliveries as Standard Webhooks (the standardwebhooks library verifies them), and logs them', async () => {
       await editor.patch(`${base}/${post.id}`, { name: 'Post!' });
       await deliveries();
       const [delivery] = received;
       expect(delivery.headers['x-webhook-event']).toBe('content.changed');
-      expect(delivery.headers['x-webhook-signature']).toBe('sha256=' + createHmac('sha256', 'shh').update(delivery.body).digest('hex'));
+      expect(delivery.headers['webhook-signature']).toMatch(/^v1,/);
+      expect(delivery.headers['authorization']).toBe('Bearer site-token');
+      // Delivered to the URL as stored; logged without its query values.
+      expect(delivery.url).toBe('/hook?token=site-key');
+      expect(new Webhook(SECRET).verify(delivery.body, delivery.headers as Record<string, string>)).toMatchObject({
+        event: 'content.changed',
+      });
+      expect(() => new Webhook(newWebhookSecret()).verify(delivery.body, delivery.headers as Record<string, string>)).toThrow();
       const logs = await t.db
         .select()
         .from(webhookLogs)
-        .where(eq(webhookLogs.deliveryId, delivery.headers['x-webhook-delivery'] as string));
+        .where(eq(webhookLogs.deliveryId, delivery.headers['webhook-id'] as string));
       expect(logs).toEqual([expect.objectContaining({ status: 'SUCCESS', statusCode: 200, event: 'content.changed', responseBody: 'ok' })]);
+      expect(logs[0].url).toMatch(/\/hook\?token=••••$/);
     });
 
     it('renames a folder: one row, and every path under it follows', async () => {
@@ -266,9 +320,9 @@ describe('app API: contents', () => {
       expect(await item(deep.id)).toMatchObject({ parentSlug: 'news', fullSlug: 'news/2026' });
       expect(await item(nested.id)).toMatchObject({ parentSlug: 'news/2026', fullSlug: 'news/2026/deep' });
       expect(
-        (await reader.get(`${base}?parentId=`))
+        (await reader.get(base))
           .json()
-          .map((c: { fullSlug: string }) => c.fullSlug)
+          .items.map((c: { fullSlug: string }) => c.fullSlug)
           .sort(),
       ).toEqual(['about', 'blog-archive', 'news']);
       // A move is not a content.changed, as before.
@@ -321,7 +375,7 @@ describe('app API: contents', () => {
 
     it('does not leave a child behind when its folder is deleted at the same moment (foreign key)', async () => {
       const folder = await create({ kind: 'FOLDER', name: 'Gone', slug: 'gone' });
-      const repository = t.app.get(ContentsRepository);
+      const repository = t.app.get(ContentRepository);
       let release!: () => void;
       const held = new Promise<void>(resolve => (release = resolve));
       let inserted!: () => void;
@@ -337,7 +391,12 @@ describe('app API: contents', () => {
       release();
       await first;
       expect((await deleting).statusCode).toBe(204);
-      expect(await t.db.select().from(contents).where(and(eq(contents.spaceId, S1), eq(contents.parentId, folder.id)))).toEqual([]);
+      expect(
+        await t.db
+          .select()
+          .from(contents)
+          .where(and(eq(contents.spaceId, S1), eq(contents.parentId, folder.id))),
+      ).toEqual([]);
     });
 
     it('clones a document under a new slug with its data', async () => {
@@ -355,7 +414,7 @@ describe('app API: contents', () => {
     const cdn = (id: string, query = '') => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/contents/${id}?token=${TOKEN}${query}` });
     const cdnFollow = async (id: string, query = '') => {
       const redirect = await cdn(id, query);
-      return t.request({ method: 'GET', url: redirect.headers.location as string });
+      return t.request({ method: 'GET', url: redirect.headers.location });
     };
 
     it('publishes a snapshot per locale that the public API serves, moving cv', async () => {
@@ -446,8 +505,12 @@ describe('app API: contents', () => {
 
   // This file runs with LOCALESS_WEBHOOK_ALLOW_INTERNAL=true (the local receiver above).
   it('saves a local http webhook when internal targets are allowed, as delivery does', async () => {
-    const manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
-    const created = await manager.post(`/api/app/spaces/${S1}/webhooks`, { name: 'Local', url: 'http://localhost:4000/hook', events: ['content.changed'] });
+    const manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'DEVELOPER' }));
+    const created = await manager.post(`/api/app/spaces/${S1}/webhooks`, {
+      name: 'Local',
+      url: 'http://localhost:4000/hook',
+      events: ['content.changed'],
+    });
     expect(created.statusCode, created.body).toBe(201);
     expect((await manager.delete(`/api/app/spaces/${S1}/webhooks/${created.json().id}`)).statusCode).toBe(204);
   });

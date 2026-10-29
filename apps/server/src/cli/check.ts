@@ -1,10 +1,16 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+
+import { INTEGRATIONS } from '@localess/shared';
 import { count, eq } from 'drizzle-orm';
+
 import type { AppConfig } from '../infra/config/config.js';
 import type { Database } from '../infra/database/database.module.js';
-import { users } from '../infra/database/schema.js';
+import { integrationSettings, users } from '../infra/database/schema.js';
+import { createSecretBox, secretFile } from '../infra/secrets/secret-box.js';
 import type { StorageDriver } from '../infra/storage/storage.driver.js';
+import type { IntegrationSettingEntity } from '../shared/entities/integration-setting.entity.js';
+import { errorMessage } from '../shared/utils/error-message.js';
 
 export type CheckStatus = 'ok' | 'warn' | 'fail';
 export interface CheckResult {
@@ -42,7 +48,7 @@ export async function runChecks(config: AppConfig, db: Database, storage: Storag
     await storage.delete(key);
     add('storage', 'ok', `writable (${config.storageDir})`);
   } catch (error) {
-    add('storage', 'fail', `not writable (${config.storageDir}): ${error instanceof Error ? error.message : error}`);
+    add('storage', 'fail', `not writable (${config.storageDir}): ${errorMessage(error)}`);
   }
 
   try {
@@ -63,12 +69,48 @@ export async function runChecks(config: AppConfig, db: Database, storage: Storag
     config.smtp ? 'ok' : 'warn',
     config.smtp ? 'SMTP configured' : 'no SMTP — admins create reset links in Admin → Users',
   );
-  add(
-    'machine translation',
-    config.translate.provider === 'none' ? 'warn' : 'ok',
-    config.translate.provider === 'none' ? 'not configured (DEEPL_API_KEY or GOOGLE_CLOUD_PROJECT)' : config.translate.provider,
-  );
-  add('unsplash', config.unsplash ? 'ok' : 'warn', config.unsplash ? 'configured' : 'not configured (UNSPLASH_API_KEY)');
+  results.push(...(await integrationChecks(config, db)));
   if (!config.publicUrl) add('public url', 'warn', 'LOCALESS_PUBLIC_URL unset — links use the request origin (set it behind a proxy)');
+  return results;
+}
+
+/**
+ * One row per integration (env, UI, UI (not verified), key rejected, quota reached, key unreadable, switched off, off),
+ * and the secret that encrypts the keys saved in the UI.
+ */
+async function integrationChecks(config: AppConfig, db: Database): Promise<CheckResult[]> {
+  const results: CheckResult[] = [];
+  const rows = new Map((await db.select().from(integrationSettings)).map(it => [it.id, it]));
+  const box = await createSecretBox(config, false);
+  const opens = (row: IntegrationSettingEntity) => {
+    try {
+      box.open(row.secrets, row.id);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  for (const definition of INTEGRATIONS) {
+    const row = rows.get(definition.id);
+    const add = (status: CheckStatus, detail: string) => results.push({ name: definition.name, status, detail });
+    if (config.integrationEnv[definition.id]) add('ok', `env (${definition.lockEnv.join(', ')})`);
+    else if (!row) add('warn', `off (connect it in Admin → Settings → Integrations, or set ${definition.lockEnv.join(', ')})`);
+    else if (!opens(row)) add('warn', 'key unreadable: enter it again, or restore LOCALESS_SECRET_KEY / secret.key');
+    else if (!row.enabled) add('warn', 'UI, switched off');
+    else if (row.status === 'unverified') add('warn', 'UI (not verified)');
+    else if (row.status === 'rejected') add('warn', `key rejected${row.statusMessage ? `: ${row.statusMessage}` : ''}`);
+    else if (row.status === 'quota') add('warn', `quota reached${row.statusMessage ? `: ${row.statusMessage}` : ''}`);
+    else add('ok', 'UI');
+  }
+  if (config.secretKey) results.push({ name: 'secret key', status: 'ok', detail: 'LOCALESS_SECRET_KEY' });
+  else if (box.available) {
+    results.push({
+      name: 'secret key',
+      status: 'warn',
+      detail: `generated in ${secretFile(config.dataDir)}: keep the data directory persistent, and back it up apart from the database`,
+    });
+  } else {
+    results.push({ name: 'secret key', status: 'ok', detail: 'not needed yet (generated when a key is first saved in the UI)' });
+  }
   return results;
 }

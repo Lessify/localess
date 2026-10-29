@@ -1,14 +1,15 @@
+import { TokenType, WebhookEvent } from '@localess/shared';
 import { and, eq } from 'drizzle-orm';
-import { TokenType, WebHookEvent } from '@localess/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
+
+import { newUuid } from '../src/infra/database/id.js';
 import { schemas, tokens, translations } from '../src/infra/database/schema.js';
-import { newApiToken } from '../src/shared/utils/api-token-format.js';
-import { EventsService } from '../src/infra/events/events.service.js';
+import { EventService } from '../src/infra/events/event.service.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { S1, S2 } from './ids.js';
 import { seedContent, seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_PUBLIC, TOKEN_READ, tokenRow } from './seed.js';
 import { buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp } from './test-app.js';
-import { S1, S2 } from './ids.js';
-import { newUuid } from '../src/infra/database/id.js';
 
 describe('management API', () => {
   let t: TestApp;
@@ -97,11 +98,11 @@ describe('management API', () => {
   describe('translation push', () => {
     const push = (payload: unknown, value: string | null = TOKEN_MANAGEMENT) => post(`${base}/translations/de`, payload, value);
     let dispatch: MockInstance<WebhookDispatcher['dispatch']>;
-    let publish: MockInstance<EventsService['publish']>;
+    let publish: MockInstance<EventService['publish']>;
 
     beforeAll(() => {
       dispatch = vi.spyOn(t.app.get(WebhookDispatcher), 'dispatch');
-      publish = vi.spyOn(t.app.get(EventsService), 'publish');
+      publish = vi.spyOn(t.app.get(EventService), 'publish');
     });
     beforeEach(() => {
       dispatch.mockClear();
@@ -111,7 +112,7 @@ describe('management API', () => {
     /** A push that wrote something fires translation.changed and refreshes open editors; others notify nobody. */
     const expectNotified = (notified: boolean) => {
       if (notified) {
-        expect(dispatch.mock.calls).toEqual([[S1, WebHookEvent.TRANSLATION_CHANGED]]);
+        expect(dispatch.mock.calls).toEqual([[S1, WebhookEvent.TRANSLATION_CHANGED]]);
         expect(publish.mock.calls.map(([event]) => event)).toEqual([{ spaceId: S1, entity: 'translations', op: 'updated' }]);
       } else {
         expect(dispatch).not.toHaveBeenCalled();
@@ -121,7 +122,9 @@ describe('management API', () => {
 
     it('authenticates with the Bearer header only', async () => {
       expect((await post(`${base}/translations/de`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(401);
-      expect((await post(`${base}/translations/de?token=${TOKEN_MANAGEMENT}`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(401);
+      expect((await post(`${base}/translations/de?token=${TOKEN_MANAGEMENT}`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(
+        401,
+      );
       expect((await push({ type: 'add-missing', values: {} }, TOKEN_PUBLIC)).statusCode).toBe(401);
     });
 
@@ -330,11 +333,22 @@ describe('management API', () => {
     });
 
     it.each([
-      ['invalid JSON (400)', { method: 'POST', url: `/api/manage/v1/spaces/${S1}/schemas`, payload: '{not json', headers: { 'content-type': 'application/json' } }],
-      ['an unsupported content type (415)', { method: 'POST', url: `/api/manage/v1/spaces/${S1}/schemas`, payload: 'x', headers: { 'content-type': 'application/x-thing' } }],
+      [
+        'invalid JSON (400)',
+        {
+          method: 'POST',
+          url: `/api/manage/v1/spaces/${S1}/schemas`,
+          payload: '{not json',
+          headers: { 'content-type': 'application/json' },
+        },
+      ],
+      [
+        'an unsupported content type (415)',
+        { method: 'POST', url: `/api/manage/v1/spaces/${S1}/schemas`, payload: 'x', headers: { 'content-type': 'application/x-thing' } },
+      ],
       ['an unknown route (404)', { method: 'GET', url: `/api/manage/v1/spaces/${S1}/nothing-here` }],
     ] as const)('marks errors answered before the guard no-store too: %s', async (_, request) => {
-      const response = await t.request({ ...request, headers: { ...bearer(), ...('headers' in request ? request.headers : {}) } } as never);
+      const response = await t.request({ ...request, headers: { ...bearer(), ...('headers' in request ? request.headers : {}) } });
       expect(response.statusCode).toBeGreaterThanOrEqual(400);
       expect(response.headers['cache-control']).toBe('no-store');
     });

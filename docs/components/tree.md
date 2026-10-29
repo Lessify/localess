@@ -52,7 +52,8 @@ node array can be a `computed()` that rebuilds freely.
 | `selectedKey` | `model<string \| undefined>` | `undefined` | Key of the selected node. |
 | `indent` | `input<number>` | `16` | Pixels of indentation per level. |
 | `guides` | `input<boolean>` | `false` | Draw vertical indent guide lines. |
-| `nodeSelect` | `output<T>` | — | Emitted when a leaf is selected. |
+| `selectGroups` | `input<boolean>` | `false` | A node with children can be selected too (Aria's `selectable` on every item): a click selects it and opens it, as in Aria's single-selection example. For pickers whose targets have children (the content Move dialog). |
+| `nodeSelect` | `output<T>` | — | Emitted when a node is selected: a leaf, or with `selectGroups` any node. |
 
 ### `LlTreeNodeDef` — `[llTreeNodeDef]`
 
@@ -82,8 +83,9 @@ function collectGroupKeys(nodes: readonly LlTreeNode[]): ReadonlySet<string>;
 
 ## Behaviour
 
-- **Group nodes are not selectable.** A node with children toggles expansion on click
-  or Space/Enter; only leaves select and emit `nodeSelect`.
+- **Group nodes are not selectable** (unless `selectGroups`). A node with children toggles expansion on click
+  or Space/Enter; only leaves select and emit `nodeSelect`. With `selectGroups`, a click selects the node and opens
+  it; the arrow keys expand and collapse.
 - **`selectionMode` is `explicit`.** Arrow keys move focus without changing selection;
   Space/Enter selects. This keeps a detail pane from re-rendering on every keypress.
 - **Keyboard support** comes from Aria: arrows, Home/End, expand/collapse, and

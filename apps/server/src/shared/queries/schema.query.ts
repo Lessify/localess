@@ -1,9 +1,10 @@
-import { and, eq, inArray } from 'drizzle-orm';
 import { type SchemaExport, type SchemaField, SchemaType } from '@localess/shared';
+import { and, eq, inArray } from 'drizzle-orm';
+
 import { newUuid } from '../../infra/database/id.js';
 import { schemas } from '../../infra/database/schema.js';
 import type { Transaction } from '../../infra/database/transaction.js';
-import { schemaReferences, type SchemaPushPlan } from '../utils/schema.utils.js';
+import { type SchemaPushPlan, schemaReferences } from '../utils/schema.utils.js';
 
 /*
  * The write of a schema push: the CLI push (schemas) and the schema import task (tasks) apply the same plan, each in
@@ -12,7 +13,12 @@ import { schemaReferences, type SchemaPushPlan } from '../utils/schema.utils.js'
 
 /** Columns written for a pushed schema; absent fields are cleared, like `FieldValue.delete()` did. */
 function schemaColumns(schema: SchemaExport) {
-  const base = { type: schema.type, displayName: schema.displayName || null, description: schema.description || null, labels: schema.labels || null };
+  const base = {
+    type: schema.type,
+    displayName: schema.displayName || null,
+    description: schema.description || null,
+    labels: schema.labels || null,
+  };
   return schema.type === SchemaType.ENUM
     ? { ...base, previewField: null, fields: null, values: schema.values ?? null }
     : { ...base, previewField: schema.previewField || null, fields: schema.fields ?? null, values: null };

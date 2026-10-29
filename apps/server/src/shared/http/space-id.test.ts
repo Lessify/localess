@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { SpaceIdResolver } from './space-id.js';
 
 type Row = { id: string; importStatus: 'IMPORTING' | 'FAILED' | null };

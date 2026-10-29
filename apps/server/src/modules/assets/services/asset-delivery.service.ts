@@ -1,17 +1,19 @@
-import { mkdtemp, rm } from 'node:fs/promises';
-import { createWriteStream } from 'node:fs';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import ffmpeg from 'fluent-ffmpeg';
 import sharp, { type Sharp } from 'sharp';
+
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { isUuid } from '../../../infra/database/id.js';
+import { withLocalFile } from '../../../infra/storage/local-file.js';
 import { type ByteRange, STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
+import { assetFilesPrefix } from '../../../shared/data-rules/storage-deletions.js';
 import { isAnimatedPages } from '../../../shared/utils/media-pages.js';
-import { AssetsRepository } from '../repositories/assets.repository.js';
+import { AssetRepository } from '../repositories/asset.repository.js';
 import {
   applySharpTransforms,
   type AssetTransformQuery,
@@ -23,10 +25,45 @@ import {
   resolveOutputFormat,
   sourceEncoderFormat,
 } from '../utils/image-transform.js';
-import { originalKey, renditionKey } from '../utils/storage-keys.js';
+import { originalKey, previewKey, renditionKey, thumbnailKey } from '../utils/storage-keys.js';
 
 const FORMAT_MIME: Record<string, string> = { webp: 'image/webp', jpeg: 'image/jpeg', png: 'image/png', avif: 'image/avif' };
 const FORMAT_EXT: Record<string, string> = { webp: '.webp', jpeg: '.jpg', png: '.png', avif: '.avif' };
+
+/**
+ * The platform thumbnail: the longest side at most 512 px (a grid card is up to 320 px wide, sharp on 2× screens), WebP
+ * at quality 75 (transparency kept). Measured at about 16 KB on average for photos, screenshots and logos. Changing
+ * these needs the stored `renditions/thumbnail.webp` files deleted: they are served as long as they exist.
+ */
+export const THUMBNAIL_SIZE = 512;
+const THUMBNAIL_QUALITY = 75;
+const toThumbnail = (image: Sharp): Sharp =>
+  image
+    .resize(THUMBNAIL_SIZE, THUMBNAIL_SIZE, { fit: 'inside', withoutEnlargement: true })
+    .keepIccProfile()
+    .webp({ quality: THUMBNAIL_QUALITY });
+
+/**
+ * The platform preview (the preview dialog): the longest side at most 2048 px, never enlarged, WebP at quality 85 —
+ * above the thumbnail's, since it is looked at closely and q75 shows around text and sharp edges. Generated the first
+ * time an image is previewed, not on upload: most images never are. Same note as the thumbnail on changing these.
+ */
+export const PREVIEW_SIZE = 2048;
+const PREVIEW_QUALITY = 85;
+const toPreview = (image: Sharp): Sharp =>
+  image.resize(PREVIEW_SIZE, PREVIEW_SIZE, { fit: 'inside', withoutEnlargement: true }).keepIccProfile().webp({ quality: PREVIEW_QUALITY });
+
+/** The platform thumbnail of a file, and the md5 of its original (its ETag). */
+export interface Thumbnail {
+  output: Buffer;
+  md5: string | null;
+}
+
+/**
+ * The platform preview of an image: the generated WebP, or the original itself for an SVG (vector: sharp at any size)
+ * and an animation (it plays).
+ */
+export type Preview = ({ kind: 'generated' } & Thumbnail) | { kind: 'original'; stored: StoredAsset };
 
 /**
  * Two different failures, cached differently: no row means the asset doesn't exist (cache hard);
@@ -79,9 +116,12 @@ export type Rendition =
   | { kind: 'bad-request'; message: string }
   | { kind: 'rendition'; output: Buffer | undefined; contentType: string; filename: string };
 
-/** First frame of a video at `time`, as a file in `dir`. */
+/**
+ * A frame of a video at `time`, as a file in `dir`. PNG: its encoder is built into every ffmpeg, where WebP needs
+ * libwebp, which some builds lack (Homebrew's: "Encoder not found"); sharp encodes the frame to its final format.
+ */
 function extractVideoFrame(videoPath: string, dir: string, time = '00:00:01'): Promise<string> {
-  const filename = 'frame.webp';
+  const filename = 'frame.png';
   return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
       .on('end', () => resolve(join(dir, filename)))
@@ -101,11 +141,13 @@ function extractVideoFrame(videoPath: string, dir: string, time = '00:00:01'): P
 @Injectable()
 export class AssetDeliveryService {
   private readonly logger = new Logger(AssetDeliveryService.name);
+  /** Platform images being read or generated, by key: a request arriving meanwhile shares the work and the one write. */
+  private readonly platformImages = new Map<string, Promise<Buffer | undefined>>();
   /** LOCALESS_RENDITION_CACHE=disk: generated renditions are stored next to the original and served from there. */
   private readonly cacheRenditions: boolean;
 
   constructor(
-    private readonly assets: AssetsRepository,
+    private readonly assetRepository: AssetRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
     @Inject(APP_CONFIG) config: AppConfig,
   ) {
@@ -120,14 +162,16 @@ export class AssetDeliveryService {
    */
   async findLegacyAssetId(spaceId: string, assetId: string): Promise<string | undefined> {
     if (isUuid(assetId)) return undefined;
-    return this.assets.findIdByLegacyId(spaceId, assetId);
+    return this.assetRepository.findIdByLegacyId(spaceId, assetId);
   }
 
   /** `GET /assets/:id/original` and `/download`: the stored bytes, untouched. */
   async findStored(spaceId: string, assetId: string): Promise<StoredAsset | MissingAsset> {
-    const key = originalKey(spaceId, assetId);
-    const [object, asset] = await Promise.all([this.storage.stat(key), this.assets.findById(spaceId, assetId)]);
-    if (!object || !asset) return { kind: 'missing', rowExists: asset !== undefined };
+    const asset = await this.assetRepository.findOne(spaceId, assetId);
+    if (!asset?.originalName) return { kind: 'missing', rowExists: asset !== undefined };
+    const key = originalKey(spaceId, assetId, asset.originalName);
+    const object = await this.storage.stat(key);
+    if (!object) return { kind: 'missing', rowExists: true };
     return {
       kind: 'found',
       key,
@@ -153,9 +197,11 @@ export class AssetDeliveryService {
     query: AssetTransformQuery,
   ): Promise<MissingAsset | { kind: 'canonical'; query: AssetTransformQuery } | { kind: 'plan'; plan: TransformPlan }> {
     const { quality, fit, thumbnail } = query;
-    const key = originalKey(spaceId, assetId);
-    const [object, asset] = await Promise.all([this.storage.stat(key), this.assets.findById(spaceId, assetId)]);
-    if (!object || !asset) return { kind: 'missing', rowExists: asset !== undefined };
+    const asset = await this.assetRepository.findOne(spaceId, assetId);
+    if (!asset?.originalName) return { kind: 'missing', rowExists: asset !== undefined };
+    const key = originalKey(spaceId, assetId, asset.originalName);
+    const object = await this.storage.stat(key);
+    if (!object) return { kind: 'missing', rowExists: true };
     const assetType = asset.type ?? '';
     const extension = asset.extension ?? '';
     const metadata = (asset.metadata ?? undefined) as { width?: number; height?: number; pages?: number } | undefined;
@@ -171,8 +217,9 @@ export class AssetDeliveryService {
       quality,
       resizing: width !== undefined || height !== undefined,
     });
-    // What the pipeline encodes to; `format` alone decides the response's type and extension.
-    const encodeAs = format ?? sourceEncoderFormat(assetType);
+    // What the pipeline encodes to; `format` alone decides the response's type and extension. A video's frame is
+    // WebP unless asked otherwise: the frame ffmpeg hands over is a PNG, which sharp would otherwise keep.
+    const encodeAs = format ?? (assetType.startsWith('video/') ? 'webp' : sourceEncoderFormat(assetType));
     // Names what the caller asked for (download filename).
     const suffix = [width ? `w${width}` : '', height ? `h${height}` : '', format ? `f${format}` : '', fit ? `fit${fit}` : '']
       .filter(Boolean)
@@ -237,7 +284,9 @@ export class AssetDeliveryService {
       }
     }
 
-    const cacheKey = renditionKey(spaceId, assetId, plan.etagSuffix, thumbnail);
+    // The format as the extension: a video frame is WebP unless asked otherwise; an image the encoder keeps is its own.
+    const cacheExt = encodeAs ? FORMAT_EXT[encodeAs] : assetType.startsWith('video/') ? '.webp' : plan.extension.toLowerCase();
+    const cacheKey = renditionKey(spaceId, assetId, { width, height, quality, fit, frame: thumbnail }, cacheExt);
     let output: Buffer | undefined;
     let overwriteType: string | undefined;
     // True when `output` was generated (and so belongs in the rendition cache).
@@ -298,7 +347,7 @@ export class AssetDeliveryService {
       if (await this.cachedRendition(cacheKey)) {
         output = await this.storage.read(cacheKey);
       } else {
-        output = await this.videoThumbnail(key, { width, height, quality, format: encodeAs, fit });
+        output = await this.videoFrame(key, frame => applySharpTransforms(frame, { width, height, quality, format: encodeAs, fit }));
         generated = true;
       }
     }
@@ -315,15 +364,102 @@ export class AssetDeliveryService {
     return this.cacheRenditions && (await this.storage.stat(cacheKey)) !== undefined;
   }
 
-  private async videoThumbnail(key: string, options: Parameters<typeof applySharpTransforms>[1]): Promise<Buffer> {
+  /**
+   * The platform thumbnail of a file (`GET /api/app/…/assets/:id/thumbnail`): one stored WebP per asset, never enlarged;
+   * a video's frame, an animation's first frame, an SVG rasterised. Generated on the first request and stored whatever
+   * LOCALESS_RENDITION_CACHE says: every screen of the platform shows it.
+   * Undefined when the asset has none: a folder, a file that is not an image or a video, a missing or unreadable file.
+   */
+  async findThumbnail(spaceId: string, assetId: string): Promise<Thumbnail | undefined> {
+    const asset = await this.assetRepository.findOne(spaceId, assetId);
+    const type = asset?.type ?? '';
+    if (!asset?.originalName || !(type.startsWith('image/') || type.startsWith('video/'))) return undefined;
+    const source = originalKey(spaceId, assetId, asset.originalName);
+    const output = await this.platformImage(spaceId, assetId, thumbnailKey(spaceId, assetId), source, () =>
+      type.startsWith('video/') ? this.videoFrame(source, toThumbnail) : this.stillImage(source, toThumbnail),
+    );
+    return output ? { output, md5: asset.md5 } : undefined;
+  }
+
+  /**
+   * `GET /api/app/…/assets/:id/preview`, for an image: the stored `renditions/preview.webp`, generated on the first
+   * request; the original for an SVG or an animation. `undefined` when there is none (not an image, the file missing or
+   * unreadable): the dialog shows the thumbnail instead.
+   */
+  async findPreview(spaceId: string, assetId: string): Promise<Preview | undefined> {
+    const asset = await this.assetRepository.findOne(spaceId, assetId);
+    const type = asset?.type ?? '';
+    if (!asset?.originalName || !type.startsWith('image/')) return undefined;
+    const metadata = (asset.metadata ?? undefined) as { pages?: number } | undefined;
+    if (type === 'image/svg+xml' || isAnimatedPages(metadata?.pages)) {
+      const stored = await this.findStored(spaceId, assetId);
+      return stored.kind === 'found' ? { kind: 'original', stored } : undefined;
+    }
+    const source = originalKey(spaceId, assetId, asset.originalName);
+    const output = await this.platformImage(spaceId, assetId, previewKey(spaceId, assetId), source, () =>
+      this.stillImage(source, toPreview),
+    );
+    return output ? { kind: 'generated', output, md5: asset.md5 } : undefined;
+  }
+
+  /**
+   * A platform image kept at `key` (the thumbnail, the preview): served as long as it exists, else generated by `make`
+   * from the original at `source` and stored, even with the rendition cache off. `undefined` when the original is
+   * missing or can't be read. Requests for the same key at once (a grid and a list, two tabs) share one: it is
+   * registered before anything is awaited, so a second one can't slip in between the check and the write.
+   */
+  private platformImage(
+    spaceId: string,
+    assetId: string,
+    key: string,
+    source: string,
+    make: () => Promise<Buffer>,
+  ): Promise<Buffer | undefined> {
+    let job = this.platformImages.get(key);
+    if (!job) {
+      job = this.readOrMakePlatformImage(spaceId, assetId, key, source, make).finally(() => this.platformImages.delete(key));
+      this.platformImages.set(key, job);
+    }
+    return job;
+  }
+
+  private async readOrMakePlatformImage(
+    spaceId: string,
+    assetId: string,
+    key: string,
+    source: string,
+    make: () => Promise<Buffer>,
+  ): Promise<Buffer | undefined> {
+    if (await this.storage.stat(key)) return this.storage.read(key);
+    if (!(await this.storage.stat(source))) return undefined;
+    let output: Buffer;
+    try {
+      output = await make();
+    } catch (error) {
+      // An image sharp can't read, a video ffmpeg can't: the platform shows the file's icon instead.
+      this.logger.warn(`No ${key.slice(key.lastIndexOf('/') + 1, -'.webp'.length)} for asset ${assetId}: ${(error as Error).message}`);
+      return undefined;
+    }
+    await this.storage.put(key, output);
+    // Deleted while this was generated: its files were swept already, and this one would stay for good.
+    if (!(await this.assetRepository.findOne(spaceId, assetId))) await this.storage.deletePrefix(assetFilesPrefix(spaceId, assetId));
+    return output;
+  }
+
+  /** The first frame of a stored image, upright, encoded by `encode`. */
+  private async stillImage(key: string, encode: (image: Sharp) => Sharp): Promise<Buffer> {
+    return encode(sharp(await this.storage.read(key), { page: 0, pages: 1, autoOrient: true })).toBuffer();
+  }
+
+  /** A frame of a stored video, encoded by `encode`: ffmpeg reads the stored file itself where the storage keeps one. */
+  private async videoFrame(key: string, encode: (frame: Sharp) => Sharp): Promise<Buffer> {
+    // Only the frame is written here.
     const dir = await mkdtemp(join(tmpdir(), 'localess-video-'));
     try {
-      const videoPath = join(dir, 'source');
-      await pipeline(this.storage.createReadStream(key), createWriteStream(videoPath));
-      const frame = await extractVideoFrame(videoPath, dir);
-      return await applySharpTransforms(sharp(frame, { autoOrient: true }), options).toBuffer();
+      const frame = await withLocalFile(this.storage, key, videoPath => extractVideoFrame(videoPath, dir));
+      return await encode(sharp(await readFile(frame), { autoOrient: true })).toBuffer();
     } finally {
-      await rm(dir, { recursive: true, force: true });
+      await rm(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }).catch(() => undefined);
     }
   }
 }
