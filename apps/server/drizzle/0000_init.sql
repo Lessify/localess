@@ -1,3 +1,11 @@
+CREATE TABLE "app_settings" (
+	"key" text PRIMARY KEY NOT NULL,
+	"value" jsonb NOT NULL,
+	"updated_by" uuid,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "assets" (
 	"id" uuid NOT NULL,
 	"space_id" uuid NOT NULL,
@@ -73,6 +81,20 @@ CREATE TABLE "firebase_imports" (
 	"heartbeat_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"finished_at" timestamp with time zone,
 	CONSTRAINT "firebase_imports_status_check" CHECK ("firebase_imports"."status" in ('RUNNING', 'FINISHED', 'FAILED'))
+);
+--> statement-breakpoint
+CREATE TABLE "integration_settings" (
+	"id" text PRIMARY KEY NOT NULL,
+	"enabled" boolean DEFAULT true NOT NULL,
+	"secrets" text NOT NULL,
+	"hints" jsonb NOT NULL,
+	"status" text NOT NULL,
+	"status_message" text,
+	"status_at" timestamp with time zone,
+	"updated_by" uuid,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "integration_settings_status_check" CHECK ("integration_settings"."status" in ('verified', 'unverified', 'rejected', 'quota'))
 );
 --> statement-breakpoint
 CREATE TABLE "locales" (
@@ -282,6 +304,7 @@ CREATE TABLE "webhooks" (
 	CONSTRAINT "webhooks_events_check" CHECK ("webhooks"."events" <@ array['content.published', 'content.unpublished', 'content.changed', 'translation.published', 'translation.changed']::text[])
 );
 --> statement-breakpoint
+ALTER TABLE "app_settings" ADD CONSTRAINT "app_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assets" ADD CONSTRAINT "assets_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assets" ADD CONSTRAINT "assets_parent_fk" FOREIGN KEY ("space_id","parent_id") REFERENCES "public"."assets"("space_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "content_link_snapshots" ADD CONSTRAINT "content_link_snapshots_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -289,6 +312,7 @@ ALTER TABLE "content_snapshots" ADD CONSTRAINT "content_snapshots_space_id_conte
 ALTER TABLE "contents" ADD CONSTRAINT "contents_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contents" ADD CONSTRAINT "contents_parent_fk" FOREIGN KEY ("space_id","parent_id") REFERENCES "public"."contents"("space_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "firebase_imports" ADD CONSTRAINT "firebase_imports_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "integration_settings" ADD CONSTRAINT "integration_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "schemas" ADD CONSTRAINT "schemas_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
