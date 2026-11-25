@@ -62,7 +62,10 @@ describe('EditDialogComponent', () => {
   it('lets a name and slug be as long as when they were created (the validator limit, not 50)', () => {
     TestBed.configureTestingModule({
       providers: [
-        { provide: DIALOG_DATA, useValue: { content: folder({ name: 'N'.repeat(120), slug: 's'.repeat(120) }), reservedNames: [], reservedSlugs: [] } },
+        {
+          provide: DIALOG_DATA,
+          useValue: { content: folder({ name: 'N'.repeat(120), slug: 's'.repeat(120) }), reservedNames: [], reservedSlugs: [] },
+        },
         { provide: BrnDialogRef, useValue: { close: vi.fn() } },
       ],
     });

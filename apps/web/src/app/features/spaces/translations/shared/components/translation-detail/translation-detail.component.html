@@ -1,67 +1,96 @@
-<div class="overlay col-span-2 border">
+<!-- The editor fills its row: the source value scrolls inside, so the Save row stays on screen. -->
+<div class="h-full min-h-0 overflow-hidden border @4xl:col-span-2">
   @if (translation(); as translation) {
     <div class="flex h-full flex-col">
+      @if (outsideFilter()) {
+        <p
+          class="border-b border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs text-amber-900 dark:text-amber-200"
+          role="status"
+          data-testid="outside-filter">
+          Not in the current filter: this key stays here until you select another.
+        </p>
+      }
       <div class="p-2">
         <fieldset hlmFieldSet>
-          <div hlmFieldGroup class="flex flex-row justify-center gap-2">
-            <div hlmField>
-              <hlm-select [(value)]="selectedSourceLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">
-                <hlm-select-trigger class="w-full">
-                  <hlm-select-placeholder>Source Locale</hlm-select-placeholder>
-                  <ng-template hlmSelectValueTemplate let-value>
-                    <div class="flex items-center">
-                      <ll-locale-icon class="mr-2" [locale]="value.id" />
-                      {{ value.name }}
-                    </div>
-                  </ng-template>
-                </hlm-select-trigger>
-                <hlm-select-content *hlmSelectPortal>
-                  @for (locale of availableLocales(); track locale.id) {
-                    <hlm-select-item [value]="locale">
-                      <ll-locale-icon class="mr-2" [locale]="locale.id" />
-                      {{ locale.name }}
-                    </hlm-select-item>
-                  }
-                </hlm-select-content>
-              </hlm-select>
+          <!-- Two groups, source → and target with Translate: on a narrow editor the second moves under the first. -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex min-w-48 flex-1 items-center gap-2">
+              <div class="min-w-0 flex-1">
+                <label class="sr-only" for="translation-source-locale">Source Locale</label>
+                <hlm-select [(value)]="selectedSourceLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">
+                  <hlm-select-trigger class="w-full" buttonId="translation-source-locale">
+                    <hlm-select-placeholder>Source Locale</hlm-select-placeholder>
+                    <ng-template hlmSelectValueTemplate let-value>
+                      <div class="flex items-center">
+                        <ll-locale-icon class="mr-2" [locale]="value.id" />
+                        {{ value.name }}
+                      </div>
+                    </ng-template>
+                  </hlm-select-trigger>
+                  <hlm-select-content *hlmSelectPortal>
+                    @for (locale of availableLocales(); track locale.id) {
+                      <hlm-select-item [value]="locale">
+                        <ll-locale-icon class="mr-2" [locale]="locale.id" />
+                        {{ locale.name }}
+                      </hlm-select-item>
+                    }
+                  </hlm-select-content>
+                </hlm-select>
+              </div>
+              <!-- Decoration between the two selects: not a button (a hidden button could still take the focus). -->
+              <span class="inline-flex size-9 shrink-0 items-center justify-center" aria-hidden="true">
+                <ng-icon hlm size="sm" name="lucideArrowRight" />
+              </span>
             </div>
-            <button hlmBtn size="icon" variant="ghost">
-              <ng-icon hlm size="sm" name="lucideArrowRight" />
-            </button>
-            <div hlmField>
-              <hlm-select [(value)]="selectedTargetLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">
-                <hlm-select-trigger class="w-full">
-                  <hlm-select-placeholder>Target Locale</hlm-select-placeholder>
-                  <ng-template hlmSelectValueTemplate let-value>
-                    <div class="flex items-center">
-                      <ll-locale-icon class="mr-2" [locale]="value.id" />
-                      {{ value.name }}
-                    </div>
-                  </ng-template>
-                </hlm-select-trigger>
-                <hlm-select-content *hlmSelectPortal>
-                  @for (locale of availableLocales(); track locale.id) {
-                    <hlm-select-item [value]="locale">
-                      <ll-locale-icon class="mr-2" [locale]="locale.id" />
-                      {{ locale.name }}
-                    </hlm-select-item>
-                  }
-                </hlm-select-content>
-              </hlm-select>
+            <div class="flex min-w-48 flex-1 items-center gap-2">
+              <div class="min-w-0 flex-1">
+                <label class="sr-only" for="translation-target-locale">Target Locale</label>
+                <hlm-select [(value)]="selectedTargetLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">
+                  <hlm-select-trigger class="w-full" buttonId="translation-target-locale">
+                    <hlm-select-placeholder>Target Locale</hlm-select-placeholder>
+                    <ng-template hlmSelectValueTemplate let-value>
+                      <div class="flex items-center">
+                        <ll-locale-icon class="mr-2" [locale]="value.id" />
+                        {{ value.name }}
+                      </div>
+                    </ng-template>
+                  </hlm-select-trigger>
+                  <hlm-select-content *hlmSelectPortal>
+                    @for (locale of availableLocales(); track locale.id) {
+                      <hlm-select-item [value]="locale">
+                        <ll-locale-icon class="mr-2" [locale]="locale.id" />
+                        {{ locale.name }}
+                      </hlm-select-item>
+                    }
+                  </hlm-select-content>
+                </hlm-select>
+              </div>
+              <button
+                hlmBtn
+                class="shrink-0"
+                size="icon"
+                variant="outline"
+                (click)="translate()"
+                aria-label="Translate"
+                [hlmTooltip]="translateTooltip()"
+                [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
+                @if (isTranslateLoading()) {
+                  <hlm-spinner class="size-4" />
+                } @else {
+                  <ng-icon hlm size="sm" name="lucideLanguages" />
+                }
+              </button>
+              <button
+                hlmBtn
+                class="shrink-0 @4xl:hidden"
+                size="icon"
+                variant="outline"
+                aria-label="Details"
+                hlmTooltip="Details"
+                (click)="openDetails()">
+                <ng-icon hlm size="sm" name="lucideInfo" />
+              </button>
             </div>
-            <button
-              hlmBtn
-              size="icon"
-              variant="outline"
-              (click)="translate()"
-              [hlmTooltip]="translateTooltip()"
-              [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
-              @if (isTranslateLoading()) {
-                <hlm-spinner class="size-4" />
-              } @else {
-                <ng-icon hlm size="sm" name="lucideLanguages" />
-              }
-            </button>
           </div>
         </fieldset>
       </div>
@@ -72,11 +101,11 @@
         </div>
         <div aria-hidden="true" class="w-full border-t"></div>
       </div>
-      <div class="mb-auto p-2 wrap-break-word">
+      <div class="min-h-0 flex-1 overflow-y-auto p-2 wrap-break-word">
         <ll-translation-string-view [value]="translation.locales[selectedSourceLocale().id]" />
       </div>
 
-      @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
+      @if ('TRANSLATORS' | hasRole | async) {
         <div class="flex items-center">
           <div aria-hidden="true" class="w-full border-t"></div>
           <div class="relative flex justify-center">
@@ -92,6 +121,7 @@
           <button
             hlmBtn
             variant="outline"
+            aria-label="Save"
             hlmTooltip="Save the changes"
             [disabled]="isLocaleUpdateLoading() || translation.locales[selectedTargetLocale().id] === selectedTranslationLocaleValue()"
             (click)="save.emit({ translation: translation, locale: selectedTargetLocale(), value: selectedTranslationLocaleValue()! })">
@@ -108,106 +138,30 @@
     </div>
   }
 </div>
-<div class="overlay border break-all">
-  @if (translation(); as translation) {
-    <div>
-      <div class="align-items-start flex gap-2 p-2">
-        @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
-          <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit Key" (click)="openEditIdDialog(translation)">
-            <ng-icon hlm size="sm" name="lucideReplace" />
-          </button>
-          <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit" (click)="openEditDialog(translation)">
-            <ng-icon hlm size="sm" name="lucidePencil" />
-          </button>
-        }
-        @if ('TRANSLATION_DELETE' | canUserPerform | async) {
-          <button hlmBtn size="icon" variant="outline" hlmTooltip="Delete" (click)="openDeleteDialog(translation)">
-            <ng-icon hlm size="sm" name="lucideTrash" />
-          </button>
-        }
-      </div>
-      <hlm-separator />
-      <ul role="list" class="divide-y">
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all">Key</div>
-            </div>
-            <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              <code>{{ translation.key }}</code>
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                hlmTooltip="Copy Key"
-                [cdkCopyToClipboard]="translation.key"
-                (cdkCopyToClipboardCopied)="copied()">
-                <ng-icon hlm size="sm" name="lucideCopy" />
-              </button>
-            </div>
-          </div>
-        </li>
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all"> Status</div>
-            </div>
-            <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              {{ statusLabel(translation) }}
-            </div>
-          </div>
-        </li>
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all"> Description</div>
-            </div>
-            <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              @if (translation.description) {
-                {{ translation.description }}
-              } @else {
-                No description available.
-              }
-            </div>
-          </div>
-        </li>
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all"> Labels</div>
-            </div>
-            <div class="flex items-center gap-2 text-xs leading-5 break-words">
-              @for (label of translation.labels; track label) {
-                <span hlmBadge [variant]="selectedLabels().includes(label) ? 'secondary' : 'outline'">
-                  {{ label }}
-                </span>
-              } @empty {
-                No label available.
-              }
-            </div>
-          </div>
-        </li>
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all"> Created At</div>
-            </div>
-            <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              {{ translation.createdAt | date: 'medium' }}
-            </div>
-          </div>
-        </li>
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all"> Updated At</div>
-            </div>
-            <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              {{ translation.updatedAt | date: 'medium' }}
-            </div>
-          </div>
-        </li>
-      </ul>
-    </div>
-  }
-</div>
+<!-- The info panel only where the page is wide enough for a third column; narrower, the editor's Details button
+     opens the same details in a sheet from the right. -->
+<ll-translation-info
+  class="hidden h-full min-h-0 overflow-y-auto border break-all @4xl:block"
+  [translation]="translation()"
+  [availableLocales]="availableLocales()"
+  [selectedLabels]="selectedLabels()"
+  (editKey)="openEditIdDialog($event)"
+  (edit)="openEditDialog($event)"
+  (remove)="openDeleteDialog($event)" />
+
+<!-- An id of its own: Spartan numbers declared and opened dialogs with two counters that both make "brn-dialog-N". -->
+<hlm-sheet id="translation-details-sheet" side="right" [state]="detailsOpen() ? 'open' : 'closed'" (closed)="onDetailsClosed()">
+  <hlm-sheet-content *hlmSheetPortal="let ctx" class="overflow-y-auto">
+    <hlm-sheet-header>
+      <h3 hlmSheetTitle>Details</h3>
+    </hlm-sheet-header>
+    <ll-translation-info
+      class="break-all"
+      [translation]="translation()"
+      [availableLocales]="availableLocales()"
+      [selectedLabels]="selectedLabels()"
+      (editKey)="fromDetails('editKey', $event)"
+      (edit)="fromDetails('edit', $event)"
+      (remove)="fromDetails('remove', $event)" />
+  </hlm-sheet-content>
+</hlm-sheet>

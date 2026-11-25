@@ -14,8 +14,8 @@ This module lives under the **Developers** section alongside [Webhooks](../../we
 /features/spaces/:spaceId/developers/open-api
 ```
 
-There is no route guard: neither the `developers` route in `features-routing.module.ts` nor `developers-routing.module.ts` has a
-`canActivate`. `DEV_OPEN_API` only controls whether the sidebar item is shown (see [Spaces Overview](overview.md#modules)).
+The `developers` route has `roleGuard(DEVELOPERS)` (`features-routing.module.ts`), as the server's
+`@RequireRole(DEVELOPERS)` on `POST …/open-api` (see [Spaces Overview](overview.md#modules)).
 
 ## Key Files
 
@@ -37,7 +37,7 @@ The Elements bundle (~2MB) is lazy-loaded on this route only via `import('@stopl
 **Injected services:** `OpenApiService`, `SpaceStore`
 
 **Key behaviour:**
-- `ngOnInit()` — reads `spaceId` from `spaceStore.selectedSpaceId()` and calls `OpenApiService.generate(spaceId)`, which calls `POST /api/app/spaces/:spaceId/open-api` and returns the spec serialized as a string; then starts loading the Elements bundle. The endpoint requires `DEV_OPEN_API` (`@RequirePermission`; admins always pass), so it enforces the same permission the sidebar item checks
+- `ngOnInit()` — reads `spaceId` from `spaceStore.selectedSpaceId()` and calls `OpenApiService.generate(spaceId)`, which calls `POST /api/app/spaces/:spaceId/open-api` and returns the spec serialized as a string; then starts loading the Elements bundle. The endpoint requires a developer or an admin (`@RequireRole(DEVELOPERS)`), the same list the route and the sidebar item check
 - Passes the generated spec (as `apiDescriptionDocument`) to the web component for rendering
 - The spec covers all CDN endpoints: translations, links, content by slug, content by ID, assets
 

@@ -12,7 +12,7 @@
 <div class="my-3">
   <ll-filter-toolbar class="mb-3" (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort>
+    <table ll-table [dataSource]="dataSource" llTableSort (sortChange)="onSortChange($event)">
       <ng-container llColumnDef="hint">
         <th llHeaderCell *llHeaderCellDef>Token</th>
         <td llCell *llCellDef="let element">
@@ -26,13 +26,13 @@
       <ng-container llColumnDef="type">
         <th llHeaderCell *llHeaderCellDef>Type</th>
         <td llCell *llCellDef="let element">
-          <span hlmBadge variant="outline" [hlmTooltip]="typeInfo[element.type].description">
-            <ng-icon hlm size="sm" [name]="typeInfo[element.type].icon" />
-            {{ typeInfo[element.type].label }}
+          <span hlmBadge variant="outline" [hlmTooltip]="typeInfoOf(element.type).description">
+            <ng-icon hlm size="sm" [name]="typeInfoOf(element.type).icon" />
+            {{ typeInfoOf(element.type).label }}
           </span>
         </td>
       </ng-container>
-      <ng-container llColumnDef="cacheTtl">
+      <ng-container llColumnDef="cacheTtl" llColumnDefClass="hidden @3xl/table:table-cell">
         <th llHeaderCell *llHeaderCellDef>Cache TTL</th>
         <td llCell *llCellDef="let element">
           @if (element.type === 'management') {
@@ -46,7 +46,7 @@
           }
         </td>
       </ng-container>
-      <ng-container llColumnDef="updatedAt">
+      <ng-container llColumnDef="updatedAt" llColumnDefClass="hidden @3xl/table:table-cell">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
         <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
           {{ element.updatedAt | date: 'mediumDate' }}
@@ -62,17 +62,24 @@
               variant="ghost"
               [cdkCopyToClipboard]="element.token"
               (cdkCopyToClipboardCopied)="copied()"
-              hlmTooltip="Copy Token">
+              hlmTooltip="Copy Token"
+              aria-label="Copy Token">
               <ng-icon hlm size="sm" name="lucideCopy" />
             </button>
           }
-          <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit">
+          <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit" aria-label="Edit">
             <ng-icon hlm size="sm" name="lucidePencil" />
           </button>
-          <button hlmBtn size="icon" variant="ghost" (click)="openRegenerateDialog(element)" hlmTooltip="Regenerate">
+          <button
+            hlmBtn
+            size="icon"
+            variant="ghost"
+            (click)="openRegenerateDialog(element)"
+            hlmTooltip="Regenerate"
+            aria-label="Regenerate">
             <ng-icon hlm size="sm" name="lucideRefreshCw" />
           </button>
-          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltip="Delete">
+          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltip="Delete" aria-label="Delete">
             <ng-icon hlm size="sm" name="lucideTrash" />
           </button>
         </td>
@@ -85,5 +92,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

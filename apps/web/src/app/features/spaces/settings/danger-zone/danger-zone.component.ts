@@ -55,7 +55,7 @@ export class DangerZoneComponent {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.translationService.deleteAll(selectedSpaceId)),
+        switchMap(() => this.translationService.removeAll(selectedSpaceId)),
       )
       .subscribe({
         next: () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { isFlagSet } from './query-flag.js';
 
 describe('isFlagSet', () => {

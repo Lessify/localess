@@ -1,5 +1,5 @@
 <div class="flex items-center justify-end gap-2 p-2">
-  @if ('CONTENT_CREATE' | canUserPerform | async) {
+  @if ('CONTENT_WRITERS' | hasRole | async) {
     <button hlmBtn [hlmDropdownMenuTrigger]="contentCreateMenu">
       <ng-icon hlm size="sm" name="lucidePlus" />
       Add Content
@@ -17,26 +17,11 @@
       </hlm-dropdown-menu>
     </ng-template>
   }
-  <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
+  <button hlmBtn size="icon" variant="ghost" aria-label="More" [hlmDropdownMenuTrigger]="extraMenu">
     <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
   </button>
   <ng-template #extraMenu>
     <hlm-dropdown-menu>
-      @if (importExportEnabled) {
-        @if ('CONTENT_IMPORT' | canUserPerform | async) {
-          <button hlmDropdownMenuItem (click)="openImportDialog()">
-            <ng-icon hlm size="sm" name="lucideUploadCloud" />
-            Import
-          </button>
-        }
-        @if ('CONTENT_EXPORT' | canUserPerform | async) {
-          <button hlmDropdownMenuItem (click)="openExportDialog()">
-            <ng-icon hlm size="sm" name="lucideCloudDownload" />
-            Export
-          </button>
-        }
-        <hlm-dropdown-menu-separator />
-      }
       <button hlmDropdownMenuItem (click)="openLinksV1InNewTab()">
         <ng-icon hlm size="sm" name="lucideLink" />
         Links
@@ -45,17 +30,17 @@
     </hlm-dropdown-menu>
   </ng-template>
 </div>
-@if (isLoading()) {
+@if (page.loading()) {
   <hlm-progress class="h-0.5">
     <hlm-progress-indicator />
   </hlm-progress>
 }
 
 <div class="mx-auto mt-3 px-2">
-  <nav hlmBreadcrumb class="p-2">
+  <nav hlmBreadcrumb aria-label="Folders" class="p-2">
     <ol hlmBreadcrumbList>
       <li hlmBreadcrumbItem>
-        <button hlmBreadcrumbButton (click)="navigateToFolder(null)">
+        <button hlmBreadcrumbButton aria-label="Root folder" (click)="navigateToFolder(null)">
           <ng-icon name="lucideFolderRoot" />
         </button>
       </li>
@@ -72,8 +57,16 @@
     </ol>
   </nav>
 
+  <ll-filter-toolbar class="mb-3" [filters]="filters" (filterChange)="contentList.onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort>
+    <table
+      ll-table
+      [dataSource]="dataSource"
+      llTableSort
+      llTableSortActive="name"
+      llTableSortDirection="asc"
+      [llTableSortDisableClear]="true"
+      (sortChange)="contentList.onSortChange($event)">
       <ng-container llColumnDef="status">
         <th llHeaderCell *llHeaderCellDef>Status</th>
         <td llCell *llCellDef="let element">
@@ -92,15 +85,17 @@
         <td llCell *llCellDef="let element">
           <div [title]="element.name">
             <div class="line-clamp-1">{{ element.name }}</div>
-            <div class="text-muted-foreground line-clamp-1">#{{ element.slug }}</div>
+            <!-- Everything under the folder: rows from several folders, so each shows where it is. -->
+            <div class="text-muted-foreground line-clamp-1">{{ contentList.deep() ? element.fullSlug : '#' + element.slug }}</div>
           </div>
         </td>
       </ng-container>
-      <ng-container llColumnDef="schema">
+      <!-- Optional columns leave a narrow table first, so the name and the actions always fit. -->
+      <ng-container llColumnDef="schema" llColumnDefClass="hidden @md/table:table-cell">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="schema">Schema</th>
         <td llCell *llCellDef="let element">
           @if (element.kind === 'DOCUMENT') {
-            @if (schemasMapByName.get(element.schema); as schema) {
+            @if (schemasMapByName().get(element.schema); as schema) {
               {{ schema.displayName || schema.name }}
             } @else {
               unknown...
@@ -120,7 +115,7 @@
           {{ element.createdAt | date: 'mediumDate' }}
         </td>
       </ng-container>
-      <ng-container llColumnDef="updatedAt">
+      <ng-container llColumnDef="updatedAt" llColumnDefClass="hidden @lg/table:table-cell">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
         <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
           {{ element.updatedAt | date: 'mediumDate' }}
@@ -130,12 +125,18 @@
       <ng-container llColumnDef="actions">
         <th llHeaderCell *llHeaderCellDef>Actions</th>
         <td llCell *llCellDef="let element">
-          <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+          <button
+            hlmBtn
+            size="icon"
+            variant="ghost"
+            aria-label="Actions"
+            [hlmDropdownMenuTrigger]="actionsMenu"
+            (click)="$event.stopPropagation()">
             <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
           </button>
           <ng-template #actionsMenu>
             <hlm-dropdown-menu class="text-nowrap">
-              @if ('CONTENT_PUBLISH' | canUserPerform | async) {
+              @if ('CONTENT_WRITERS' | hasRole | async) {
                 <hlm-dropdown-menu-group>
                   <button hlmDropdownMenuItem (click)="openPublishDialog(element)">
                     <ng-icon hlm size="sm" name="lucideUpload" />
@@ -164,26 +165,26 @@
               </hlm-dropdown-menu-group>
               <hlm-dropdown-menu-separator />
               <hlm-dropdown-menu-group>
-                @if ('CONTENT_UPDATE' | canUserPerform | async) {
+                @if ('CONTENT_WRITERS' | hasRole | async) {
                   <button hlmDropdownMenuItem (click)="openEditDialog(element)">
                     <ng-icon hlm size="sm" name="lucidePencil" />
                     Edit
                   </button>
                 }
-                @if (('CONTENT_CREATE' | canUserPerform | async) && element.kind === 'DOCUMENT') {
+                @if (('CONTENT_WRITERS' | hasRole | async) && element.kind === 'DOCUMENT') {
                   <button hlmDropdownMenuItem (click)="openCloneDialog(element)">
                     <ng-icon hlm size="sm" name="lucideBookCopy" />
                     Clone
                   </button>
                 }
-                @if ('CONTENT_UPDATE' | canUserPerform | async) {
+                @if ('CONTENT_WRITERS' | hasRole | async) {
                   <button hlmDropdownMenuItem (click)="openMoveDialog(element)">
                     <ng-icon hlm size="sm" name="lucideFolderInput" />
                     Move
                   </button>
                 }
               </hlm-dropdown-menu-group>
-              @if ('CONTENT_DELETE' | canUserPerform | async) {
+              @if ('CONTENT_WRITERS' | hasRole | async) {
                 <hlm-dropdown-menu-separator />
                 <hlm-dropdown-menu-group>
                   <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
@@ -200,10 +201,10 @@
       <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
       <tr ll-row *llRowDef="let row; columns: displayedColumns" class="cursor-pointer" (click)="onRowSelect(row)"></tr>
       <tr *llNoDataRow>
-        <td [attr.colspan]="displayedColumns.length">No content yet.</td>
+        <td [attr.colspan]="displayedColumns.length">{{ contentList.filtering() ? 'No contents match.' : 'No content yet.' }}</td>
       </tr>
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="page.total()" [(pageIndex)]="contentList.list.page" [(pageSize)]="contentList.list.size" />
 </div>

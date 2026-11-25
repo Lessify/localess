@@ -1,14 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
 
 import { FilterDef } from './filter-toolbar.model';
 import { FilterToolbar } from './filter-toolbar.component';
 
 describe('FilterToolbar', () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   const singleFilter: FilterDef = {
     key: 'status',
     label: 'Status',
@@ -129,16 +124,54 @@ describe('FilterToolbar', () => {
     expect(component.form.value).toEqual({ search: '', status: '', labels: [] });
   });
 
-  it('emits a debounced filterChange with the current form value', async () => {
-    vi.useFakeTimers();
+  it('emits a selection at once, the search only on Enter (applySearch)', () => {
     const { component } = setup();
     const emitted: unknown[] = [];
     component.filterChange.subscribe(v => emitted.push(v));
 
     component.form.controls['search'].setValue('foo');
-    await vi.advanceTimersByTimeAsync(500);
+    expect(emitted).toEqual([]);
 
-    expect(emitted).toEqual([{ search: 'foo', status: '', labels: [] }]);
+    component.applySearch();
+    component.select(singleFilter, 'active');
+
+    expect(emitted).toEqual([
+      { search: 'foo', status: '', labels: [] },
+      { search: 'foo', status: 'active', labels: [] },
+    ]);
+  });
+
+  it('keeps the applied search while typing, and clears it when the box is emptied', () => {
+    const { component } = setup();
+    const emitted: unknown[] = [];
+    component.filterChange.subscribe(v => emitted.push(v));
+    component.form.controls['search'].setValue('foo');
+    component.applySearch();
+
+    component.form.controls['search'].setValue('fo');
+    component.form.controls['search'].setValue('');
+
+    expect(emitted).toEqual([
+      { search: 'foo', status: '', labels: [] },
+      { search: '', status: '', labels: [] },
+    ]);
+  });
+
+  it('searchPending() tells typed text from the search applied: empty, typed, searched', () => {
+    const { component } = setup();
+    expect(component.searchPending()).toBe(false);
+
+    component.form.controls['search'].setValue('foo');
+    expect(component.searchPending()).toBe(true);
+
+    component.applySearch();
+    expect(component.searchPending()).toBe(false);
+
+    component.form.controls['search'].setValue('food');
+    expect(component.searchPending()).toBe(true);
+
+    component.form.controls['search'].setValue('');
+    expect(component.searchPending()).toBe(false);
   });
 
   it('works with no filters configured', () => {

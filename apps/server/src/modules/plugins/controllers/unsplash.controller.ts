@@ -1,33 +1,26 @@
+import { CONTENT_WRITERS, type UnsplashRandomResult, type UnsplashSearch, type UnsplashSearchResult } from '@localess/shared';
+import { zUnsplashSearch } from '@localess/shared/zod';
 import { Controller, Get, Query } from '@nestjs/common';
-import { z } from 'zod';
-import { UserPermission } from '@localess/shared';
-import { RequirePermission } from '../../../auth/decorators.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
+
+import { RequireRole } from '../../../auth/decorators.js';
 import { UnsplashService } from '../services/unsplash.service.js';
 
-const searchSchema = z.object({
-  query: z.string().min(1).max(200),
-  page: z.coerce.number().optional(),
-  perPage: z.coerce.number().optional(),
-  orientation: z.enum(['landscape', 'portrait', 'squarish']).optional(),
-});
-
 /**
- * Unsplash proxy for the asset picker (was the `unsplash-search` / `unsplash-random` callables).
- * ASSET_CREATE only: it spends the operator's API quota. The key comes from UNSPLASH_API_KEY.
+ * Unsplash proxy for the asset picker (was the `unsplash-search` / `unsplash-random` callables). Content writers only:
+ * it spends the operator's API quota. The key is the Unsplash integration's (UNSPLASH_API_KEY or Admin → Settings).
  */
 @Controller('api/app/plugins/unsplash')
-@RequirePermission(UserPermission.ASSET_CREATE)
+@RequireRole(CONTENT_WRITERS)
 export class UnsplashController {
-  constructor(private readonly unsplash: UnsplashService) {}
+  constructor(private readonly unsplashService: UnsplashService) {}
 
   @Get('search')
-  search(@Query(new ZodValidationPipe(searchSchema)) query: z.infer<typeof searchSchema>) {
-    return this.unsplash.search(query);
+  search(@Query({ schema: zUnsplashSearch }) query: UnsplashSearch): Promise<UnsplashSearchResult> {
+    return this.unsplashService.search(query);
   }
 
   @Get('random')
-  random() {
-    return this.unsplash.random();
+  random(): Promise<UnsplashRandomResult> {
+    return this.unsplashService.random();
   }
 }

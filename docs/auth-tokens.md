@@ -56,9 +56,12 @@ SHA-256 (not argon2) is enough: the values are random, not chosen by people, so 
 would only slow every request.
 
 Tokens are managed in the app (Space Settings → Tokens) through `/api/app/spaces/:spaceId/tokens`
-(`apps/server/src/modules/tokens/`, `SPACE_MANAGEMENT`): list (`?type=`, `?limit=`), get, create (`{ name, type, cacheTtl? }`),
-update (`{ name, cacheTtl? }`: no type), delete, and `POST …/:id/regenerate` (same row, id, type and name, new value). `:id` is
-the UUID; anything else answers 404. Change events (SSE) carry the UUID only.
+(`SpaceTokenController` in `apps/server/src/modules/spaces/`, `DEVELOPERS`): one page (`SpaceTokenPageable`:
+`?page=&size=&sort=&direction=`, sort `createdAt` (newest first by default), `updatedAt`, `name` or `type`; `?type=` one type;
+`?search=` the name or the hint), get, create (`{ name, type, cacheTtl? }`), update (`{ name, cacheTtl? }`: no type), delete,
+and `POST …/:tokenId/regenerate` (same row, id, type and name, new value). `:spaceId` and `:tokenId` are UUIDs; anything else,
+an unknown space ("Space not found", checked first) or a token of another space answers 404. Change events (SSE) carry
+the UUID only.
 
 ---
 
@@ -113,7 +116,8 @@ const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 - `apps/server/src/shared/utils/api-token-format.ts` — `newApiToken`, `parseApiToken`, `tokenHint`, `tokenColumns`
 - `apps/server/src/shared/data-rules/space-tokens.ts` — `createPreviewToken` (the auto-generated preview token)
 - `apps/server/src/auth/token-auth.decorators.ts`, `auth/guards/` — `@CdnToken`, `@ManagementToken` and their guards
-- `apps/server/src/auth/services/token-auth.service.ts` — lookups, the CDN cache and its invalidation; `auth/repositories/api-tokens.repository.ts`
+- `apps/server/src/auth/services/token-auth.service.ts` — lookups, the CDN cache and its invalidation; `auth/repositories/api-token.repository.ts`
 - `apps/server/src/infra/http/v1/v1-error.ts` — `V1Error`, `V1ExceptionFilter`
-- `apps/server/src/modules/tokens/` — token management for the app
+- `apps/server/src/modules/spaces/` (`space-token.controller.ts`, `space-token.service.ts`, `space-token.repository.ts`) —
+  token management for the app, a sub-entity of the space like its locales and environments
 - `apps/web/src/app/features/spaces/settings/tokens/` — the tokens page, the type choice cards, the show-once dialog

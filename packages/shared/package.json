@@ -20,14 +20,20 @@
   },
   "scripts": {
     "build": "tsc -b",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "tsc -p tsconfig.test.json && vitest run"
   },
   "dependencies": {
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@eslint/js": "catalog:",
     "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-simple-import-sort": "catalog:",
     "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
     "vitest": "catalog:"
   }
 }

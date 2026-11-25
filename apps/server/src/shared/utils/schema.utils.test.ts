@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { Schema, SchemaExport, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
+import { describe, expect, it } from 'vitest';
+
 import { checkSchemaFields, docSchemaToExport, isSchemaChanged, planSchemaPush } from './schema.utils.js';
 
 // What a stored row adds to a model; the functions under test key rows by the map key, not by `id`.
@@ -414,7 +415,14 @@ describe('planSchemaPush: fields checked against the schemas after the push', ()
   it('names the schema of every field error', () => {
     const plan = planSchemaPush(
       existing,
-      [{ id: 'page', type: SchemaType.ROOT, previewField: 'nope', fields: [{ name: 'items', kind: SchemaFieldKind.SCHEMAS, schemas: ['colors'] }] }],
+      [
+        {
+          id: 'page',
+          type: SchemaType.ROOT,
+          previewField: 'nope',
+          fields: [{ name: 'items', kind: SchemaFieldKind.SCHEMAS, schemas: ['colors'] }],
+        },
+      ],
       'upsert',
     );
     expect(plan.errors).toEqual([

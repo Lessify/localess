@@ -20,17 +20,21 @@
       <legend hlmFieldLegend>Template</legend>
       <p hlmFieldDescription>Start from a ready-made set of schemas.</p>
       <hlm-radio-group formControlName="template">
-        @for (template of templates; track template.id) {
-          <label hlmFieldLabel [for]="template.id">
+        @for (template of templates(); track template.key) {
+          <label hlmFieldLabel [for]="template.key">
             <div hlmField orientation="horizontal">
               <div hlmFieldContent>
-                <div hlmFieldTitle>
+                <div hlmFieldTitle [id]="template.key + '-title'">
                   <ng-icon hlm size="sm" [name]="template.icon" />
                   {{ template.name }}
                 </div>
-                <div hlmFieldDescription>{{ template.description }}</div>
+                <div hlmFieldDescription [id]="template.key + '-description'">{{ template.description }}</div>
               </div>
-              <hlm-radio [value]="template.id" [inputId]="template.id">
+              <hlm-radio
+                [value]="template.id"
+                [inputId]="template.key"
+                [aria-labelledby]="template.key + '-title'"
+                [aria-describedby]="template.key + '-description'">
                 <hlm-radio-indicator indicator />
               </hlm-radio>
             </div>

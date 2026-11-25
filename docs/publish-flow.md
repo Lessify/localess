@@ -15,7 +15,7 @@ Every write follows the same shape on the server: one transaction that changes t
 ```
 1. User clicks "Publish" in the UI
 2. Angular ContentService → POST /api/app/spaces/:spaceId/contents/:id/publish   (CONTENT_PUBLISH)
-3. ContentsService.publish(), in one transaction:
+3. ContentService.publish(), in one transaction:
    a. reads the document (or, for a FOLDER, every DOCUMENT under it that changed since it was
       last published) and the space's schemas
    b. extracts locale-specific data for each space locale (buildDocumentStorage) and upserts one
@@ -40,7 +40,7 @@ Every write follows the same shape on the server: one transaction that changes t
 
 ```
 1. Angular → POST /api/app/spaces/:spaceId/contents/:id/unpublish   (CONTENT_PUBLISH)
-2. ContentsService.unpublish(), in one transaction:
+2. ContentService.unpublish(), in one transaction:
    - for a DOCUMENT: clears published_at and deletes its published content_snapshots rows (drafts stay)
    - for a FOLDER: does the same for every published document under the folder
    - drops both /links lists, emits change events
@@ -54,7 +54,7 @@ Every write follows the same shape on the server: one transaction that changes t
 ```
 1. User clicks "Publish Translations" in the UI
 2. Angular TranslationService → POST /api/app/spaces/:spaceId/translations/publish   (TRANSLATION_PUBLISH)
-3. TranslationsService.publish() → TranslationSnapshotsRepository.publish(), in one transaction:
+3. TranslationService.publish() → TranslationSnapshotRepository.publish(), in one transaction:
    a. takes the space's translations lock
    b. reads every translation row of the space
    c. per space locale, builds the flat key/value map, filled from the default locale
@@ -69,7 +69,7 @@ Publishing a space with no translations is allowed and serves `{}`.
 
 ## Translation Drafts
 
-Draft translations are snapshots built from the `translations` rows (`apps/server/src/modules/translations/repositories/translation-snapshots.repository.ts`). A write that changes what a draft would hold drops the space's draft snapshots in its own transaction; the first draft request after it builds every locale at once (one `built_at`, the new draft `cv`). The published `cv` doesn't move. Writes, publishes and draft builds of one space take the same lock (`pg_advisory_xact_lock` named for the space's translations; `lockTranslations` / `dropTranslationDrafts` in `apps/server/src/shared/data-rules/translation-drafts.ts`, which every module that writes translations or a space's locales calls), so a build never stores a map read before an edit that has since committed. The Firebase-era `translation-publishdraft` callable that the UI fired after every edit is gone.
+Draft translations are snapshots built from the `translations` rows (`apps/server/src/modules/translations/repositories/translation-snapshot.repository.ts`). A write that changes what a draft would hold drops the space's draft snapshots in its own transaction; the first draft request after it builds every locale at once (one `built_at`, the new draft `cv`). The published `cv` doesn't move. Writes, publishes and draft builds of one space take the same lock (`pg_advisory_xact_lock` named for the space's translations; `lockTranslations` / `dropTranslationDrafts` in `apps/server/src/shared/data-rules/translation-drafts.ts`, which every module that writes translations or a space's locales calls), so a build never stores a map read before an edit that has since committed. The Firebase-era `translation-publishdraft` callable that the UI fired after every edit is gone.
 
 Writes that drop the drafts: every translation save, delete all, machine translation, the import task, the CLI push, and adding or removing a space locale or changing the default locale (a removed locale also loses its published snapshot).
 
@@ -78,7 +78,7 @@ Writes that drop the drafts: every translation save, delete all, machine transla
 ```
 1. User saves a translation key in the UI
 2. Angular TranslationService → /api/app/spaces/:spaceId/translations[...]   (POST / PATCH / PUT / DELETE)
-3. TranslationsService.write(), in one transaction: row change + draft snapshots dropped + change events
+3. TranslationService.write(), in one transaction: row change + draft snapshots dropped + change events
 4. After commit: TRANSLATION_CHANGED webhook
 ```
 
@@ -145,12 +145,12 @@ Do not reintroduce them into a response. `stripStorageIds` uses a rest-destructu
 
 ## Implementation Files
 
-- `apps/server/src/modules/contents/services/contents.service.ts` — content `publish`/`unpublish`, webhooks after commit
-- `apps/server/src/modules/contents/repositories/contents.repository.ts` — the writes and their transaction: `write()` (snapshots dropped, change events), the publish snapshots
-- `apps/server/src/modules/translations/services/translations.service.ts` — translation `publish` and the app's writes; `repositories/translations.repository.ts` — the write transaction (row change, draft snapshots dropped, change events)
+- `apps/server/src/modules/contents/services/content.service.ts` — content `publish`/`unpublish`, webhooks after commit
+- `apps/server/src/modules/contents/repositories/content.repository.ts` — the writes and their transaction: `write()` (snapshots dropped, change events), the publish snapshots
+- `apps/server/src/modules/translations/services/translation.service.ts` — translation `publish` and the app's writes; `repositories/translation.repository.ts` — the write transaction (row change, draft snapshots dropped, change events)
 - `apps/server/src/shared/data-rules/content-snapshots.ts` — the contents lock, `dropContentDrafts`, `dropContentLinks`, `dropContentLocale`
 - `apps/server/src/modules/contents/utils/content-extract.ts` — locale extraction (`buildDocumentStorage`)
 - `apps/server/src/modules/contents/services/content-delivery.service.ts` — published/draft document reads, `/links`, link/reference/asset resolution (queries and the draft and `/links` builds in `repositories/content-delivery.repository.ts`)
 - `apps/server/src/modules/translations/services/translation-delivery.service.ts` — published/draft translation reads and the CLI push; `buildTranslationMap` in `utils/translation.utils.ts`
 - `apps/server/src/modules/tasks/services/*-transfer.service.ts` — imports; their `repositories/*-transfer.repository.ts` write each import in one transaction and drop the snapshots it makes stale (contents, translations)
-- `apps/server/src/modules/translations/controllers/translations.management.controller.ts` — CLI translation push endpoint (Management API)
+- `apps/server/src/modules/translations/controllers/translation.management.controller.ts` — CLI translation push endpoint (Management API)

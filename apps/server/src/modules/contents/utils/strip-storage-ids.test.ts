@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { stripStorageIds } from './strip-storage-ids.js';
 
 describe('stripStorageIds', () => {
@@ -34,7 +35,8 @@ describe('stripStorageIds', () => {
   });
 
   it('is a no-op when the fields are absent', () => {
-    const result = stripStorageIds({ id: 'author-1', name: 'Jane' } as { id: string; name: string; assets?: string[] });
+    const input: { id: string; name: string; assets?: string[] } = { id: 'author-1', name: 'Jane' };
+    const result = stripStorageIds(input);
     expect(result).toEqual({ id: 'author-1', name: 'Jane' });
   });
 

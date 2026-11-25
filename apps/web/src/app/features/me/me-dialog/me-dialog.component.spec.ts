@@ -23,23 +23,23 @@ describe('MeDialogComponent', () => {
   }
 
   it('patches the form with the given context on init', () => {
-    const { component } = setup({ displayName: 'Alex', photoURL: 'https://example.com/a.png' });
+    const { component } = setup({ displayName: 'Alex', photoUrl: 'https://example.com/a.png' });
 
-    expect(component.form.value).toEqual({ displayName: 'Alex', photoURL: 'https://example.com/a.png' });
+    expect(component.form.value).toEqual({ displayName: 'Alex', photoUrl: 'https://example.com/a.png' });
   });
 
   it('leaves the form at its defaults when no context is given', () => {
     const { component } = setup(null);
 
-    expect(component.form.value).toEqual({ displayName: null, photoURL: null });
+    expect(component.form.value).toEqual({ displayName: null, photoUrl: null });
   });
 
   it('closes with the form value when saved', () => {
     const { component, close } = setup({ displayName: 'Alex' });
 
-    component.form.patchValue({ photoURL: 'https://example.com/b.png' });
+    component.form.patchValue({ photoUrl: 'https://example.com/b.png' });
     component.save();
 
-    expect(close).toHaveBeenCalledWith({ displayName: 'Alex', photoURL: 'https://example.com/b.png' });
+    expect(close).toHaveBeenCalledWith({ displayName: 'Alex', photoUrl: 'https://example.com/b.png' });
   });
 });

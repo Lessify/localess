@@ -1,16 +1,17 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AssetService } from '@core/services/asset.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { AssetFile, SchemaFieldAsset, SchemaFieldKind, Space } from '@localess/shared';
+import { SpaceStore } from '@core/stores/space.store';
+import { assetFieldFileType, AssetFile, AssetFileSummary, SchemaFieldAsset, SchemaFieldKind, Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideFile, lucideFilePlusCorner, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
 import { DIALOG_WIDTH_FULL_SCREEN, DIALOG_WIDTH_IMAGE_PREVIEW } from '@shared/components/dialog/dialog-width';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
+import { filePreview } from '@shared/models/asset.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -34,7 +35,6 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogContext } from '../asset
     CommonModule,
     ImagePreviewDirective,
     FormatFileSizePipe,
-    NgOptimizedImage,
     HlmButtonImports,
     HlmFieldImports,
     HlmIconImports,
@@ -56,7 +56,6 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogContext } from '../asset
 export class AssetSelectComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(HlmDialogService);
-  private readonly assetService = inject(AssetService);
 
   // Input
   form = input.required<FormGroup>();
@@ -65,7 +64,16 @@ export class AssetSelectComponent implements OnInit {
   /** Shared, non-translatable value viewed outside the default locale: shown, but not editable. */
   locked = input(false);
   hover = input(false);
-  asset = signal<AssetFile | undefined>(undefined);
+  private readonly spaceStore = inject(SpaceStore);
+  /** Images and videos show their thumbnail; other files an icon. */
+  protected readonly filePreview = filePreview;
+  /** The id picked (the form's value). */
+  readonly id = signal<string | undefined>(undefined);
+  /** The file picked, from `SpaceStore` (live: a rename or a new image shows at once); none when it is gone. */
+  readonly asset = computed(() => {
+    const id = this.id();
+    return id ? this.spaceStore.assetFileById().get(id) : undefined;
+  });
 
   //Settings
   settingsStore = inject(LocalSettingsStore);
@@ -74,21 +82,11 @@ export class AssetSelectComponent implements OnInit {
     if (this.form().value.kind === null) {
       this.form().patchValue({ kind: SchemaFieldKind.ASSET });
     }
-    this.loadData();
+    this.spaceStore.loadAssetFiles();
+    this.id.set(this.form().value.uri || undefined);
   }
 
-  loadData(): void {
-    const id: string | undefined = this.form().value.uri;
-    if (id) {
-      this.assetService.findById(this.space().id, id).subscribe({
-        next: asset => {
-          this.asset.set(asset as AssetFile);
-        },
-      });
-    }
-  }
-
-  openImagePreview(element: AssetFile): void {
+  openImagePreview(element: AssetFileSummary): void {
     this.dialog
       .open<void, ImagePreviewDialogContext>(ImagePreviewDialogComponent, {
         context: {
@@ -111,7 +109,7 @@ export class AssetSelectComponent implements OnInit {
         context: {
           spaceId: this.space().id,
           multiple: false,
-          fileType: this.component().fileTypes?.at(0),
+          fileType: assetFieldFileType(this.component()),
         },
         contentClass: DIALOG_WIDTH_FULL_SCREEN,
       })
@@ -119,7 +117,7 @@ export class AssetSelectComponent implements OnInit {
       .subscribe({
         next: selectedAssets => {
           if (selectedAssets && selectedAssets.length > 0) {
-            this.asset.set(selectedAssets[0]);
+            this.id.set(selectedAssets[0].id);
             this.form().patchValue({
               uri: selectedAssets[0].id,
               kind: SchemaFieldKind.ASSET,
@@ -130,7 +128,7 @@ export class AssetSelectComponent implements OnInit {
   }
 
   deleteAsset() {
-    this.asset.set(undefined);
+    this.id.set(undefined);
     this.form().controls['uri'].setValue(null);
     //this.form?.reset();
   }

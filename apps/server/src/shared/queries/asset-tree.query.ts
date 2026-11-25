@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+
 import type { Database } from '../../infra/database/database.module.js';
 import { assets } from '../../infra/database/schema.js';
 

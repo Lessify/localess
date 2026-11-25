@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
+
 import { FirebaseImportController } from './controllers/firebase-import.controller.js';
 import { AssetImportRepository } from './repositories/asset-import.repository.js';
 import { ContentImportRepository } from './repositories/content-import.repository.js';
-import { FirebaseImportsRepository } from './repositories/firebase-imports.repository.js';
+import { FirebaseImportRepository } from './repositories/firebase-import.repository.js';
 import { SchemaImportRepository } from './repositories/schema-import.repository.js';
 import { SpaceImportRepository } from './repositories/space-import.repository.js';
 import { TranslationImportRepository } from './repositories/translation-import.repository.js';
@@ -18,7 +19,7 @@ import { WebhookImportService } from './services/webhook-import.service.js';
 import { FirebaseImportRunner } from './workers/firebase-import.runner.js';
 
 /**
- * Admin → Spaces → Import from Firebase. Layered (docs/server-architecture.md) and deliberately self-contained: it
+ * Admin → Spaces → Import from Firebase. Layered (docs/server/architecture.md) and deliberately self-contained: it
  * writes every table of a space (spaces, locales, environments, webhooks, translations, schemas, assets and
  * their files, contents) with its own repositories, written for the import, and uses no other feature module. It
  * still follows the shared data rules (the content `cv` bump at the end).
@@ -35,7 +36,7 @@ import { FirebaseImportRunner } from './workers/firebase-import.runner.js';
     ContentImportService,
     ReferenceRewriteService,
     FirebaseImportRunner,
-    FirebaseImportsRepository,
+    FirebaseImportRepository,
     SpaceImportRepository,
     WebhookImportRepository,
     TranslationImportRepository,

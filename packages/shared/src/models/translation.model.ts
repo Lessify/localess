@@ -1,7 +1,4 @@
-import type { z } from 'zod';
-
 import type { Timestamp } from './timestamp.js';
-import type { zTranslationManageUpdateSchema } from './translation.zod.js';
 
 /**
  * A translation key: a letter first, then letters, digits, `-`, `_` or `.`, ending in a letter or digit (the nested
@@ -30,40 +27,41 @@ export interface Translation {
   updatedAt: Timestamp;
 }
 
-export interface PublishTranslationsData {
-  spaceId: string;
-}
-
 // Import and Export: a translation is identified by its key, carried as `id`; the row UUID never leaves the App API.
 export type TranslationExport = Omit<Translation, 'id' | 'key' | 'createdAt' | 'updatedAt'> & { /** The key. */ id: string };
 
-// App API requests
-export interface TranslationCreate {
-  key: string;
-  labels?: string[];
-  description?: string;
-  locales: Record<string, string>;
-}
+// App API requests: translation.zod.ts
 
-export interface TranslationUpdate {
-  labels: string[];
-  description: string;
-}
+/** What the translation list sorts by: the key (the default), when created, when last changed. */
+export const TRANSLATION_SORT_FIELDS = ['key', 'createdAt', 'updatedAt'] as const;
+export type TranslationSortField = (typeof TRANSLATION_SORT_FIELDS)[number];
 
-/** Body of the public MANAGE API `POST /api/v1/spaces/{spaceId}/translations/{locale}`. */
-export type TranslationManageUpdate = z.infer<typeof zTranslationManageUpdateSchema>;
+/** A key's status across the space's locales: a value in every one, in some, in none. */
+export const TRANSLATION_STATUSES = ['TRANSLATED', 'PARTIALLY_TRANSLATED', 'UNTRANSLATED'] as const;
+export type TranslationStatusFilter = (typeof TRANSLATION_STATUSES)[number];
+
+/** A key's status in one locale (`?locale=`): a non-blank value, or none. */
+export const LOCALE_STATUSES = ['TRANSLATED', 'UNTRANSLATED'] as const;
+export type LocaleStatusFilter = (typeof LOCALE_STATUSES)[number];
+
+/**
+ * One node of the translation tree, which `.` in the keys makes (`home.hero.title` → home › hero › title). The tree has no
+ * rows of its own: `GET …/translations/nodes?parent=` resolves one level of it, from the keys that match the filter.
+ */
+export interface TranslationNode {
+  /** The segment: `title`. */
+  name: string;
+  /** The key up to and with this segment: `home.hero.title`. */
+  path: string;
+  /** The translation whose key is exactly `path`; a node can be a key and a group (`home` and `home.title`). */
+  translation?: Translation;
+  /** How many matching keys lie below; 0: no group, nothing to expand. */
+  children: number;
+}
 
 export interface TranslationUpdateResponse {
   message: string;
   /** Translation keys the request's `type` wrote (or, on a dry run, would write). */
   ids: string[];
   dryRun?: boolean;
-}
-
-export interface TranslateLocaleData {
-  spaceId: string;
-  sourceLocaleId: string;
-  targetLocaleId: string;
-  /** Replace target values that already exist instead of filling only the empty ones. */
-  overwrite?: boolean;
 }

@@ -1,5 +1,5 @@
 @if (component(); as field) {
-  <div hlmField class="gap-2">
+  <div hlmField class="gap-2" [attr.aria-label]="field.displayName || field.name">
     <label hlmFieldLabel [for]="'schema-field-' + field.name">
       {{ field.displayName || field.name }}
       @if (field.description) {

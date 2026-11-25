@@ -1,12 +1,14 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { contentLinkSnapshots, contentSnapshots, schemas } from '../src/infra/database/schema.js';
-import { ContentsService } from '../src/modules/contents/services/contents.service.js';
-import { SchemasService } from '../src/modules/schemas/services/schemas.service.js';
-import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
+import { ContentService } from '../src/modules/contents/services/content.service.js';
+import { SchemaService } from '../src/modules/schemas/services/schema.service.js';
+import { SpaceService } from '../src/modules/spaces/services/space.service.js';
+import { SpaceLocaleService } from '../src/modules/spaces/services/space-locale.service.js';
+import { C, contentName, S1 } from './ids.js';
 import { seedContent, seedSpace, TOKEN_DRAFT, TOKEN_PUBLIC, TOKEN_READ } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
-import { C, contentName, S1 } from './ids.js';
 
 /**
  * What the public API serves for content (`content_snapshots`, `content_link_snapshots`): each document and each links
@@ -53,9 +55,8 @@ describe('content snapshots', () => {
   const linkSnapshots = () => t.db.select().from(contentLinkSnapshots).where(eq(contentLinkSnapshots.spaceId, S1));
   /** Two builds in the same millisecond would share a `cv`. */
   const tick = () => new Promise(resolve => setTimeout(resolve, 5));
-  const contents = () => t.app.get(ContentsService);
-  const saveData = (id: string, title: string) =>
-    contents().updateData(S1, id, { data: { _id: `${id}-root`, _schema: 'page', title }, assets: [], links: [], references: [] });
+  const contents = () => t.app.get(ContentService);
+  const saveData = (id: string, title: string) => contents().updateData(S1, id, { _id: `${id}-root`, _schema: 'page', title });
 
   describe('documents', () => {
     it('answers a published document with the built_at of its snapshot', async () => {
@@ -103,9 +104,12 @@ describe('content snapshots', () => {
 
     it('a schema edit moves no cv', async () => {
       const draft = await cvOf(draftUrl(C.home));
-      const [page] = await t.db.select().from(schemas).where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'page')));
+      const [page] = await t.db
+        .select()
+        .from(schemas)
+        .where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'page')));
       await tick();
-      await t.app.get(SchemasService).update(S1, page.id, { displayName: 'Page (renamed)', fields: page.fields ?? [] });
+      await t.app.get(SchemaService).update(S1, page.id, { displayName: 'Page (renamed)', fields: page.fields ?? [] });
       expect(await cvOf(draftUrl(C.home))).toBe(draft);
       expect(await cvOf(documentUrl(C.home))).toBe('7');
     });
@@ -125,22 +129,22 @@ describe('content snapshots', () => {
     it('changing the default locale drops every draft and keeps the published snapshots', async () => {
       await cvOf(draftUrl(C.home));
       const published = await snapshots('published');
-      await t.app.get(SpacesService).setDefaultLocale(S1, 'de');
+      await t.app.get(SpaceService).setDefaultLocale(S1, { defaultLocaleId: 'de' });
       expect(await snapshots('draft')).toEqual([]);
       expect(await snapshots('published')).toEqual(published);
-      await t.app.get(SpacesService).setDefaultLocale(S1, 'en');
+      await t.app.get(SpaceService).setDefaultLocale(S1, { defaultLocaleId: 'en' });
     });
 
     it('removing a locale drops its snapshots, draft and published', async () => {
       await cvOf(draftUrl(C.home, 'de'));
-      await t.app.get(SpacesService).removeLocale(S1, 'de');
+      await t.app.get(SpaceLocaleService).remove(S1, 'de');
       const rows = [...(await snapshots('draft')), ...(await snapshots('published'))];
       expect(rows.filter(it => it.locale === 'de')).toEqual([]);
       expect(rows.some(it => it.locale === 'en')).toBe(true);
     });
 
     it('an added locale stores nothing: published requests get the default locale', async () => {
-      await t.app.get(SpacesService).addLocale(S1, 'de');
+      await t.app.get(SpaceLocaleService).create(S1, { localeId: 'de' });
       expect((await snapshots('published')).filter(it => it.locale === 'de')).toEqual([]);
       expect(await follow(documentUrl(C.home, '&locale=de'))).toMatchObject({ locale: 'en', data: { title: 'Home' } });
     });
@@ -149,21 +153,22 @@ describe('content snapshots', () => {
   describe('links', () => {
     it('lists every folder and the published documents without `version`, for a public token', async () => {
       const url = `/api/v1/spaces/${S1}/links?token=${TOKEN_PUBLIC}`;
-      expect(Object.keys(await follow(url)).map(contentName).sort()).toEqual(['archive', 'blog', 'home', 'post1']);
+      expect(
+        Object.keys(await follow(url))
+          .map(contentName)
+          .sort(),
+      ).toEqual(['archive', 'blog', 'home', 'post1']);
     });
 
     it('lists the whole tree with `version`, which needs a preview token', async () => {
       const response = await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_PUBLIC}&version=draft`);
       expect(response.statusCode).toBe(403);
       expect(response.json().details.reason).toMatch(/preview token/);
-      expect(Object.keys(await follow(linksUrl('&version=draft'))).map(contentName).sort()).toEqual([
-        'archive',
-        'blog',
-        'home',
-        'old',
-        'post1',
-        'post2',
-      ]);
+      expect(
+        Object.keys(await follow(linksUrl('&version=draft')))
+          .map(contentName)
+          .sort(),
+      ).toEqual(['archive', 'blog', 'home', 'old', 'post1', 'post2']);
       expect((await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_READ}&version=draft`)).statusCode).toBe(302);
     });
 
@@ -181,8 +186,11 @@ describe('content snapshots', () => {
     it('a content write drops both lists; a schema edit drops neither', async () => {
       await cvOf(linksUrl());
       await cvOf(linksUrl('&version=draft'));
-      const [page] = await t.db.select().from(schemas).where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'page')));
-      await t.app.get(SchemasService).update(S1, page.id, { displayName: 'Page', fields: page.fields ?? [] });
+      const [page] = await t.db
+        .select()
+        .from(schemas)
+        .where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'page')));
+      await t.app.get(SchemaService).update(S1, page.id, { displayName: 'Page', fields: page.fields ?? [] });
       expect(await linkSnapshots()).toHaveLength(2);
       await contents().update(S1, C.post2, { name: 'Post 2 renamed' });
       expect(await linkSnapshots()).toEqual([]);

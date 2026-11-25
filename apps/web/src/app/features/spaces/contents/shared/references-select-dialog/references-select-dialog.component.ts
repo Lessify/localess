@@ -1,27 +1,19 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  Injector,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, signal } from '@angular/core';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ContentService } from '@core/services/content.service';
-import { SchemaService } from '@core/services/schema.service';
+import { NotificationService } from '@core/services/notification.service';
+import { SpaceStore } from '@core/stores/space.store';
+import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
 import { breadcrumbs } from '@core/utils/folder-tree';
-import { Content, ContentDocument, ContentFolderSummary, ContentKind, Schema, SchemaType } from '@localess/shared';
+import { pagedResource } from '@core/utils/paged-resource';
+import { Content, ContentDocument, ContentKind, Schema } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFolder, lucideFolderRoot } from '@ng-icons/lucide';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -30,8 +22,6 @@ import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { combineLatest } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
 
 import { DocumentStatusComponent } from '../document-status/document-status.component';
 import { ReferencesSelectDialogContext, ReferencesSelectDialogResult } from './references-select-dialog.model';
@@ -48,6 +38,7 @@ import { ReferencesSelectDialogContext, ReferencesSelectDialogResult } from './r
     HlmDialogImports,
     LlTableImports,
     LlPaginatorImports,
+    LlFilterToolbarImports,
     CommonModule,
     HlmBreadcrumbImports,
     HlmButtonImports,
@@ -64,8 +55,9 @@ import { ReferencesSelectDialogContext, ReferencesSelectDialogResult } from './r
     }),
   ],
 })
-export class ReferencesSelectDialogComponent implements OnInit, AfterViewInit {
-  private readonly schemasService = inject(SchemaService);
+export class ReferencesSelectDialogComponent {
+  private readonly spaceStore = inject(SpaceStore);
+  private readonly notificationService = inject(NotificationService);
   private readonly contentService = inject(ContentService);
   readonly fe = inject(FormErrorHandlerService);
   private readonly injector = inject(Injector);
@@ -74,61 +66,28 @@ export class ReferencesSelectDialogComponent implements OnInit, AfterViewInit {
   /** Required: scopes the browser to a space, and `multiple` decides the selection mode. */
   private readonly context = injectBrnDialogContext<ReferencesSelectDialogContext>();
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
-  schemas = signal<Schema[]>([]);
-  schemasMapByName = computed(() => new Map(this.schemas().map(it => [it.name, it])));
-  contents = signal<Content[]>([]);
-  readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);
-  displayedColumns: string[] = ['select', 'status', 'name', 'schema', 'updatedAt'];
-  selection = new SelectionModel<ContentDocument>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
-  /** Every folder of the space: the breadcrumbs are built from it. */
-  private readonly folders = toSignal(this.contentService.findAllFolders(this.context.spaceId), {
-    initialValue: [] as ContentFolderSummary[],
-  });
-  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
+  /** Every schema by name, from `SpaceStore` (live): a document's schema column. */
+  readonly schemasMapByName = computed(() => new Map<string, Schema>(this.spaceStore.schemas().map(it => [it.name, it])));
   /** The folder shown; `null`: the root. */
   readonly folderId = signal<string | null>(null);
+  /** The same paged query as the Contents table: folder, search, scope, sort, page. */
+  readonly contentList = new FolderList(this.folderId);
+  readonly filters = FOLDER_LIST_FILTERS;
+  /** The page shown, live. */
+  readonly page = pagedResource({
+    list: this.contentList.list,
+    load: params => this.contentService.findAll(this.context.spaceId, params),
+    error: 'Contents can not be loaded.',
+  });
+  readonly dataSource = new TableDataSource<Content>(this.page.items, this.injector);
+  displayedColumns: string[] = ['select', 'status', 'name', 'schema', 'updatedAt'];
+  selection = new SelectionModel<ContentDocument>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
+  /** Every folder of the space, from `SpaceStore` (live): the breadcrumbs are built from it. */
+  private readonly folderMap = computed(() => new Map(this.spaceStore.contentFolders().map(it => [it.id, it])));
   /** The folders from the root down to the one shown. */
   readonly trail = computed(() => breadcrumbs(this.folderMap(), this.folderId()));
 
-  // Subscriptions
-  private readonly folderId$ = toObservable(this.folderId);
-  // Subscriptions
   private destroyRef = inject(DestroyRef);
-  // Loading
-  isLoading = signal(true);
-
-  ngOnInit(): void {
-    this.loadData();
-  }
-
-  loadData(): void {
-    this.folderId$
-      .pipe(
-        switchMap(folderId =>
-          combineLatest([
-            this.schemasService.findAll(this.context.spaceId, SchemaType.ROOT),
-            this.contentService.findAll(this.context.spaceId, folderId ?? undefined),
-          ]),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: ([schemas, contents]) => {
-          this.schemas.set(schemas);
-          this.contents.set(contents);
-          this.isLoading.set(false);
-        },
-      });
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
-  }
-
   /** A breadcrumb: a folder, or `null` for the root. */
   navigateToFolder(folderId: string | null) {
     this.folderId.set(folderId);
@@ -139,8 +98,7 @@ export class ReferencesSelectDialogComponent implements OnInit, AfterViewInit {
       this.selection.toggle(element);
       return;
     } else if (element.kind === ContentKind.FOLDER) {
-      this.isLoading.set(false);
-      this.folderId.set(element.id);
+      this.navigateToFolder(element.id);
     }
   }
 

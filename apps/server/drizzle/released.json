@@ -1,0 +1,4 @@
+{
+  "description": "Migrations a release shipped, with the SHA-256 of their SQL (line endings normalised). They must never change: put a schema change in a new migration. Recorded by `pnpm --filter @localess/server db:release` when tagging a release; checked by src/infra/database/released-migrations.test.ts.",
+  "migrations": {}
+}

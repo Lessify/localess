@@ -1,8 +1,11 @@
-import { Controller, Get, Inject } from '@nestjs/common';
 import type { PublicAppConfig } from '@localess/shared';
+import { Controller, Get, Inject } from '@nestjs/common';
+
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
+import { IntegrationService } from '../../shared/services/integration.service.js';
+import { TranslateService } from '../../shared/services/translate.service.js';
 import { Public } from '../decorators.js';
 import { OAuthService } from '../services/oauth.service.js';
-import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 
 /**
  * Runtime settings for the SPA, replacing the build-time LOCALESS_* `--define`s so one build works
@@ -13,19 +16,24 @@ import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 export class AppConfigController {
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly oauth: OAuthService,
+    private readonly oauthService: OAuthService,
+    private readonly integrationService: IntegrationService,
+    private readonly translateService: TranslateService,
   ) {}
 
+  /** Read on every request: integrations change at runtime (Admin → Settings). */
   @Get()
-  get(): PublicAppConfig {
+  async get(): Promise<PublicAppConfig> {
+    const unsplash = (await this.integrationService.resolve('unsplash')) !== undefined;
+    const locales = await this.translateService.translatableLocales();
     return {
       auth: {
-        providers: this.oauth.enabledProviders().map(it => it.toUpperCase() as 'GOOGLE' | 'MICROSOFT'),
+        providers: this.oauthService.enabledProviders().map(it => it.toUpperCase() as 'GOOGLE' | 'MICROSOFT'),
         loginMessage: this.config.loginMessage,
         passwordResetByEmail: this.config.smtp !== undefined,
       },
-      plugins: { unsplash: this.config.unsplash !== undefined },
-      translate: { enabled: this.config.translate.provider !== 'none' },
+      plugins: { unsplash },
+      translate: { enabled: locales.targetLocales.length > 0, ...locales },
       ...(this.config.instance ? { instance: this.config.instance } : {}),
     };
   }

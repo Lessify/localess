@@ -1,8 +1,8 @@
 <form [formGroup]="form()" class="overflow-hidden">
-  <fieldset hlmFieldSet>
+  <fieldset hlmFieldSet [attr.aria-label]="component().displayName || component().name">
     <div hlmFieldGroup class="gap-2">
       <div hlmField class="gap-2">
-        <label hlmFieldLabel [for]="component().name">
+        <label hlmFieldLabel [for]="'schema-field-' + component().name">
           {{ component().displayName || component().name }}
           @if (component().description; as description) {
             <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="description" />
@@ -17,18 +17,19 @@
             variant="secondary"
             size="icon"
             hlmTooltip="Change link type"
+            aria-label="Change link type"
             [hlmDropdownMenuTrigger]="linkTypeMenu"
             [disabled]="default() && !component().translatable">
             <ng-icon [name]="linkType() === 'content' ? 'lucideFileSymlink' : 'lucideLink'" />
           </button>
           <ng-template #linkTypeMenu>
             <hlm-dropdown-menu>
-              <button hlmDropdownMenuRadio [checked]="linkType() === 'url'" (click)="onTypeChange('url')">
+              <button hlmDropdownMenuRadio [keepOpen]="false" [checked]="linkType() === 'url'" (click)="onTypeChange('url')">
                 <hlm-dropdown-menu-radio-indicator />
                 <ng-icon name="lucideLink" class="mr-2" />
                 <span>Public URL</span>
               </button>
-              <button hlmDropdownMenuRadio [checked]="linkType() === 'content'" (click)="onTypeChange('content')">
+              <button hlmDropdownMenuRadio [keepOpen]="false" [checked]="linkType() === 'content'" (click)="onTypeChange('content')">
                 <hlm-dropdown-menu-radio-indicator />
                 <ng-icon name="lucideFileSymlink" class="mr-2" />
                 <span>Internal Reference</span>
@@ -42,7 +43,7 @@
               } @else {
                 <input
                   hlmInput
-                  [id]="component().name"
+                  [id]="'schema-field-' + component().name"
                   type="url"
                   formControlName="uri"
                   autocomplete="off"
@@ -79,8 +80,12 @@
         }
       </div>
       <div hlmField orientation="horizontal">
-        <hlm-switch inputId="target" [checked]="form().value.target === '_blank'" (checkedChange)="targetChange($event)" />
-        <label hlmFieldLabel for="target">Open in a new tab</label>
+        <!-- Per field: two Link fields in one form must not share the id the label points at. -->
+        <hlm-switch
+          [inputId]="'schema-field-' + component().name + '-target'"
+          [checked]="form().value.target === '_blank'"
+          (checkedChange)="targetChange($event)" />
+        <label hlmFieldLabel [for]="'schema-field-' + component().name + '-target'">Open in a new tab</label>
       </div>
     </div>
   </fieldset>

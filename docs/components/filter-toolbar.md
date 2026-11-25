@@ -9,9 +9,9 @@ with a `FilterPredicateUtils.create()` helper in `apps/web/src/app/core/utils/`.
 hand-rolled `filterForm` / `schemaFilterPredicate` code that used to be duplicated per page — search
 input, a `FormGroup`, `debounceTime`, and a bespoke `JSON.parse(filter)` matcher.
 
-It renders an optional search input, one popover per configured filter (single- or multi-select),
-and a Reset button that appears only once something is set, then emits a single debounced
-`filterChange` with the combined state.
+It renders an optional search input with a **Search** button inside it, one popover per configured
+filter (single- or multi-select), and a Reset button that appears only once something is set, then
+emits one `filterChange` with the combined state.
 
 **Not yet migrated:** `translations.component` mixes filter state with an unrelated `locale` select
 in the same `FormGroup`, so it needs its own design pass before switching over.
@@ -56,7 +56,7 @@ it back out.
 | `searchEnabled` | `InputSignal<boolean>` | `true` | Hides the search box entirely when `false`. |
 | `searchPlaceholder` | `InputSignal<string>` | `'Search...'` | |
 | `filters` | `InputSignal<FilterDef[]>` | `[]` | **Read once in `ngOnInit`** to build the internal controls — changing it later has no effect. |
-| `filterChange` | `output<FilterToolbarValue>` | — | Fires ~500 ms after the last change to search text or any selection. |
+| `filterChange` | `output<FilterToolbarValue>` | — | Fires at once on a selection or Reset; for the search, only on Enter, the Search button, or when the box is emptied. Never twice with the same value. |
 
 ### Models (`filter-toolbar.model.ts`)
 
@@ -99,14 +99,24 @@ FilterPredicateUtils.create<Schema>({
 
 ## Behaviour
 
+- **Search**: typing sends nothing. Enter in the box or its **Search** button (`applySearch()`)
+  sends the text; until then `filterChange` carries the search last applied, so a selection made
+  while editing the text keeps the previous search. Emptying the box (or its ✕) applies the empty
+  search at once. `searchPending()` is true while the box holds text not searched yet: the box gets
+  `data-search-pending` (an amber border and ring, `styles.css`) and the Search button turns primary
+  with a `⏎` hint (label "Search (not applied yet)"); otherwise the button is disabled, since the list
+  already shows what is in the box. Every button is `type="button"`, so Enter can never click Reset when the toolbar
+  sits inside a `<form>`. The Translations filter (`translation-filter.component`) works the same way.
 - **`multiple`**: clicking an option toggles it in the array, the popover stays open, and the trigger
   shows a count badge (`hlmButtonGroupText`) once ≥1 option is selected.
 - **`single`**: clicking an option replaces the value and closes the popover; the trigger shows the
   selected option's `label` instead of a count.
+- **Options menu**: at least 200 px wide and as wide as its longest option (`w-auto min-w-[200px]`); each option's
+  label stays on one line (`whitespace-nowrap`), so "Including subfolders" doesn't wrap beside its checkbox.
 - **Reset**: `hasActiveValues` (a `computed()` over `toSignal(form.valueChanges)`) is true whenever
   search text or any filter value is non-empty. The button renders only then, and clears every
-  control to its empty shape — `''` for `search` and `single`, `[]` for `multiple` — re-triggering
-  `filterChange` like any other edit.
+  control to its empty shape — `''` for `search` and `single`, `[]` for `multiple` — sending
+  `filterChange` at once.
 - **Predicate matching**: a row must satisfy **all** active `filterFields` **and** the search text.
   `filterFields` use array-overlap matching, with `single` (`string`) and `multiple` (`string[]`)
   values both normalised to arrays so one code path handles each. Empty selections are skipped and
@@ -139,7 +149,8 @@ It is read once in `ngOnInit`. Consumers compute `FilterOption[]` themselves (ty
 
 `FilterToolbar` is unit tested in `filter-toolbar.component.spec.ts`: one control per filter
 definition with the right empty default, `hasActiveValues()`, single- and multiple-mode
-`select`/`isSelected`, `selectedOptionLabel()`, `reset()`, the debounced `filterChange` emit, and
+`select`/`isSelected`, `selectedOptionLabel()`, `reset()`, the search sent only by `applySearch()` (and
+when emptied), and
 the no-filters case. `FilterPredicateUtils` **is** fully unit tested (`filter-predicate-utils.service.spec.ts`): empty
 filter, search-only, single-mode equality, multiple-mode overlap, combined search + filter, and
 undefined accessor values.

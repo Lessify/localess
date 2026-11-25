@@ -1,16 +1,19 @@
-import { SchemaFieldKind, TokenType } from '@localess/shared';
-import { eq } from 'drizzle-orm';
-import { newApiToken } from '../src/shared/utils/api-token-format.js';
-import { tokenRow } from './seed.js';
 import { randomBytes } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { schemas, taskLogs, tokens, webhookLogs } from '../src/infra/database/schema.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
-import { S1, UUID_V7 } from './ids.js';
+
+import { SchemaFieldKind, TokenType } from '@localess/shared';
+import { eq } from 'drizzle-orm';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
 import { newUuid } from '../src/infra/database/id.js';
+import { schemas, taskLogs, tasks, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
+import { EventService } from '../src/infra/events/event.service.js';
 import { WebhookLogCleanupService } from '../src/modules/webhooks/services/webhook-log-cleanup.service.js';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { S1, S2, UUID_V7 } from './ids.js';
+import { tokenRow } from './seed.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 
 function multipart(fields: Record<string, string>, file: { filename: string; bytes: Buffer }) {
   const boundary = `----localess${randomBytes(8).toString('hex')}`;
@@ -52,15 +55,17 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     // These pin the API; task processing has its own tests (test/tasks.test.ts).
     t = await createTestApp({ LOCALESS_TASK_WORKER: 'false' });
     await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
-    await t.db.insert(schemas).values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] });
+    await t.db
+      .insert(schemas)
+      .values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] });
     admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
-    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
+    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'DEVELOPER' }));
+    // An editor: content tasks, not schema tasks (a developer's).
     exporterCookie = await userWithAccess(t, 'exporter@example.com', {
-      role: 'CUSTOM',
-      permissions: ['CONTENT_EXPORT', 'CONTENT_IMPORT', 'DEV_OPEN_API'],
+      role: 'EDITOR',
     });
     exporter = api(t, exporterCookie);
-    nobody = api(t, await userWithAccess(t, 'nobody@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
+    nobody = api(t, await userWithAccess(t, 'nobody@example.com', { role: 'VIEWER' }));
   });
 
   afterAll(() => t?.close());
@@ -69,7 +74,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     const base = `/api/app/spaces/${S1}/tokens`;
     const cdn = (value: string) => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${value}` });
 
-    it('creates typed tokens with a UUIDv7 id and a prefixed value, for SPACE_MANAGEMENT only', async () => {
+    it('creates typed tokens with a UUIDv7 id and a prefixed value, for developers only', async () => {
       const response = await manager.post(base, { name: 'Website', type: 'public', cacheTtl: 120 });
       expect(response.statusCode).toBe(201);
       const body = response.json();
@@ -86,7 +91,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       const created = (await manager.post(base, { name: 'CI', type: 'management' })).json();
       expect(created.token).toMatch(/^mgt_[A-Za-z0-9]{38}$/);
       expect(created.hint).toBe(`mgt_…${created.token.slice(-4)}`);
-      const listed = (await manager.get(base)).json().find((it: { id: string }) => it.id === created.id);
+      const listed = (await manager.get(base)).json().items.find((it: { id: string }) => it.id === created.id);
       expect(listed).not.toHaveProperty('token');
       expect(listed.hint).toBe(created.hint);
       expect((await manager.get(`${base}/${created.id}`)).json()).not.toHaveProperty('token');
@@ -102,8 +107,10 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     });
 
     it('filters by type', async () => {
-      expect((await manager.get(`${base}?type=management&limit=1`)).json().map((it: { type: string }) => it.type)).toEqual(['management']);
-      expect((await manager.get(`${base}?type=public`)).json().every((it: { type: string }) => it.type === 'public')).toBe(true);
+      expect((await manager.get(`${base}?type=management&size=1`)).json().items.map((it: { type: string }) => it.type)).toEqual([
+        'management',
+      ]);
+      expect((await manager.get(`${base}?type=public`)).json().items.every((it: { type: string }) => it.type === 'public')).toBe(true);
       expect((await manager.get(`${base}?type=DEV_TOOLS`)).statusCode).toBe(400);
     });
 
@@ -162,6 +169,10 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   describe('webhooks', () => {
     const base = `/api/app/spaces/${S1}/webhooks`;
     let hook: { id: string };
+    const headersOf = async (id: string) =>
+      (await t.db.select({ headers: webhooks.headers }).from(webhooks).where(eq(webhooks.id, id)))[0].headers;
+    const secretOf = async (id: string) =>
+      (await t.db.select({ secret: webhooks.secret }).from(webhooks).where(eq(webhooks.id, id)))[0].secret;
 
     it('creates enabled webhooks, refusing a URL delivery would refuse', async () => {
       expect((await manager.post(base, { name: 'Bad', url: 'http://example.com/hook', events: ['content.published'] })).statusCode).toBe(
@@ -177,33 +188,141 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       const internal = await manager.post(base, { name: 'Internal', url: 'https://10.0.0.5/hook', events: ['content.changed'] });
       expect(internal.statusCode).toBe(400);
       expect(internal.json().message).toBe('Webhook URL is not allowed: private address');
-      expect((await manager.post(base, { name: 'Alpha', url: 'https://alpha.example.com/hook', events: ['content.changed'] })).statusCode).toBe(201);
-      hook = (
-        await manager.post(base, {
-          name: 'Site',
-          url: 'https://example.com/hook',
-          events: ['content.published'],
-          secret: 's3cret',
-          headers: { 'X-Site': 'a' },
-        })
-      ).json();
-      expect(hook).toMatchObject({ enabled: true, secret: 's3cret', headers: { 'X-Site': 'a' } });
+      expect(
+        (await manager.post(base, { name: 'Alpha', url: 'https://alpha.example.com/hook', events: ['content.changed'] })).statusCode,
+      ).toBe(201);
+      // Unsigned unless asked: no secret, none answered.
+      expect((await manager.get(base)).json().items[0]).toMatchObject({ name: 'Alpha', hasSecret: false });
+      expect((await manager.get(base)).json().items[0]).not.toHaveProperty('secret');
+      // A typed secret is refused: the server makes it.
+      const typed = { name: 'Typed', url: 'https://example.com/hook', events: ['content.published'], secret: 's3cret' };
+      expect((await manager.post(base, typed)).statusCode).toBe(400);
+
+      const created = await manager.post(base, {
+        name: 'Site',
+        url: 'https://example.com/hook',
+        events: ['content.published'],
+        signed: true,
+        headers: { 'X-Site': 'a' },
+      });
+      expect(created.statusCode).toBe(201);
+      hook = created.json();
+      expect(hook).toMatchObject({ enabled: true, hasSecret: true, headerNames: ['X-Site'], secret: expect.stringMatching(/^whsec_/) });
+      expect(hook).not.toHaveProperty('headers');
+      expect(await secretOf(hook.id)).toBe(created.json().secret);
+      // Shown once: never again.
+      expect((await manager.get(`${base}/${hook.id}`)).json()).not.toHaveProperty('secret');
+      expect((await manager.get(base)).json().items.find((it: { id: string }) => it.id === hook.id)).not.toHaveProperty('secret');
     });
 
-    it('keeps the secret and headers when an update leaves them out', async () => {
-      const updated = (
-        await manager.put(`${base}/${hook.id}`, {
-          name: 'Site 2',
-          url: 'https://example.com/v2',
-          events: ['content.published', 'content.unpublished'],
-        })
-      ).json();
-      expect(updated).toMatchObject({
-        name: 'Site 2',
-        secret: 's3cret',
-        headers: { 'X-Site': 'a' },
-        events: ['content.published', 'content.unpublished'],
-      });
+    it('keeps the secret and headers when an update leaves them out, and refuses a secret in an update', async () => {
+      const before = await secretOf(hook.id);
+      const body = { name: 'Site 2', url: 'https://example.com/v2', events: ['content.published', 'content.unpublished'] };
+      const updated = (await manager.put(`${base}/${hook.id}`, body)).json();
+      expect(updated).toMatchObject({ ...body, hasSecret: true, headerNames: ['X-Site'] });
+      expect(await headersOf(hook.id)).toEqual({ 'X-Site': 'a' });
+      expect(updated).not.toHaveProperty('secret');
+      expect(await secretOf(hook.id)).toBe(before);
+      expect((await manager.put(`${base}/${hook.id}`, { ...body, secret: 'n3w' })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/${hook.id}`, { ...body, secret: null })).statusCode).toBe(400);
+    });
+
+    it('never answers a header value; an update keeps (null), replaces or removes each header', async () => {
+      const body = { name: 'Headers', url: 'https://example.com/h', events: ['content.published'] };
+      const created = await manager.post(base, { ...body, headers: { Authorization: 'Bearer t0k3n', 'X-Site': 'a' } });
+      expect(created.json()).toMatchObject({ headerNames: ['Authorization', 'X-Site'] });
+      const id = created.json().id;
+      for (const answer of [created.body, (await manager.get(`${base}/${id}`)).body, (await manager.get(base)).body]) {
+        expect(answer).not.toContain('t0k3n');
+      }
+
+      // Kept (null), replaced, and one added; X-Site left out: removed.
+      const kept = await manager.put(`${base}/${id}`, { ...body, headers: { authorization: null, 'X-New': 'n' } });
+      expect(kept.json().headerNames).toEqual(['authorization', 'X-New']);
+      expect(await headersOf(id)).toEqual({ authorization: 'Bearer t0k3n', 'X-New': 'n' });
+      await manager.put(`${base}/${id}`, { ...body, headers: { authorization: 'Bearer other', 'X-New': null } });
+      expect(await headersOf(id)).toEqual({ authorization: 'Bearer other', 'X-New': 'n' });
+      // Without headers: all kept; an empty set: none.
+      await manager.put(`${base}/${id}`, body);
+      expect(await headersOf(id)).toEqual({ authorization: 'Bearer other', 'X-New': 'n' });
+      const none = await manager.put(`${base}/${id}`, { ...body, headers: {} });
+      expect(none.json()).not.toHaveProperty('headerNames');
+      expect(await headersOf(id)).toBeNull();
+
+      for (const [headers, message] of [
+        [{ 'X-Gone': null }, 'Header X-Gone has no value to keep'],
+        [{ 'webhook-signature': 'v1,x' }, 'Header webhook-signature is set by Localess'],
+        [{ 'X-Webhook-Event': 'x' }, 'Header X-Webhook-Event is set by Localess'],
+        [{ Host: 'internal' }, 'Header Host is set by Localess'],
+        [{ 'X-A': 'a', 'x-a': 'b' }, 'Header x-a is given twice'],
+      ] as const) {
+        const response = await manager.put(`${base}/${id}`, { ...body, headers });
+        expect(response.statusCode, message).toBe(400);
+        expect(response.json().message).toBe(message);
+      }
+      for (const headers of [
+        { 'Bad Name': 'x' },
+        { 'X-A': 'line\nbreak' },
+        { 'X-A': '' },
+        Object.fromEntries(Array.from({ length: 21 }, (_, i) => [`X-${i}`, 'v'])),
+      ]) {
+        expect((await manager.post(base, { ...body, headers })).statusCode).toBe(400);
+      }
+      expect((await manager.post(base, { ...body, headers: { 'X-A': null } })).statusCode).toBe(400);
+      expect((await manager.delete(`${base}/${id}`)).statusCode).toBe(204);
+    });
+
+    it('never answers nor searches the URL query values; a masked value sent back keeps the stored one', async () => {
+      const real = 'https://cloudbuild.googleapis.com/v1/projects/p/triggers/deploy:webhook?key=AIzaK3y&secret=s3cr3t';
+      const masked = 'https://cloudbuild.googleapis.com/v1/projects/p/triggers/deploy:webhook?key=••••&secret=••••';
+      const body = { name: 'Build', events: ['content.published'] };
+      const created = await manager.post(base, { ...body, url: real });
+      expect(created.json().url).toBe(masked);
+      const id = created.json().id;
+      const urlOf = async () => (await t.db.select({ url: webhooks.url }).from(webhooks).where(eq(webhooks.id, id)))[0].url;
+      expect(await urlOf()).toBe(real);
+      for (const answer of [(await manager.get(`${base}/${id}`)).body, (await manager.get(base)).body]) {
+        expect(answer).not.toContain('s3cr3t');
+        expect(answer).not.toContain('AIzaK3y');
+      }
+      // The search looks at the URL without its query.
+      expect((await manager.get(`${base}?search=s3cr3t`)).json().total).toBe(0);
+      expect((await manager.get(`${base}?search=deploy:webhook`)).json().total).toBe(1);
+
+      // Sent back as answered: kept. One value typed: replaced, the other kept.
+      expect((await manager.put(`${base}/${id}`, { ...body, url: masked })).json().url).toBe(masked);
+      expect(await urlOf()).toBe(real);
+      await manager.put(`${base}/${id}`, { ...body, url: masked.replace('secret=••••', 'secret=n3w') });
+      expect(await urlOf()).toBe(real.replace('s3cr3t', 'n3w'));
+      // A mask with nothing stored, on update or create: 400.
+      const nothing = await manager.put(`${base}/${id}`, { ...body, url: `${masked}&token=••••` });
+      expect(nothing.statusCode).toBe(400);
+      expect(nothing.json().message).toBe('Webhook URL has a •••• value with nothing stored to keep');
+      expect((await manager.post(base, { ...body, url: masked })).statusCode).toBe(400);
+      expect((await manager.delete(`${base}/${id}`)).statusCode).toBe(204);
+    });
+
+    it('makes a new secret (shown once, the old one stops) and removes it', async () => {
+      const before = await secretOf(hook.id);
+      const renewed = await manager.post(`${base}/${hook.id}/secret`);
+      expect(renewed.statusCode).toBe(201);
+      expect(renewed.json()).toMatchObject({ id: hook.id, hasSecret: true, secret: expect.stringMatching(/^whsec_/) });
+      expect(renewed.json().secret).not.toBe(before);
+      expect(await secretOf(hook.id)).toBe(renewed.json().secret);
+
+      expect((await manager.delete(`${base}/${hook.id}/secret`)).statusCode).toBe(204);
+      expect(await secretOf(hook.id)).toBeNull();
+      expect((await manager.get(`${base}/${hook.id}`)).json().hasSecret).toBe(false);
+      // An unsigned webhook starts signing the same way; then signed again for the tests below.
+      expect((await manager.post(`${base}/${hook.id}/secret`)).json().hasSecret).toBe(true);
+      for (const response of [
+        await manager.post(`${base}/${S2}/secret`),
+        await manager.delete(`${base}/${S2}/secret`),
+        await manager.post(`/api/app/spaces/${S2}/webhooks/${hook.id}/secret`),
+      ]) {
+        expect(response.statusCode).toBe(404);
+      }
+      expect((await nobody.post(`${base}/${hook.id}/secret`)).statusCode).toBe(403);
     });
 
     it('enables and disables, and lists newest logs first', async () => {
@@ -222,46 +341,99 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
         { ...log, id: newUuid(), deliveryId: 'old', createdAt: new Date('2026-01-01') },
         { ...log, id: newUuid(), deliveryId: 'new', createdAt: new Date('2026-02-01') },
       ]);
-      const logs = (await manager.get(`${base}/${hook.id}/logs?limit=1`)).json();
+      const logs = (await manager.get(`${base}/${hook.id}/logs?size=1`)).json().items;
       expect(logs).toEqual([expect.objectContaining({ deliveryId: 'new', id: expect.stringMatching(UUID_V7) })]);
       expect((await manager.get(`${base}/not-a-uuid/logs`)).statusCode).toBe(404);
       expect(logs[0]).not.toHaveProperty('webhookId');
     });
 
-    it('lists at most 100 logs unless asked for more, and deletes those older than the retention', async () => {
-      const log = { webhookId: hook.id, event: 'content.published' as const, url: 'https://example.com/v2', status: 'SUCCESS' as const, requestSize: 10, data: {}, duration: 5 };
+    it('pages through every log kept, and deletes those older than the retention', async () => {
+      const log = {
+        webhookId: hook.id,
+        event: 'content.published' as const,
+        url: 'https://example.com/v2',
+        status: 'SUCCESS' as const,
+        requestSize: 10,
+        data: {},
+        duration: 5,
+      };
       const day = 24 * 60 * 60 * 1000;
       await t.db.insert(webhookLogs).values(
-        Array.from({ length: 101 }, (_, index) => ({ ...log, id: newUuid(), deliveryId: `bulk-${index}`, createdAt: new Date(Date.now() - day) })),
+        Array.from({ length: 101 }, (_, index) => ({
+          ...log,
+          id: newUuid(),
+          deliveryId: `bulk-${index}`,
+          createdAt: new Date(Date.now() - day),
+        })),
       );
       await t.db.insert(webhookLogs).values({ ...log, id: newUuid(), deliveryId: 'stale', createdAt: new Date(Date.now() - 31 * day) });
-      expect((await manager.get(`${base}/${hook.id}/logs`)).json()).toHaveLength(100);
-      expect((await manager.get(`${base}/${hook.id}/logs?limit=500`)).json().length).toBeGreaterThan(101);
+      // Every delivery can be reached, a page at a time: 'old' and 'new' (above), the 101 bulk ones and the stale one.
+      expect((await manager.get(`${base}/${hook.id}/logs`)).json()).toMatchObject({ page: 0, size: 20, total: 104 });
 
       await t.app.get(WebhookLogCleanupService).cleanup();
-      const kept = (await manager.get(`${base}/${hook.id}/logs?limit=1000`)).json().map((it: { deliveryId: string }) => it.deliveryId);
+      // 'old', 'new' (January, February) and 'stale' are past the 30 days.
+      expect((await manager.get(`${base}/${hook.id}/logs`)).json().total).toBe(101);
+      const kept = (await t.db.select({ deliveryId: webhookLogs.deliveryId }).from(webhookLogs)).map(it => it.deliveryId);
       expect(kept).not.toContain('stale');
       expect(kept).toContain('bulk-0');
     });
 
-    it('lists by name and deletes with logs, for SPACE_MANAGEMENT only', async () => {
-      expect((await manager.get(base)).json().map((it: { name: string }) => it.name)).toEqual(['Alpha', 'Site 2']);
+    it('checks the space first, answers 404 for ids that are not UUIDs, and refuses unknown fields', async () => {
+      const unknown = `/api/app/spaces/${S2}/webhooks`;
+      const body = { name: 'X', url: 'https://example.com/x', events: ['content.published'] };
+      const responses = [
+        await manager.get(unknown),
+        await manager.post(unknown, body),
+        await manager.get(`${unknown}/${hook.id}`),
+        await manager.put(`${unknown}/${hook.id}`, body),
+        await manager.patch(`${unknown}/${hook.id}/status`, { enabled: true }),
+        await manager.delete(`${unknown}/${hook.id}`),
+        await manager.get(`${unknown}/${hook.id}/logs`),
+      ];
+      for (const response of responses) {
+        expect(response.statusCode).toBe(404);
+        expect(response.json().message).toBe('Space not found');
+      }
+      expect((await manager.get(`${base}/${S2}`)).json().message).toBe('Webhook not found');
+      expect((await manager.get(`${base}/${S2}/logs`)).json().message).toBe('Webhook not found');
+
+      expect((await manager.get('/api/app/spaces/abc/webhooks')).statusCode).toBe(404);
+      expect((await manager.get(`${base}/abc`)).statusCode).toBe(404);
+      expect((await manager.get(`${base}/abc/logs`)).statusCode).toBe(404);
+
+      expect((await manager.post(base, { ...body, secrets: 'x' })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/${hook.id}`, { ...body, enable: true })).statusCode).toBe(400);
+      expect((await manager.patch(`${base}/${hook.id}/status`, { enabled: true, name: 'x' })).statusCode).toBe(400);
+      expect((await manager.get(`${base}/${hook.id}`)).json()).toMatchObject({ name: 'Site 2', enabled: false });
+    });
+
+    it('lists by name and deletes with logs, for developers only', async () => {
+      expect((await manager.get(base)).json().items.map((it: { name: string }) => it.name)).toEqual(['Alpha', 'Site 2']);
       expect((await nobody.get(base)).statusCode).toBe(403);
+      const publish = vi.spyOn(t.app.get(EventService), 'publish');
       expect((await manager.delete(`${base}/${hook.id}`)).statusCode).toBe(204);
       expect(await t.db.select().from(webhookLogs)).toEqual([]);
+      // Already gone: 404, and no second event.
+      expect((await manager.delete(`${base}/${hook.id}`)).json()).toMatchObject({ statusCode: 404, message: 'Webhook not found' });
+      expect(publish.mock.calls.filter(([event]) => event.entity === 'webhooks')).toEqual([
+        [{ spaceId: S1, entity: 'webhooks', id: hook.id, op: 'deleted' }, expect.anything()],
+      ]);
+      publish.mockRestore();
     });
   });
 
   describe('tasks', () => {
     const base = `/api/app/spaces/${S1}/tasks`;
 
-    it('creates exports for the permission the kind names', async () => {
-      const response = await exporter.post(base, { kind: 'CONTENT_EXPORT', path: 'blog' });
+    it('creates exports for the role the kind names', async () => {
+      const response = await exporter.post(base, { kind: 'TRANSLATION_EXPORT' });
       expect(response.statusCode).toBe(201);
-      expect(response.json()).toMatchObject({ kind: 'CONTENT_EXPORT', status: 'INITIATED', path: 'blog' });
+      expect(response.json()).toMatchObject({ kind: 'TRANSLATION_EXPORT' });
       expect(response.json()).not.toHaveProperty('lockedBy');
-      expect((await exporter.post(base, { kind: 'ASSET_EXPORT' })).statusCode).toBe(403);
-      expect((await nobody.post(base, { kind: 'CONTENT_EXPORT' })).statusCode).toBe(403);
+      expect((await exporter.post(base, { kind: 'SCHEMA_EXPORT' })).statusCode).toBe(403);
+      expect((await nobody.post(base, { kind: 'TRANSLATION_EXPORT' })).statusCode).toBe(403);
+      expect((await exporter.post(base, { kind: 'CONTENT_EXPORT', path: 'blog' })).statusCode).toBe(400);
+      expect((await exporter.post(base, { kind: 'TRANSLATION_EXPORT', extra: true })).statusCode).toBe(400);
     });
 
     it('keeps metadata regeneration admin-only', async () => {
@@ -271,7 +443,10 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
 
     it('stores an import upload as the task file, downloadable with the session', async () => {
       const zip = Buffer.from('PK\u0003\u0004 fake zip');
-      const body = multipart({ kind: 'CONTENT_IMPORT' }, { filename: 'content.llc.zip', bytes: zip });
+      const body = multipart(
+        { kind: 'TRANSLATION_IMPORT', type: 'translation-full' },
+        { filename: 'translations.localess.zip', bytes: zip },
+      );
       const response = await t.request({
         method: 'POST',
         url: `${base}/import`,
@@ -280,7 +455,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       });
       expect(response.statusCode, response.body).toBe(201);
       const task = response.json();
-      expect(task).toMatchObject({ kind: 'CONTENT_IMPORT', status: 'INITIATED', file: { name: 'content.llc.zip', size: zip.length } });
+      expect(task).toMatchObject({ kind: 'TRANSLATION_IMPORT', file: { name: 'translations.localess.zip', size: zip.length } });
 
       const download = await exporter.get(`${base}/${task.id}/download`);
       expect(download.statusCode).toBe(200);
@@ -301,8 +476,11 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     });
 
     it('lists newest first, with logs in order', async () => {
-      const list = (await exporter.get(base)).json();
-      expect(list.map((it: { kind: string }) => it.kind)).toEqual(['CONTENT_IMPORT', 'ASSET_REGEN_METADATA', 'CONTENT_EXPORT']);
+      const list = (await exporter.get(base)).json().items;
+      // An editor reads the kinds it may start: not the admins' metadata regeneration.
+      expect(list.map((it: { kind: string }) => it.kind)).toEqual(['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT']);
+      const all = (await admin.get(base)).json().items;
+      expect(all.map((it: { kind: string }) => it.kind)).toEqual(['TRANSLATION_IMPORT', 'ASSET_REGEN_METADATA', 'TRANSLATION_EXPORT']);
       await t.db.insert(taskLogs).values([
         { id: newUuid(), taskId: list[0].id, level: 'INFO', message: 'first' },
         { id: newUuid(), taskId: list[0].id, level: 'INFO', message: 'second' },
@@ -314,14 +492,28 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect(list[0].id).toMatch(UUID_V7);
       for (const log of (await exporter.get(`${base}/${list[0].id}/logs`)).json()) expect(log.id).toMatch(UUID_V7);
       expect((await exporter.get(`${base}/not-a-uuid/logs`)).statusCode).toBe(404);
-      expect((await exporter.get(`${base}/${list[2].id}/download`)).statusCode).toBe(404);
+      expect((await admin.get(`${base}/${all[1].id}/download`)).statusCode).toBe(404);
+      expect((await exporter.get(`${base}/${all[1].id}`)).statusCode).toBe(404);
     });
 
-    it('deletes with the kind permission, removing logs and files', async () => {
-      const list = (await exporter.get(base)).json();
-      const imported = list.find((it: { kind: string }) => it.kind === 'CONTENT_IMPORT');
+    it('answers 404 for a malformed or unknown space, and for the logs of an unknown task', async () => {
+      const unknown = `/api/app/spaces/${newUuid()}/tasks`;
+      expect((await exporter.get('/api/app/spaces/not-a-uuid/tasks')).statusCode).toBe(404);
+      expect((await exporter.get(unknown)).statusCode).toBe(404);
+      expect((await exporter.post(unknown, { kind: 'TRANSLATION_EXPORT' })).statusCode).toBe(404);
+      expect((await exporter.get(`${unknown}/${newUuid()}/logs`)).statusCode).toBe(404);
+      expect((await exporter.get(`${base}/${newUuid()}/logs`)).statusCode).toBe(404);
+    });
+
+    it('deletes with the role the kind names, removing logs and files', async () => {
+      const list = (await admin.get(base)).json().items;
+      const imported = list.find((it: { kind: string }) => it.kind === 'TRANSLATION_IMPORT');
       const regen = list.find((it: { kind: string }) => it.kind === 'ASSET_REGEN_METADATA');
-      expect((await exporter.delete(`${base}/${regen.id}`)).statusCode).toBe(403);
+      // Another kind is not there for an editor.
+      expect((await exporter.delete(`${base}/${regen.id}`)).statusCode).toBe(404);
+      // Queued: refused until it ends (the worker is off here, so it ends by hand).
+      expect((await exporter.delete(`${base}/${imported.id}`)).statusCode).toBe(409);
+      await t.db.update(tasks).set({ status: 'ERROR' }).where(eq(tasks.id, imported.id));
       expect((await exporter.delete(`${base}/${imported.id}`)).statusCode).toBe(204);
       expect(await t.db.select().from(taskLogs)).toEqual([]);
       expect(await readdir(join(t.storageDir, `spaces/${S1}/tasks`))).toEqual([]);
@@ -329,10 +521,11 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   });
 
   describe('OpenAPI', () => {
-    it('generates the document for DEV_OPEN_API', async () => {
-      const response = await exporter.post(`/api/app/spaces/${S1}/open-api`);
+    it('generates the document for a developer, not an editor', async () => {
+      const response = await manager.post(`/api/app/spaces/${S1}/open-api`);
       expect(response.statusCode).toBe(200);
       expect(response.json().openapi).toMatch(/^3\./);
+      expect((await exporter.post(`/api/app/spaces/${S1}/open-api`)).statusCode).toBe(403);
       expect((await nobody.post(`/api/app/spaces/${S1}/open-api`)).statusCode).toBe(403);
     });
   });

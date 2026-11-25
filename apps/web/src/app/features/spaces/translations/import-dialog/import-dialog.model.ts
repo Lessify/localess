@@ -4,15 +4,8 @@ export interface ImportDialogContext {
   locales: Locale[];
 }
 
-export type ImportDialogResult = ImportFullDialogResult | ImportFlatDialogResult;
-
-export interface ImportFullDialogResult {
-  kind: 'FULL';
+/** The file; with a locale for a key-value JSON (a `.localess.zip` says what it holds). */
+export interface ImportDialogResult {
   file: File;
-}
-
-export interface ImportFlatDialogResult {
-  kind: 'FLAT';
-  locale: string;
-  file: File;
+  locale?: string;
 }

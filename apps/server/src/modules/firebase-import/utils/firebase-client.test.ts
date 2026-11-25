@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { fakeFirebase } from '../../../../test/fake-firebase.js';
 import { FirebaseClient, FirebaseConnectionError, normalizeOrigin } from './firebase-client.js';
 
@@ -75,17 +76,60 @@ describe('FirebaseClient', () => {
     expect(await client().assetFile('s1', 'missing')).toBeNull();
   });
 
+  it('tries an asset Firebase answers 500 for three times, then reports a server error', async () => {
+    const failing = await fakeFirebase([{ id: 's1', name: 'Site', doc: {}, files: { big: Buffer.from('x') } }], { failingFiles: ['big'] });
+    try {
+      const local = new FirebaseClient(failing.url, 'migration-secret', { allowInternal: true, retryDelayMs: 0 });
+      await expect(local.assetFile('s1', 'big')).rejects.toMatchObject({ reason: 'server-error' });
+      expect(failing.requests.filter(it => it.endsWith('/big/original'))).toHaveLength(3);
+    } finally {
+      await failing.close();
+    }
+  });
+
+  it('says why Firebase refused a file: too large (413), another refusal, or a server error, with its plain-text reason', async () => {
+    const refusing = await fakeFirebase([{ id: 's1', name: 'Site', doc: {} }], {
+      refusedFiles: {
+        big: { status: 413, reason: 'This asset is 108726933 bytes, above the 32505856-byte limit.' },
+        forbidden: { status: 403, reason: 'Not yours.' },
+        broken: { status: 500, reason: 'Storage is down.' },
+      },
+    });
+    const local = new FirebaseClient(refusing.url, 'migration-secret', { allowInternal: true, retryDelayMs: 0 });
+    try {
+      await expect(local.assetFile('s1', 'big')).rejects.toMatchObject({
+        reason: 'tooLarge',
+        message: 'This asset is 108726933 bytes, above the 32505856-byte limit.',
+      });
+      await expect(local.assetFile('s1', 'forbidden')).rejects.toMatchObject({
+        reason: 'failed',
+        message: 'Asset forbidden answered 403: Not yours.',
+      });
+      // A server error is tried three times first.
+      await expect(local.assetFile('s1', 'broken')).rejects.toMatchObject({
+        reason: 'server-error',
+        message: 'Asset broken answered 500 3 times: Storage is down.',
+      });
+    } finally {
+      await refusing.close();
+    }
+  });
+
   it('names the failure: wrong token, disabled API, unreachable', async () => {
     const local = { allowInternal: true };
     await expect(new FirebaseClient(fake.url, 'wrong', local).spaces()).rejects.toMatchObject({ reason: 'unauthorized' });
-    await expect(new FirebaseClient(`${fake.url}/nothing-here`, 'migration-secret', local).spaces()).rejects.toMatchObject({ reason: 'disabled' });
+    await expect(new FirebaseClient(`${fake.url}/nothing-here`, 'migration-secret', local).spaces()).rejects.toMatchObject({
+      reason: 'disabled',
+    });
     await expect(new FirebaseClient('http://127.0.0.1:1', 'x', local).spaces()).rejects.toBeInstanceOf(FirebaseConnectionError);
   });
 
   it('reports a site without the migration API (its app answering 200 with HTML) as not enabled', async () => {
     const spa = await fakeFirebase([], { spa: true });
     try {
-      await expect(new FirebaseClient(spa.url, 'migration-secret', { allowInternal: true }).spaces()).rejects.toMatchObject({ reason: 'disabled' });
+      await expect(new FirebaseClient(spa.url, 'migration-secret', { allowInternal: true }).spaces()).rejects.toMatchObject({
+        reason: 'disabled',
+      });
     } finally {
       await spa.close();
     }

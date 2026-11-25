@@ -1,27 +1,18 @@
+import type { AuthLogin, PasswordResetConfirm, PasswordResetRequest, User } from '@localess/shared';
+import { zAuthLogin, zPasswordResetConfirm, zPasswordResetRequest } from '@localess/shared/zod';
 import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { RouteConfig } from '@nestjs/platform-fastify';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { z } from 'zod';
-import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
+
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
-import type { UserRow } from '../../shared/models/user.js';
-import type { UserDto } from '../../shared/transformers/user.transformer.js';
-import { AuthService } from '../services/auth.service.js';
-import { Public } from '../decorators.js';
-import { PASSWORD_MIN_LENGTH } from '../utils/password.js';
-import { PasswordResetService } from '../services/password-reset.service.js';
-import { publicOrigin } from '../utils/public-url.js';
+import type { UserEntity } from '../../shared/entities/user.entity.js';
+import { Public, SignedIn } from '../decorators.js';
 import { CurrentUser } from '../request-context.js';
-import { clearSessionCookie, SESSION_COOKIE, setSessionCookie } from '../utils/session-cookie.js';
+import { AuthService } from '../services/auth.service.js';
+import { PasswordResetService } from '../services/password-reset.service.js';
 import { SessionService } from '../services/session.service.js';
-
-const loginSchema = z.object({
-  email: z.string().trim().email(),
-  password: z.string().min(1),
-});
-
-const resetRequestSchema = z.object({ email: z.string().trim().email() });
-const resetConfirmSchema = z.object({ token: z.string().min(1), password: z.string().min(PASSWORD_MIN_LENGTH) });
+import { publicOrigin } from '../utils/public-url.js';
+import { clearSessionCookie, SESSION_COOKIE, setSessionCookie } from '../utils/session-cookie.js';
 
 /** Login attempts per client IP per minute; LOCALESS_LOGIN_RATE_LIMIT overrides (read per request). */
 const loginRateLimit = (): number => Number(process.env['LOCALESS_LOGIN_RATE_LIMIT'] ?? 10);
@@ -29,9 +20,9 @@ const loginRateLimit = (): number => Number(process.env['LOCALESS_LOGIN_RATE_LIM
 @Controller('api/auth')
 export class AuthController {
   constructor(
-    private readonly auth: AuthService,
-    private readonly sessions: SessionService,
-    private readonly passwordReset: PasswordResetService,
+    private readonly authService: AuthService,
+    private readonly sessionService: SessionService,
+    private readonly passwordResetService: PasswordResetService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -40,22 +31,22 @@ export class AuthController {
   @HttpCode(200)
   @RouteConfig({ rateLimit: { max: loginRateLimit, timeWindow: '1 minute' } })
   async login(
-    @Body(new ZodValidationPipe(loginSchema)) body: z.infer<typeof loginSchema>,
+    @Body({ schema: zAuthLogin }) body: AuthLogin,
     @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
-  ): Promise<{ user: UserDto }> {
-    const user = await this.auth.verifyCredentials(body.email, body.password);
-    const { token, expiresAt } = await this.sessions.create(user.id, { userAgent: request.headers['user-agent'], ip: request.ip });
+  ): Promise<{ user: User }> {
+    const user = await this.authService.verifyCredentials(body.email, body.password);
+    const { token, expiresAt } = await this.sessionService.create(user.id, { userAgent: request.headers['user-agent'], ip: request.ip });
     setSessionCookie(request, reply, token, expiresAt);
-    return { user: await this.auth.toUser(user) };
+    return { user: await this.authService.toUser(user) };
   }
 
   @Public()
   @Post('logout')
   @HttpCode(204)
   async logout(@Req() request: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply): Promise<void> {
-    const session = await this.sessions.resolve(request.cookies?.[SESSION_COOKIE]);
-    if (session) await this.sessions.revoke(session.id);
+    const session = await this.sessionService.resolve(request.cookies?.[SESSION_COOKIE]);
+    if (session) await this.sessionService.revoke(session.id);
     clearSessionCookie(reply);
   }
 
@@ -64,23 +55,24 @@ export class AuthController {
   @HttpCode(204)
   @RouteConfig({ rateLimit: { max: loginRateLimit, timeWindow: '1 minute' } })
   async requestPasswordReset(
-    @Body(new ZodValidationPipe(resetRequestSchema)) body: z.infer<typeof resetRequestSchema>,
+    @Body({ schema: zPasswordResetRequest }) body: PasswordResetRequest,
     @Req() request: FastifyRequest,
   ): Promise<void> {
-    await this.passwordReset.request(body.email, publicOrigin(this.config, request));
+    await this.passwordResetService.request(body.email, publicOrigin(this.config, request));
   }
 
   @Public()
   @Post('password-reset/confirm')
   @HttpCode(204)
   @RouteConfig({ rateLimit: { max: loginRateLimit, timeWindow: '1 minute' } })
-  async confirmPasswordReset(@Body(new ZodValidationPipe(resetConfirmSchema)) body: z.infer<typeof resetConfirmSchema>): Promise<void> {
-    await this.passwordReset.confirm(body.token, body.password);
+  async confirmPasswordReset(@Body({ schema: zPasswordResetConfirm }) body: PasswordResetConfirm): Promise<void> {
+    await this.passwordResetService.confirm(body.token, body.password);
   }
 
-  /** The signed-in user, including role and permissions (replaces `getIdTokenResult().claims`). */
+  /** The signed-in user, with their role. */
+  @SignedIn()
   @Get('me')
-  async me(@CurrentUser() user: UserRow): Promise<{ user: UserDto }> {
-    return { user: await this.auth.toUser(user) };
+  async me(@CurrentUser() user: UserEntity): Promise<{ user: User }> {
+    return { user: await this.authService.toUser(user) };
   }
 }

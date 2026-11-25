@@ -22,7 +22,8 @@ export function isValidId(value: unknown): value is string {
  * @param {string} name what the ID is, for the error message
  */
 export function assertPathSegment(id: string, name: string): void {
-  if (!isValidId(id)) {
+  // The pattern, not `isValidId`: its type guard would leave `id` as `never` in the message.
+  if (!ID_PATTERN.test(id)) {
     throw new Error(`Invalid ${name} '${id}'`);
   }
 }

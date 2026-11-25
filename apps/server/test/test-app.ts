@@ -1,22 +1,28 @@
+import { randomBytes } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+import type { UserRole } from '@localess/shared';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { and, asc, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { and, eq } from 'drizzle-orm';
 import type { InjectOptions, LightMyRequestResponse } from 'fastify';
 import pg from 'pg';
+
 import { createApp } from '../src/app.factory.js';
 import { loadConfig } from '../src/infra/config/config.js';
+import { type Database, DB_SCHEMA } from '../src/infra/database/database.module.js';
 import { newUuid } from '../src/infra/database/id.js';
 import * as schema from '../src/infra/database/schema.js';
-import { TranslationSnapshotsRepository } from '../src/modules/translations/repositories/translation-snapshots.repository.js';
-
+import { TranslationSnapshotRepository } from '../src/modules/translations/repositories/translation-snapshot.repository.js';
+import type { SpaceInsertEntity } from '../src/shared/entities/space.entity.js';
+import type { UserEntity } from '../src/shared/entities/user.entity.js';
 import { createTestDatabase, TestDatabase } from './database.js';
 
 export interface TestApp {
   app: NestFastifyApplication;
-  db: ReturnType<typeof drizzle<typeof schema>>;
+  db: Database;
   database: TestDatabase;
   storageDir: string;
   request(options: InjectOptions): Promise<LightMyRequestResponse>;
@@ -33,15 +39,22 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
       LOCALESS_STATIC_DIR: '',
       LOCALESS_STORAGE_DIR: storageDir,
       LOCALESS_LOG_LEVEL: 'error',
+      // Never generate secret.key in the repository's .data.
+      LOCALESS_SECRET_KEY: 'test-secret-key-test-secret-key-0123',
       ...env,
     }),
   );
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
   const pool = new pg.Pool({ connectionString: database.url });
+  // `pool.end()` resolves once each client is asked to disconnect, not once it has: `close()` then drops the database
+  // WITH (FORCE), which can terminate a client still disconnecting (57P01). Nobody listens to that client any more, so
+  // its error would be uncaught and fail the run. Connection loss of the test's own pool is never a test result.
+  pool.on('connect', client => client.on('error', () => undefined));
+  pool.on('error', () => undefined);
   return {
     app,
-    db: drizzle(pool, { schema }),
+    db: drizzle(pool, { schema: DB_SCHEMA }),
     database,
     storageDir,
     request: options => app.getHttpAdapter().getInstance().inject(options),
@@ -52,6 +65,36 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
       await rm(storageDir, { recursive: true, force: true });
     },
   };
+}
+
+/**
+ * The SQL statements run while `action` does (every `pg` client: the app's pool and its transactions). For checking how
+ * work is batched (one insert per chunk, not per row) rather than how fast the machine is.
+ */
+export async function statementsDuring<T>(action: () => Promise<T>): Promise<{ result: T; statements: string[] }> {
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- re-applied below with its client as `this`.
+  const original = pg.Client.prototype.query;
+  const statements: string[] = [];
+  pg.Client.prototype.query = function (this: pg.Client, ...args: unknown[]) {
+    const [query] = args;
+    statements.push(typeof query === 'string' ? query : ((query as { text?: string } | undefined)?.text ?? ''));
+    return (original as (...a: unknown[]) => unknown).apply(this, args);
+  } as typeof original;
+  try {
+    return { result: await action(), statements };
+  } finally {
+    pg.Client.prototype.query = original;
+  }
+}
+
+/** How many `insert` statements went to each table. */
+export function insertsByTable(statements: string[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const statement of statements) {
+    const table = /^\s*insert into "?(\w+)"?/i.exec(statement)?.[1];
+    if (table) counts[table] = (counts[table] ?? 0) + 1;
+  }
+  return counts;
 }
 
 /** Same-origin XHR header the Angular app sends on every state-changing request. */
@@ -68,18 +111,52 @@ export async function login(t: TestApp, email: string, password: string): Promis
   return sessionCookie(response);
 }
 
+/** A user to seed: no password for one who signs in with Google or Microsoft only; no role: no access yet. */
+export interface TestUserSeed {
+  email: string;
+  password?: string;
+  displayName?: string;
+  emailVerified?: boolean;
+  role?: UserRole | null;
+}
+
+/** Writes a user (and their password) straight through the repository, as the first-admin seeding does. */
+export async function createUser(t: TestApp, seed: TestUserSeed): Promise<UserEntity> {
+  const { UserRepository } = await import('../src/modules/users/repositories/user.repository.js');
+  const { hashPassword } = await import('../src/auth/utils/password.js');
+  const id = await t.app
+    .get(UserRepository)
+    .create(
+      { email: seed.email, emailVerified: seed.emailVerified ?? false, displayName: seed.displayName ?? null, role: seed.role ?? null },
+      seed.password ? await hashPassword(seed.password) : undefined,
+    );
+  const [user] = await t.db.select().from(schema.users).where(eq(schema.users.id, id));
+  return user;
+}
+
 /** Creates a user with the given access and returns a signed-in session cookie. */
-export async function userWithAccess(
-  t: TestApp,
-  email: string,
-  access: { role: 'ADMIN' | 'CUSTOM' | null; permissions?: string[] },
-): Promise<string> {
-  const { UsersService } = await import('../src/modules/users/services/users.service.js');
-  await t.app.get(UsersService).create({ email, password: 'secret1', role: access.role, permissions: access.permissions as never });
+export async function userWithAccess(t: TestApp, email: string, access: { role: UserRole | null }): Promise<string> {
+  await createUser(t, { email, password: 'secret1', role: access.role });
   return login(t, email, 'secret1');
 }
 
 /** JSON request as the SPA sends it (cookie + X-Requested-With). */
+/** A multipart body with the fields first, then the file — the order the endpoint expects. */
+export function multipart(fields: Record<string, string>, file: { filename: string; type: string; bytes: Buffer }) {
+  const boundary = `----localess${randomBytes(8).toString('hex')}`;
+  const parts: Buffer[] = [];
+  for (const [name, value] of Object.entries(fields)) {
+    parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`));
+  }
+  parts.push(
+    Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${file.filename}"\r\nContent-Type: ${file.type}\r\n\r\n`,
+    ),
+  );
+  parts.push(file.bytes, Buffer.from(`\r\n--${boundary}--\r\n`));
+  return { payload: Buffer.concat(parts), contentType: `multipart/form-data; boundary=${boundary}` };
+}
+
 export function api(t: TestApp, cookie: string) {
   const call = (method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, payload?: unknown) =>
     t.request({ method, url, headers: { ...XHR, cookie }, ...(payload !== undefined ? { payload: payload as object } : {}) });
@@ -92,7 +169,7 @@ export function api(t: TestApp, cookie: string) {
   };
 }
 
-type SpaceInsert = Omit<typeof schema.spaces.$inferInsert, 'defaultLocaleId'> & {
+type SpaceInsert = Omit<SpaceInsertEntity, 'defaultLocaleId'> & {
   locales: { id: string; name?: string }[];
   defaultLocale?: { id: string; name?: string };
 };
@@ -136,5 +213,40 @@ export function draftSnapshots(db: TestApp['db'], spaceId: string) {
 
 /** Builds the space's draft maps, as the first draft request after a write does. */
 export async function buildDrafts(t: TestApp, spaceId: string): Promise<void> {
-  await t.app.get(TranslationSnapshotsRepository).buildDrafts(spaceId);
+  await t.app.get(TranslationSnapshotRepository).buildDrafts(spaceId);
+}
+
+/** A space as the tests check it: its columns with its locales, default locale and environments flattened, its import. */
+export interface SpaceView {
+  id: string;
+  name: string;
+  defaultLocaleId: string;
+  locales: { id: string; name: string }[];
+  defaultLocale: { id: string; name: string };
+  environments: { id: string; name: string; url: string }[];
+  legacyId: string | null;
+  importStatus: 'IMPORTING' | 'FAILED' | null;
+}
+
+/** Every space (or the one `spaceId`), read with its relations, in the shape `SpaceView`. */
+export async function readSpaces(db: TestApp['db'], spaceId?: string): Promise<SpaceView[]> {
+  const rows = await db.query.spaces.findMany({
+    where: spaceId ? eq(schema.spaces.id, spaceId) : undefined,
+    with: {
+      defaultLocale: true,
+      spaceLocales: { orderBy: [asc(schema.spaceLocales.position), asc(schema.spaceLocales.createdAt)], with: { locale: true } },
+      environments: { orderBy: [asc(schema.spaceEnvironments.position), asc(schema.spaceEnvironments.createdAt)] },
+      firebaseImport: true,
+    },
+  });
+  return rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    defaultLocaleId: row.defaultLocaleId,
+    locales: row.spaceLocales.map(it => ({ id: it.locale.id, name: it.locale.name })),
+    defaultLocale: { id: row.defaultLocale.id, name: row.defaultLocale.name },
+    environments: row.environments.map(it => ({ id: it.id, name: it.name, url: it.url })),
+    legacyId: row.firebaseImport?.sourceSpaceId ?? null,
+    importStatus: row.firebaseImport?.status === 'RUNNING' ? 'IMPORTING' : row.firebaseImport?.status === 'FAILED' ? 'FAILED' : null,
+  }));
 }

@@ -37,17 +37,49 @@ describe('TranslationFilterComponent', () => {
     expect(spy).toHaveBeenCalledWith('de');
   });
 
-  it('emits filterChange with the debounced form value', async () => {
-    vi.useFakeTimers();
+  it('emits labels and statuses at once, the search only on Enter', () => {
     const { component } = setup();
     const spy = vi.fn();
     component.filterChange.subscribe(spy);
 
-    component.filterForm.patchValue({ locale: 'en', search: 'home', labels: ['ui'], states: [TranslationStatus.TRANSLATED] });
-    await vi.advanceTimersByTimeAsync(500);
+    component.filterForm.patchValue({ locale: 'en', labels: ['ui'], states: [TranslationStatus.TRANSLATED] });
+    expect(spy).toHaveBeenLastCalledWith({ locale: 'en', search: '', labels: ['ui'], states: [TranslationStatus.TRANSLATED] });
 
+    spy.mockClear();
+    component.filterForm.patchValue({ search: 'home' });
+    expect(spy).not.toHaveBeenCalled();
+
+    component.applySearch();
     expect(spy).toHaveBeenCalledWith({ locale: 'en', search: 'home', labels: ['ui'], states: [TranslationStatus.TRANSLATED] });
-    vi.useRealTimers();
+  });
+
+  it('keeps the applied search while typing and clears it when the box is emptied', () => {
+    const { component } = setup();
+    const spy = vi.fn();
+    component.filterChange.subscribe(spy);
+    component.filterForm.patchValue({ locale: 'en', search: 'home' });
+    component.applySearch();
+
+    component.filterForm.patchValue({ search: 'hom' });
+    component.selectLabel('ui');
+    expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'home', labels: ['ui'] }));
+
+    component.filterForm.patchValue({ search: '' });
+    expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ search: '' }));
+  });
+
+  it('searchPending() tells typed text from the search applied: empty, typed, searched', () => {
+    const { component } = setup();
+    expect(component.searchPending()).toBe(false);
+
+    component.filterForm.patchValue({ search: 'home' });
+    expect(component.searchPending()).toBe(true);
+
+    component.applySearch();
+    expect(component.searchPending()).toBe(false);
+
+    component.filterForm.patchValue({ search: '' });
+    expect(component.searchPending()).toBe(false);
   });
 
   it('filterReset() clears search/labels/states', () => {

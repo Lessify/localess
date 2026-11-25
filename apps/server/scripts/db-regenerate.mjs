@@ -11,6 +11,11 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'drizzle');
 const seedFile = join(out, '0001_locales.sql');
 
+// After a release its migrations are what installs applied: a schema change is a new migration (db:generate).
+const released = JSON.parse(readFileSync(join(out, 'released.json'), 'utf8')).migrations;
+if (Object.keys(released).length) {
+  throw new Error(`Migrations were released (${Object.keys(released).join(', ')}): use db:generate for a new migration instead`);
+}
 if (!existsSync(seedFile)) throw new Error(`${seedFile} is missing: it holds the locales seed and is kept as it is`);
 const seed = readFileSync(seedFile, 'utf8');
 

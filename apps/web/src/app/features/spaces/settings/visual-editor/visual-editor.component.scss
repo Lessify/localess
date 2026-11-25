@@ -1,0 +1,11 @@
+th,
+td {
+  &.ll-column-name {
+    width: 220px;
+  }
+  &.ll-column-actions {
+    width: 80px;
+    max-width: 80px;
+    text-align: center;
+  }
+}

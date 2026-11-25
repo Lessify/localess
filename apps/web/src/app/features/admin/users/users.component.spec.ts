@@ -1,12 +1,12 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { User } from '@localess/shared';
+import { Page, User } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { UserService } from './user.service';
 import { UserStore } from '@core/stores/user.store';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { UsersComponent } from './users.component';
@@ -18,28 +18,33 @@ function user(overrides: Partial<User> = {}): User {
 interface CurrentUser {
   id: string;
   role: string | undefined;
-  permissions: string[] | undefined;
 }
 
-const ADMIN: CurrentUser = { id: 'adm', role: 'ADMIN', permissions: undefined };
-const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'CUSTOM', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
+const ADMIN: CurrentUser = { id: 'adm', role: 'ADMIN' };
 
 function userStoreOf(user: CurrentUser) {
-  return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role), permissions: signal(user.permissions) } };
+  return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role) } };
 }
+
+const pageOf = <T>(items: T[], params: HttpParams): Page<T> => ({
+  items,
+  page: Number(params.get('page')),
+  size: Number(params.get('size')),
+  total: items.length,
+});
 
 describe('UsersComponent', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  function setup(users: User[] = [], findAllImpl?: () => ReturnType<typeof of>, currentUser = ADMIN) {
-    const findAll = findAllImpl ? vi.fn(findAllImpl) : vi.fn().mockReturnValue(of(users));
-    const invite = vi.fn().mockReturnValue(of(undefined));
+  function setup(users: User[] = [], findPageImpl?: (params: HttpParams) => Observable<Page<User>>, currentUser = ADMIN) {
+    const findAll = vi.fn(findPageImpl ?? ((params: HttpParams) => of(pageOf(users, params))));
+    const add = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteUser = vi.fn().mockReturnValue(of(undefined));
-    const setDisabled = vi.fn().mockReturnValue(of(undefined));
-    const passwordResetLink = vi
+    const updateStatus = vi.fn().mockReturnValue(of(undefined));
+    const createPasswordResetLink = vi
       .fn()
       .mockReturnValue(of({ url: 'https://cms.example.com/reset?token=t', expiresAt: '2026-01-01T00:00:00.000Z' }));
     const success = vi.fn();
@@ -51,7 +56,7 @@ describe('UsersComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: UserService, useValue: { findAll, invite, update, delete: deleteUser, passwordResetLink, setDisabled } },
+        { provide: UserService, useValue: { findAll, create: add, update, remove: deleteUser, createPasswordResetLink, updateStatus } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         userStoreOf(currentUser),
@@ -59,16 +64,78 @@ describe('UsersComponent', () => {
     });
     const fixture = TestBed.createComponent(UsersComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, invite, update, deleteUser, setDisabled, passwordResetLink, success, error, open };
+    const lastQuery = () => findAll.mock.calls.at(-1)![0].toString();
+    return {
+      fixture,
+      component: fixture.componentInstance,
+      findAll,
+      lastQuery,
+      add,
+      update,
+      deleteUser,
+      updateStatus,
+      createPasswordResetLink,
+      success,
+      error,
+      open,
+    };
   }
 
-  it('loads users on init', () => {
+  it('loads the first page on init, and shows the total', () => {
     const users = [user({ id: 'u1' }), user({ id: 'u2' })];
-    const { component, findAll } = setup(users);
+    const { component, lastQuery } = setup(users);
 
-    expect(findAll).toHaveBeenCalled();
+    expect(lastQuery()).toBe('page=0&size=20');
     expect(component.dataSource.filteredData()).toEqual(users);
+    expect(component.total()).toBe(2);
     expect(component.isLoading()).toBe(false);
+  });
+
+  it('asks the server for the search and the Active filter, from the first page', () => {
+    const { fixture, component, lastQuery } = setup();
+    component.list.page.set(2);
+
+    component.onFilterChange({ search: 'ali', active: 'inactive' });
+    fixture.detectChanges();
+
+    expect(lastQuery()).toBe('page=0&size=20&search=ali&active=inactive');
+  });
+
+  it('asks the server for the sorted column and direction', () => {
+    const { fixture, component, lastQuery } = setup();
+
+    component.onSortChange({ active: 'role', direction: 'desc' });
+    fixture.detectChanges();
+
+    expect(lastQuery()).toBe('page=0&size=20&sort=role&direction=desc');
+  });
+
+  it('keeps answering the table after a failed load: the next query change fetches again', () => {
+    let calls = 0;
+    const { fixture, component, findAll, error } = setup([], params =>
+      ++calls === 1
+        ? throwError(() => new Error('boom'))
+        : of({ items: [user({ id: 'u1' })], page: Number(params.get('page')), size: 20, total: 1 }),
+    );
+    expect(error).toHaveBeenCalledWith('Users can not be loaded.');
+
+    component.onFilterChange({ search: 'ali' });
+    fixture.detectChanges();
+
+    expect(findAll).toHaveBeenCalledTimes(2);
+    expect(component.total()).toBe(1);
+  });
+
+  it('moves to the last page when the page shown is past the end (users deleted meanwhile)', () => {
+    const { fixture, component, lastQuery } = setup([], params =>
+      of({ items: Number(params.get('page')) > 2 ? [] : [user({ id: 'u' })], page: Number(params.get('page')), size: 20, total: 45 }),
+    );
+
+    component.list.page.set(5);
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(lastQuery()).toBe('page=2&size=20');
   });
 
   it('notifies an error and stops loading when users fail to load', () => {
@@ -78,42 +145,34 @@ describe('UsersComponent', () => {
     expect(component.isLoading()).toBe(false);
   });
 
-  it('onFilterChange() serializes the filter value onto the data source', () => {
-    const { component } = setup();
-
-    component.onFilterChange({ search: 'user' });
-
-    expect(component.dataSource.filter).toBe(JSON.stringify({ search: 'user' }));
-  });
-
-  it('inviteDialog() invites the user and notifies success when confirmed', () => {
-    const { component, open, invite, success } = setup();
+  it('openAddDialog() adds the user and notifies success when confirmed', () => {
+    const { component, open, add, success } = setup();
     const model = { email: 'new@example.com', password: 'secret123' };
     open.mockReturnValue({ closed$: of(model) });
 
-    component.inviteDialog();
+    component.openAddDialog();
 
-    expect(invite).toHaveBeenCalledWith(model);
-    expect(success).toHaveBeenCalledWith('User has been invited.');
+    expect(add).toHaveBeenCalledWith(model);
+    expect(success).toHaveBeenCalledWith('User has been added.');
   });
 
-  it('inviteDialog() does nothing when dismissed', () => {
-    const { component, open, invite } = setup();
+  it('openAddDialog() does nothing when dismissed', () => {
+    const { component, open, add } = setup();
     open.mockReturnValue({ closed$: of(undefined) });
 
-    component.inviteDialog();
+    component.openAddDialog();
 
-    expect(invite).not.toHaveBeenCalled();
+    expect(add).not.toHaveBeenCalled();
   });
 
-  it('inviteDialog() notifies an error on failure', () => {
-    const { component, open, invite, error } = setup();
-    invite.mockReturnValue(throwError(() => new Error('boom')));
+  it('openAddDialog() notifies an error on failure', () => {
+    const { component, open, add, error } = setup();
+    add.mockReturnValue(throwError(() => new Error('boom')));
     open.mockReturnValue({ closed$: of({ email: 'new@example.com', password: 'secret123' }) });
 
-    component.inviteDialog();
+    component.openAddDialog();
 
-    expect(error).toHaveBeenCalledWith('User can not be invited.');
+    expect(error).toHaveBeenCalledWith('User can not be added.');
   });
 
   it('openEditDialog() updates the user and notifies success when confirmed', () => {
@@ -158,8 +217,8 @@ describe('UsersComponent', () => {
     });
 
     it('is shown on a failed disable', () => {
-      const { component, open, setDisabled, error } = setup();
-      setDisabled.mockReturnValue(lastAdmin());
+      const { component, open, updateStatus, error } = setup();
+      updateStatus.mockReturnValue(lastAdmin());
       open.mockReturnValue({ closed$: of(true) });
       component.toggleDisabled(user());
       expect(error).toHaveBeenCalledWith("User 'user@example.com' can not be disabled.", reason);
@@ -197,38 +256,38 @@ describe('UsersComponent', () => {
 
   describe('disable / enable', () => {
     it('disables after confirmation and notifies success', () => {
-      const { component, open, setDisabled, success } = setup();
+      const { component, open, updateStatus, success } = setup();
       open.mockReturnValue({ closed$: of(true) });
 
       component.toggleDisabled(user({ id: 'u1', email: 'user@example.com', disabled: false }));
 
       expect(open).toHaveBeenCalled();
-      expect(setDisabled).toHaveBeenCalledWith('u1', true);
+      expect(updateStatus).toHaveBeenCalledWith('u1', { disabled: true });
       expect(success).toHaveBeenCalledWith("User 'user@example.com' has been disabled. They are signed out and cannot sign in.");
     });
 
     it('does not disable when cancelled', () => {
-      const { component, open, setDisabled } = setup();
+      const { component, open, updateStatus } = setup();
       open.mockReturnValue({ closed$: of(undefined) });
 
       component.toggleDisabled(user({ id: 'u1', disabled: false }));
 
-      expect(setDisabled).not.toHaveBeenCalled();
+      expect(updateStatus).not.toHaveBeenCalled();
     });
 
     it('enables without confirmation', () => {
-      const { component, open, setDisabled, success } = setup();
+      const { component, open, updateStatus, success } = setup();
 
       component.toggleDisabled(user({ id: 'u1', email: 'user@example.com', disabled: true }));
 
       expect(open).not.toHaveBeenCalled();
-      expect(setDisabled).toHaveBeenCalledWith('u1', false);
+      expect(updateStatus).toHaveBeenCalledWith('u1', { disabled: false });
       expect(success).toHaveBeenCalledWith("User 'user@example.com' has been enabled.");
     });
 
     it('notifies an error on failure', () => {
-      const { component, setDisabled, error } = setup();
-      setDisabled.mockReturnValue(throwError(() => new Error('boom')));
+      const { component, updateStatus, error } = setup();
+      updateStatus.mockReturnValue(throwError(() => new Error('boom')));
 
       component.toggleDisabled(user({ id: 'u1', email: 'user@example.com', disabled: true }));
 
@@ -244,40 +303,43 @@ describe('UsersComponent', () => {
 
   it('copyPasswordResetLink() copies the link to the clipboard and notifies success', async () => {
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
-    const { component, passwordResetLink, success } = setup();
+    const { component, createPasswordResetLink, success } = setup();
 
     component.copyPasswordResetLink(user({ id: 'u1', email: 'user@example.com' }));
     await vi.waitFor(() => expect(success).toHaveBeenCalled());
 
-    expect(passwordResetLink).toHaveBeenCalledWith('u1');
+    expect(createPasswordResetLink).toHaveBeenCalledWith('u1');
     expect(writeText).toHaveBeenCalledWith('https://cms.example.com/reset?token=t');
     writeText.mockRestore();
   });
 
   it('copyPasswordResetLink() notifies an error on failure', () => {
-    const { component, passwordResetLink, error } = setup();
-    passwordResetLink.mockReturnValue(throwError(() => new Error('boom')));
+    const { component, createPasswordResetLink, error } = setup();
+    createPasswordResetLink.mockReturnValue(throwError(() => new Error('boom')));
 
     component.copyPasswordResetLink(user({ id: 'u1', email: 'user@example.com' }));
 
     expect(error).toHaveBeenCalledWith("Password reset link for 'user@example.com' can not be created.");
   });
 
-  describe('canManage()', () => {
-    it('lets an admin manage every user', () => {
-      const { component } = setup();
+  it('offers Disable / Enable on every user but yourself', () => {
+    const { component } = setup();
 
-      expect(component.canManage(user({ role: 'ADMIN' }))).toBe(true);
-      expect(component.canManage(user({ id: 'adm', role: 'ADMIN' }))).toBe(true);
-    });
+    expect(component.canChangeStatus(user({ id: 'u1' }))).toBe(true);
+    expect(component.canChangeStatus(user({ id: 'adm' }))).toBe(false);
+  });
 
-    it('stops a user manager at themselves, admins and users with more permissions', () => {
-      const { component } = setup([], undefined, USER_MANAGER);
+  it('shows a role by its label, no role as None', () => {
+    const { component } = setup();
 
-      expect(component.canManage(user({ role: 'CUSTOM', permissions: ['CONTENT_READ'] as User['permissions'] }))).toBe(true);
-      expect(component.canManage(user({ id: 'mgr', role: 'CUSTOM' }))).toBe(false);
-      expect(component.canManage(user({ role: 'ADMIN' }))).toBe(false);
-      expect(component.canManage(user({ role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] as User['permissions'] }))).toBe(false);
-    });
+    expect(component['roleLabel']('EDITOR')).toBe('Editor');
+    expect(component['roleLabel'](undefined)).toBe('None');
+  });
+
+  it('names the OAuth logins of the Sign-in column', () => {
+    const { component } = setup();
+
+    expect(component['loginLabel']('google')).toBe('Google');
+    expect(component['loginLabel']('microsoft')).toBe('Microsoft');
   });
 });

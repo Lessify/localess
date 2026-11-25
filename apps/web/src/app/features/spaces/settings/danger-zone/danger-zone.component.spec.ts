@@ -19,7 +19,7 @@ describe('DangerZoneComponent', () => {
     TestBed.overrideComponent(DangerZoneComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: TranslationService, useValue: { deleteAll } },
+        { provide: TranslationService, useValue: { removeAll: deleteAll } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: SpaceStore, useValue: { selectedSpaceId: signal('space-1') } },

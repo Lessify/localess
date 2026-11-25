@@ -1,0 +1,105 @@
+@let q = queue();
+@if (q.items().length) {
+  <hlm-popover sideOffset="5" align="end">
+    <button
+      hlmPopoverTrigger
+      hlmBtn
+      variant="outline"
+      class="relative overflow-hidden"
+      data-testid="upload-queue"
+      [attr.aria-label]="label()">
+      @if (q.pending()) {
+        <hlm-spinner class="size-4" />
+        <span>Uploading</span>
+        <span class="text-muted-foreground tabular-nums">{{ q.done() }} of {{ counted() }}</span>
+      } @else {
+        <ng-icon hlm size="sm" name="lucideCircleAlert" class="text-destructive" />
+        <span>Uploads</span>
+      }
+      @if (q.failed()) {
+        <span hlmBadge variant="destructive">{{ q.failed() }} failed</span>
+      }
+      @if (q.pending()) {
+        <hlm-progress class="absolute inset-x-0 bottom-0 h-0.5 rounded-none" [value]="q.percent()" aria-label="Upload progress">
+          <hlm-progress-indicator />
+        </hlm-progress>
+      }
+    </button>
+    <div *hlmPopoverPortal hlmPopoverContent class="grid w-96 gap-3">
+      <div class="flex items-center justify-between gap-2">
+        <span class="font-medium">Uploads</span>
+        <span class="text-muted-foreground text-xs tabular-nums">
+          {{ q.pending() }} in progress
+          @if (q.failed()) {
+            · {{ q.failed() }} failed
+          }
+        </span>
+      </div>
+      <div class="-mx-1 grid max-h-80 gap-2.5 overflow-y-auto px-1">
+        @for (item of q.items(); track item.id) {
+          <div class="grid gap-1" data-testid="upload-item">
+            <div class="flex items-center gap-2 text-sm">
+              @switch (item.status) {
+                @case ('waiting') {
+                  <ng-icon hlm size="sm" name="lucideClock" class="text-muted-foreground shrink-0" />
+                }
+                @case ('uploading') {
+                  <hlm-spinner class="size-4 shrink-0" />
+                }
+                @case ('done') {
+                  <ng-icon hlm size="sm" name="lucideCircleCheck" class="shrink-0 text-green-600 dark:text-green-500" />
+                }
+                @case ('error') {
+                  <ng-icon hlm size="sm" name="lucideCircleAlert" class="text-destructive shrink-0" />
+                }
+              }
+              <span class="min-w-0 flex-1 truncate" [title]="item.name">{{ item.name }}</span>
+              @switch (item.status) {
+                @case ('waiting') {
+                  <span class="text-muted-foreground text-xs">Waiting</span>
+                }
+                @case ('uploading') {
+                  <span class="text-muted-foreground text-xs tabular-nums">
+                    @if (item.total) {
+                      {{ item.loaded | formatFileSize }} / {{ item.total | formatFileSize }}
+                    } @else {
+                      Downloading
+                    }
+                  </span>
+                }
+                @case ('error') {
+                  <button
+                    hlmBtn
+                    variant="ghost"
+                    size="icon-xs"
+                    hlmTooltip="Retry"
+                    [attr.aria-label]="'Retry ' + item.name"
+                    (click)="q.retry(item.id)">
+                    <ng-icon hlm size="xs" name="lucideRotateCcw" />
+                  </button>
+                  <button
+                    hlmBtn
+                    variant="ghost"
+                    size="icon-xs"
+                    hlmTooltip="Dismiss"
+                    [attr.aria-label]="'Dismiss ' + item.name"
+                    (click)="q.dismiss(item.id)">
+                    <ng-icon hlm size="xs" name="lucideX" />
+                  </button>
+                }
+              }
+            </div>
+            @if (item.status === 'uploading') {
+              <hlm-progress class="h-1.5" [value]="percentOf(item)" [attr.aria-label]="'Upload progress of ' + item.name">
+                <hlm-progress-indicator />
+              </hlm-progress>
+            }
+            @if (item.error) {
+              <span class="text-destructive text-xs">{{ item.error }}</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </hlm-popover>
+}

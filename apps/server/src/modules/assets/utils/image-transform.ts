@@ -451,8 +451,8 @@ export function parseAssetTransformQuery(query: Record<string, unknown>): AssetT
       // collapse tell "the caller asked for 80" from "the caller asked for nothing":
       // `?f=png&q=80` on a PNG is a real re-encode request, while a bare `?f=png` is a no-op.
       quality: qualityResult.value,
-      format: formatRaw as ImageFormat | undefined,
-      fit: fitRaw as ImageFit | undefined,
+      format: formatRaw,
+      fit: fitRaw,
       thumbnail: isFlagSet(query.thumbnail),
     },
   };

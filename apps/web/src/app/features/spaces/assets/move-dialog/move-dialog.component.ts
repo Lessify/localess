@@ -1,83 +1,127 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AssetService } from '@core/services/asset.service';
-import { folderPath, subtreeIds } from '@core/utils/folder-tree';
+import { SpaceStore } from '@core/stores/space.store';
+import { breadcrumbs, folderPath, subtreeIds } from '@core/utils/folder-tree';
 import { AssetFolderSummary, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFolder, lucideHouse } from '@ng-icons/lucide';
+import { lucideFolder, lucideHouse, lucideSearch } from '@ng-icons/lucide';
+import { LlTreeImports } from '@shared/components/tree/tree.imports';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
-import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
 import { MoveDialogContext, MoveDialogResult, MoveTarget } from './move-dialog.model';
 
+/** The root's key in the tree (a folder's key is its id). */
+export const MOVE_ROOT_KEY = '~';
+
+/**
+ * Where to move a file or folder: the root and every asset folder of the space as a tree (`SpaceStore.assetFolders()`),
+ * the path to where the item is now open and marked. A folder can not go under itself: it and everything under it are
+ * left out. The search filters folders by name or path, keeping their parents, with every branch open. The same as the
+ * Contents Move dialog.
+ */
 @Component({
   selector: 'll-asset-move-dialog',
   templateUrl: './move-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'grid gap-4' },
-  imports: [HlmDialogImports, ReactiveFormsModule, HlmComboboxImports, HlmButtonImports, HlmFieldImports, HlmIconImports],
-  providers: [provideIcons({ lucideFolder, lucideHouse })],
+  imports: [HlmDialogImports, LlTreeImports, HlmButtonImports, HlmIconImports, HlmInputGroupImports],
+  providers: [provideIcons({ lucideFolder, lucideHouse, lucideSearch })],
 })
 export class MoveDialogComponent {
-  private readonly fb = inject(FormBuilder);
-  private readonly assetService = inject(AssetService);
-  readonly fe = inject(FormErrorHandlerService);
   private readonly dialogRef = inject<BrnDialogRef<MoveDialogResult>>(BrnDialogRef);
-
   private readonly context = injectBrnDialogContext<MoveDialogContext>();
+  /** Every folder of the space, from `SpaceStore` (live). */
+  private readonly folders = inject(SpaceStore).assetFolders;
+  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
 
-  form: FormGroup = this.fb.group({
-    target: this.fb.control<MoveTarget | null>(null, Validators.required),
-  });
+  /** The item's folder now (`MOVE_ROOT_KEY`: the root). */
+  private readonly currentKey = this.context.asset.parentId ?? MOVE_ROOT_KEY;
 
   readonly search = signal('');
-  readonly selected = signal<MoveTarget | null>(null);
+  readonly selectedKey = signal<string | undefined>(undefined);
+  /** Open at the start: the root and the folders down to where the item is. */
+  readonly expandedKeys = signal<ReadonlySet<string>>(
+    new Set([MOVE_ROOT_KEY, ...breadcrumbs(this.folderMap(), this.context.asset.parentId ?? null).map(it => it.id)]),
+  );
 
-  /** Every folder of the space, from the editor's folder map endpoint. */
-  private readonly folders = toSignal(this.assetService.findAllFolders(this.context.spaceId), {
-    initialValue: [] as AssetFolderSummary[],
-  });
-
-  /**
-   * The root and every folder, by path, matching the search; without where the item already is, and for a folder
-   * without itself and everything under it.
-   */
-  readonly options = computed<MoveTarget[]>(() => {
+  /** The root, with the folders that are targets under it (matching the search, with their parents). */
+  readonly nodes = computed<MoveTarget[]>(() => {
     const { asset } = this.context;
-    const folders = this.folders();
-    const map = new Map(folders.map(it => [it.id, it]));
-    const excluded = asset.kind === AssetKind.FOLDER ? subtreeIds(folders, asset.id) : new Set<string>();
-    const current = asset.parentId ?? null;
+    const all = this.folders();
+    const map = this.folderMap();
+    const excluded = asset.kind === AssetKind.FOLDER ? subtreeIds(all, asset.id) : new Set<string>();
+    const folders = all.filter(it => !excluded.has(it.id));
+    const pathOf = (folder: AssetFolderSummary) => folderPath(map, folder.id, it => it.name);
     const term = this.search().trim().toLowerCase();
-    const targets: MoveTarget[] = [
-      { id: null, name: 'Root', path: '' },
-      ...folders
-        .filter(it => !excluded.has(it.id))
-        .map(it => ({ id: it.id, name: it.name, path: folderPath(map, it.id, folder => folder.name) })),
+    const shown = term
+      ? this.withAncestors(folders, it => it.name.toLowerCase().includes(term) || pathOf(it).toLowerCase().includes(term))
+      : null;
+    const childrenOf = (parentId: string | undefined): MoveTarget[] =>
+      folders
+        .filter(it => it.parentId === parentId && (!shown || shown.has(it.id)))
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(it => {
+          const children = childrenOf(it.id);
+          return {
+            key: it.id,
+            id: it.id,
+            name: it.name,
+            path: pathOf(it),
+            current: it.id === this.currentKey,
+            children: children.length ? children : undefined,
+          };
+        });
+    const top = childrenOf(undefined);
+    return [
+      {
+        key: MOVE_ROOT_KEY,
+        id: null,
+        name: 'Root',
+        path: '',
+        current: this.currentKey === MOVE_ROOT_KEY,
+        children: top.length ? top : undefined,
+      },
     ];
-    return targets
-      .filter(it => it.id !== current)
-      .filter(it => !term || (it.id !== null && (it.name.toLowerCase().includes(term) || it.path.toLowerCase().includes(term))))
-      .sort((a, b) => a.path.localeCompare(b.path));
   });
 
-  protected readonly displayItem = (item?: MoveTarget): string => (item ? `${item.name} | ${item.path || '~'}` : '');
+  /** While searching every branch is open, so each match shows. */
+  readonly shownExpandedKeys = computed<ReadonlySet<string>>(() =>
+    this.search().trim() ? new Set([MOVE_ROOT_KEY, ...this.folders().map(it => it.id)]) : this.expandedKeys(),
+  );
 
-  protected readonly noOpFilter = (): boolean => true;
+  /** A target other than where the item is now. */
+  readonly canMove = computed(() => {
+    const key = this.selectedKey();
+    return key !== undefined && key !== this.currentKey;
+  });
 
-  choose(target: MoveTarget | null): void {
-    this.selected.set(target);
-    this.form.controls['target'].setValue(target);
+  /** The filter box: a folder's name or path. */
+  onSearch(event: Event): void {
+    this.search.set((event.target as HTMLInputElement).value);
+  }
+
+  onExpandedKeysChange(keys: ReadonlySet<string>): void {
+    if (!this.search().trim()) this.expandedKeys.set(keys);
   }
 
   save(): void {
-    const target = this.selected();
-    if (target) this.dialogRef.close({ parentId: target.id });
+    const key = this.selectedKey();
+    if (key === undefined || !this.canMove()) return;
+    this.dialogRef.close({ parentId: key === MOVE_ROOT_KEY ? null : key });
+  }
+
+  /** The ids of the folders matching, and of every folder above them. */
+  private withAncestors(folders: AssetFolderSummary[], matches: (folder: AssetFolderSummary) => boolean): Set<string> {
+    const byId = new Map(folders.map(it => [it.id, it]));
+    const ids = new Set<string>();
+    for (const folder of folders.filter(matches)) {
+      for (let it: AssetFolderSummary | undefined = folder; it && !ids.has(it.id); it = it.parentId ? byId.get(it.parentId) : undefined) {
+        ids.add(it.id);
+      }
+    }
+    return ids;
   }
 }

@@ -1,4 +1,5 @@
 import type { Content } from '@localess/shared';
+import type { LlTreeNode } from '@shared/components/tree/tree.imports';
 
 export interface MoveDialogContext {
   spaceId: string;
@@ -11,10 +12,12 @@ export interface MoveDialogResult {
   parentId: string | null;
 }
 
-/** A place to move to: a folder, or the root (`id` null). */
-export interface MoveTarget {
+/** A place to move to in the dialog's tree: the root (`id` null) with the folders under it. */
+export interface MoveTarget extends LlTreeNode {
   id: string | null;
-  name: string;
   /** The folder's full slug; '' for the root. */
   path: string;
+  /** Where the item is now: shown, but not a target. */
+  current: boolean;
+  children?: MoveTarget[];
 }

@@ -1,7 +1,8 @@
+import { TokenType } from '@localess/shared';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { FastifyRequest } from 'fastify';
-import { TokenType } from '@localess/shared';
+
 import { V1Error } from '../../infra/http/v1/v1-error.js';
 import { assertValidIdParams, type Params, type Query } from '../../infra/http/v1/v1-request.js';
 import { parseApiToken } from '../../shared/utils/api-token-format.js';
@@ -23,7 +24,7 @@ const CDN_TYPES = [TokenType.PUBLIC, TokenType.PREVIEW];
 export class CdnTokenGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly tokens: TokenAuthService,
+    private readonly tokenAuthService: TokenAuthService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -35,7 +36,7 @@ export class CdnTokenGuard implements CanActivate {
     const claimed = parseApiToken(value);
     if (claimed === TokenType.MANAGEMENT) throw new V1Error(401, 'unauthenticated', INVALID, { details: { hint: MANAGEMENT_HINT } });
     if (!claimed) throw new V1Error(401, 'unauthenticated', INVALID);
-    const token = await this.tokens.findCached(params['spaceId'], value as string);
+    const token = await this.tokenAuthService.findCached(params['spaceId'], value as string);
     const rank = token && RANK[token.type];
     if (!token || rank === undefined) throw new V1Error(401, 'unauthenticated', INVALID);
     const draft = version !== undefined;

@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
-import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
-import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
+import { UnsplashPhoto } from '@localess/shared';
+import { UnsplashService } from '@core/services/unsplash.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -24,7 +24,7 @@ describe('UnsplashAssetsSelectDialogComponent', () => {
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: UnsplashPluginService, useValue: { random, search } },
+        { provide: UnsplashService, useValue: { random, search } },
       ],
     });
     const fixture = TestBed.createComponent(UnsplashAssetsSelectDialogComponent);

@@ -92,10 +92,10 @@
           }
           <!--RICH_TEXT-->
           @case ('RICH_TEXT') {
-            @if (form.controls[field.name]; as control) {
+            @if (form.controls[field.name]) {
               <ll-rich-text-editor
                 [data]="data()"
-                [form]="control"
+                [form]="controlOf(field.name)"
                 [component]="field"
                 [selectedLocale]="selectedLocale()"
                 [availableLocales]="availableLocales()"
@@ -104,12 +104,12 @@
           }
           <!--MARKDOWN-->
           @case ('MARKDOWN') {
-            @if (form.controls[field.name]; as control) {
+            @if (form.controls[field.name]) {
               <ll-markdown-editor
                 [data]="data()"
-                [form]="control"
+                [form]="controlOf(field.name)"
                 [component]="field"
-                [default]="isDefaultLocale() ? undefined : data()[field.name]"
+                [default]="isDefaultLocale() ? undefined : textValue(field.name)"
                 [selectedLocale]="selectedLocale()"
                 [availableLocales]="availableLocales()"
                 [defaultLocale]="space()?.defaultLocale" />
@@ -244,7 +244,8 @@
           <!--OPTION-->
           @case ('OPTION') {
             <div hlmField class="gap-2">
-              <label hlmFieldLabel for="kind">
+              <!-- The trigger is the control; the host keeps schema-field-<name> for focus and highlight. -->
+              <label hlmFieldLabel [for]="'schema-field-' + field.name + '-trigger'">
                 {{ field.displayName || field.name }}
                 @if (field.description) {
                   <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
@@ -257,8 +258,10 @@
                 [id]="'schema-field-' + field.name"
                 [formControlName]="field.name"
                 [itemToString]="optionItemToStringMap().get(field.source)">
-                <hlm-select-trigger class="w-full">
-                  <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data()[field.name]) || 'Select a value'" />
+                <hlm-select-trigger class="w-full" [buttonId]="'schema-field-' + field.name + '-trigger'">
+                  <hlm-select-value
+                    class="flex-1"
+                    [placeholder]="(!isDefaultLocale() && placeholderValue(field.name)) || 'Select a value'" />
                   @if (form.controls[field.name]?.value) {
                     <span
                       role="button"
@@ -287,7 +290,8 @@
           <!--OPTIONS-->
           @case ('OPTIONS') {
             <div hlmField class="gap-2">
-              <label hlmFieldLabel for="kind">
+              <!-- The trigger is the control; the host keeps schema-field-<name> for focus and highlight. -->
+              <label hlmFieldLabel [for]="'schema-field-' + field.name + '-trigger'">
                 {{ field.displayName || field.name }}
                 @if (field.description) {
                   <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
@@ -300,8 +304,10 @@
                 [id]="'schema-field-' + field.name"
                 [formControlName]="field.name"
                 [itemToString]="optionItemToStringMap().get(field.source)">
-                <hlm-select-trigger class="w-full">
-                  <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data()[field.name]) || 'Select a value'" />
+                <hlm-select-trigger class="w-full" [buttonId]="'schema-field-' + field.name + '-trigger'">
+                  <hlm-select-value
+                    class="flex-1"
+                    [placeholder]="(!isDefaultLocale() && placeholderValue(field.name)) || 'Select a value'" />
                   @if (form.controls[field.name]?.value) {
                     <span
                       role="button"
@@ -329,48 +335,52 @@
           }
           <!--LINK-->
           @case ('LINK') {
-            @if (form.controls[field.name]; as control) {
+            @if (form.controls[field.name]) {
               <ll-link-select
-                [form]="control"
+                [form]="groupOf(field.name)"
                 [component]="field"
                 [documents]="documents()"
-                [default]="isDefaultLocale() ? undefined : data()[field.name]" />
+                [default]="isDefaultLocale() ? undefined : linkValue(field.name)" />
             }
           }
           <!--REFERENCE-->
           @case ('REFERENCE') {
-            @if (form.controls[field.name]; as control) {
-              <ll-reference-select [form]="control" [component]="field" [space]="space()" [locked]="isLockedInLocale(field)" />
+            @if (form.controls[field.name] && space(); as sp) {
+              <ll-reference-select [form]="groupOf(field.name)" [component]="field" [space]="sp" [locked]="isLockedInLocale(field)" />
             }
           }
           <!--REFERENCE-->
           @case ('REFERENCES') {
-            @if (form.controls[field.name]; as control) {
-              <ll-references-select [form]="control" [component]="field" [space]="space()" [locked]="isLockedInLocale(field)" />
+            @if (form.controls[field.name] && space(); as sp) {
+              <ll-references-select [form]="arrayOf(field.name)" [component]="field" [space]="sp" [locked]="isLockedInLocale(field)" />
             }
           }
           <!--ASSET-->
           @case ('ASSET') {
-            <ll-asset-select
-              [component]="field"
-              [form]="form.controls[field.name]"
-              [space]="space()"
-              [hover]="hoverSchemaField() === field.name"
-              [locked]="isLockedInLocale(field)" />
+            @if (space(); as sp) {
+              <ll-asset-select
+                [component]="field"
+                [form]="groupOf(field.name)"
+                [space]="sp"
+                [hover]="hoverSchemaField() === field.name"
+                [locked]="isLockedInLocale(field)" />
+            }
           }
           <!--ASSETS-->
           @case ('ASSETS') {
-            <ll-assets-select
-              [component]="field"
-              [form]="form.controls[field.name]"
-              [space]="space()"
-              [locked]="isLockedInLocale(field)"
-              (assetsChange)="onAssetsChange()" />
+            @if (space(); as sp) {
+              <ll-assets-select
+                [component]="field"
+                [form]="arrayOf(field.name)"
+                [space]="sp"
+                [locked]="isLockedInLocale(field)"
+                (assetsChange)="onAssetsChange()" />
+            }
           }
           <!--SCHEMA-->
           @case ('SCHEMA') {
             <div hlmFieldGroup>
-              <fieldset hlmFieldSet class="gap-2">
+              <fieldset hlmFieldSet class="gap-2" [attr.aria-label]="field.displayName || field.name">
                 <legend hlmFieldLegend class="flex w-full justify-between">
                   {{ field.displayName || field.name }}
                   <button
@@ -379,14 +389,15 @@
                     size="sm"
                     [hlmDropdownMenuTrigger]="menu"
                     hlmTooltip="Add Schema"
-                    [disabled]="data()[field.name]">
+                    aria-label="Add Schema"
+                    [disabled]="!!data()[field.name]">
                     <ng-icon hlm size="sm" name="lucideCirclePlus" />
                   </button>
                   <ng-template #menu>
                     <hlm-dropdown-menu class="w-60">
                       @for (sch of filterSchema(field.schemas || []); track sch.id) {
                         <button hlmDropdownMenuItem (click)="addSchemaOne(field, sch)" [hlmTooltip]="sch.description || ''">
-                          {{ sch.displayName || sch.id }}
+                          {{ sch.displayName || sch.name }}
                         </button>
                       }
                     </hlm-dropdown-menu>
@@ -396,8 +407,8 @@
                   <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
                 }
                 <hlm-field-separator />
-                <div hlmItemGroup class="gap-2">
-                  @if (data()[field.name]; as item) {
+                <div hlmItemGroup role="list" class="gap-2">
+                  @if (blockValue(field.name); as item) {
                     <div
                       [id]="item._id"
                       hlmItem
@@ -412,7 +423,7 @@
                       <div hlmItemContent class="min-w-0 overflow-hidden">
                         @if (schemaCompNodeByName().get(item._schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
-                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.name }}</span>
                           </div>
                           @if (sch.previewField) {
                             <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
@@ -424,7 +435,13 @@
                         }
                       </div>
                       <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne(field)" hlmTooltip="Delete">
+                        <button
+                          hlmBtn
+                          size="icon"
+                          variant="outline"
+                          (click)="removeSchemaOne(field)"
+                          hlmTooltip="Delete"
+                          aria-label="Delete">
                           <ng-icon hlm size="sm" name="lucideTrash" />
                         </button>
                       </div>
@@ -437,17 +454,23 @@
           <!--SCHEMAS-->
           @case ('SCHEMAS') {
             <div hlmFieldGroup>
-              <fieldset hlmFieldSet class="gap-2">
+              <fieldset hlmFieldSet class="gap-2" [attr.aria-label]="field.displayName || field.name">
                 <legend hlmFieldLegend class="flex w-full justify-between">
                   {{ field.displayName || field.name }}
-                  <button hlmBtn variant="ghost" size="sm" [hlmDropdownMenuTrigger]="menu" hlmTooltip="Add Schema at the end">
+                  <button
+                    hlmBtn
+                    variant="ghost"
+                    size="sm"
+                    [hlmDropdownMenuTrigger]="menu"
+                    hlmTooltip="Add Schema at the end"
+                    aria-label="Add Schema at the end">
                     <ng-icon hlm size="sm" name="lucideCirclePlus" />
                   </button>
                   <ng-template #menu>
                     <hlm-dropdown-menu class="w-60">
                       @for (sch of filterSchema(field.schemas || []); track sch.id) {
                         <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch)" [hlmTooltip]="sch.description || ''">
-                          {{ sch.displayName || sch.id }}
+                          {{ sch.displayName || sch.name }}
                         </button>
                       }
                     </hlm-dropdown-menu>
@@ -457,8 +480,13 @@
                   <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
                 }
                 <hlm-field-separator />
-                <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data()[field.name])">
-                  @for (item of data()[field.name] || []; track item; let index = $index) {
+                <div
+                  hlmItemGroup
+                  role="list"
+                  class="gap-2"
+                  cdkDropList
+                  (cdkDropListDropped)="schemaDropDrop($event, blocksValue(field.name))">
+                  @for (item of blocksValue(field.name); track item; let index = $index) {
                     <div
                       [id]="item._id"
                       hlmItem
@@ -475,7 +503,7 @@
                       <div hlmItemContent class="min-w-0 overflow-hidden">
                         @if (schemaCompNodeByName().get(item._schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
-                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.name }}</span>
                           </div>
                           @if (sch.previewField) {
                             <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
@@ -492,14 +520,15 @@
                           variant="outline"
                           size="sm"
                           [hlmDropdownMenuTrigger]="schemasMenuAbove"
-                          hlmTooltip="Add Schema above">
+                          hlmTooltip="Add Schema above"
+                          aria-label="Add Schema above">
                           <ng-icon hlm size="sm" name="tablerRowInsertTop" />
                         </button>
                         <ng-template #schemasMenuAbove>
                           <hlm-dropdown-menu class="w-60">
                             @for (sch of filterSchema(field.schemas || []); track sch.id) {
                               <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch, index)" [hlmTooltip]="sch.description || ''">
-                                {{ sch.displayName || sch.id }}
+                                {{ sch.displayName || sch.name }}
                               </button>
                             }
                           </hlm-dropdown-menu>
@@ -509,7 +538,8 @@
                           variant="outline"
                           size="sm"
                           [hlmDropdownMenuTrigger]="schemasMenuBelow"
-                          hlmTooltip="Add Schema below">
+                          hlmTooltip="Add Schema below"
+                          aria-label="Add Schema below">
                           <ng-icon hlm size="sm" name="tablerRowInsertBottom" />
                         </button>
                         <ng-template #schemasMenuBelow>
@@ -519,7 +549,7 @@
                                 hlmDropdownMenuItem
                                 (click)="addSchemaMany(field, sch, index + 1)"
                                 [hlmTooltip]="sch.description || ''">
-                                {{ sch.displayName || sch.id }}
+                                {{ sch.displayName || sch.name }}
                               </button>
                             }
                           </hlm-dropdown-menu>
@@ -529,10 +559,17 @@
                           size="icon"
                           variant="outline"
                           (click)="duplicateSchemaMany(field, item, index)"
-                          hlmTooltip="Clone the schema">
+                          hlmTooltip="Clone the schema"
+                          aria-label="Clone the schema">
                           <ng-icon hlm size="sm" name="lucideBookCopy" />
                         </button>
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaMany(field, item._id)" hlmTooltip="Delete">
+                        <button
+                          hlmBtn
+                          size="icon"
+                          variant="outline"
+                          (click)="removeSchemaMany(field, item._id)"
+                          hlmTooltip="Delete"
+                          aria-label="Delete">
                           <ng-icon hlm size="sm" name="lucideTrash" />
                         </button>
                         <button
@@ -541,7 +578,8 @@
                           variant="ghost"
                           cdkDragHandle
                           class="cursor-grab active:cursor-grabbing"
-                          hlmTooltip="Move">
+                          hlmTooltip="Move"
+                          aria-label="Move">
                           <ng-icon hlm size="sm" name="lucideGripVertical" />
                         </button>
                       </div>
@@ -552,7 +590,7 @@
             </div>
           }
           @default {
-            {{ field.kind }} is not implemented
+            {{ kindOf(field) }} is not implemented
           }
         }
       </div>
@@ -569,7 +607,7 @@
     <hlm-accordion-item>
       <h3 class="contents">
         <button hlmAccordionTrigger>
-          EditDocumentSchema Form => {{ form?.valid }}
+          EditDocumentSchema Form => {{ form.valid }}
           <ng-icon name="lucideChevronDown" hlm hlmAccIcon />
         </button>
       </h3>

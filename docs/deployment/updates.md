@@ -35,6 +35,15 @@ pnpm version:generate && pnpm build:prod && pnpm server:build
 **Take a backup before every upgrade** (below). Migrations are forward-only: there is no
 "migrate down", so the backup is your way back.
 
+### Upgrade notes
+
+- **Integrations in Admin → Settings.** DeepL, Google Cloud Translation and Unsplash can now be connected in the app;
+  installs that set them in the environment keep working unchanged, and their cards are read-only. An install with
+  **both** `DEEPL_API_KEY` and `GOOGLE_CLOUD_PROJECT` set used to send everything to DeepL; it now sends Google the
+  language pairs DeepL doesn't support, and retries on Google when DeepL fails (key, quota, network). Set
+  `LOCALESS_TRANSLATE_PRIMARY` to pick the provider tried first. See
+  [Configuration](configuration.md#integrations-environment-or-admin--settings).
+
 ### How migrations behave
 
 - They run before the server starts listening, inside a Postgres advisory lock. With several
@@ -54,6 +63,7 @@ reference them.
 |------|-------|-----|
 | Database | External Postgres, or the embedded cluster in `$LOCALESS_DATA_DIR/pgdata` | `pg_dump` (or your provider's snapshots / point-in-time recovery) |
 | Files | `$LOCALESS_DATA_DIR/storage` (`/data/storage` in Docker) | Any file-level copy: `rsync`, `tar`, volume snapshots |
+| Secret key | `$LOCALESS_DATA_DIR/secret.key` (`/data/secret.key` in Docker), unless `LOCALESS_SECRET_KEY` is set | Copy it once, **apart from the database backups** (a password manager). Without it, keys saved in Admin → Settings → Integrations can't be read and must be entered again |
 
 **Docker Compose:**
 

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { FirstAdminService } from '../src/modules/users/services/first-admin.service.js';
+
 import { spaces, tokens, users } from '../src/infra/database/schema.js';
-import { selectSpaces } from '../src/shared/queries/space.query.js';
-import { createTestApp, login, TestApp } from './test-app.js';
+import { FirstAdminService } from '../src/modules/users/services/first-admin.service.js';
+import { createTestApp, login, readSpaces, TestApp } from './test-app.js';
 
 describe('first admin', () => {
   let t: TestApp | undefined;
@@ -17,7 +17,7 @@ describe('first admin', () => {
     const rows = await t.db.select().from(users);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ email: 'root@example.com', role: 'ADMIN', emailVerified: true, displayName: 'Admin' });
-    const spaceRows = await selectSpaces(t.db);
+    const spaceRows = await readSpaces(t.db);
     expect(spaceRows).toHaveLength(1);
     expect(spaceRows[0]).toMatchObject({
       name: 'Hello World',

@@ -1,10 +1,11 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
+
 import { contentLinkSnapshots, contentSnapshots } from '../../infra/database/schema.js';
 import type { Transaction } from '../../infra/database/transaction.js';
 
 /*
  * Rules every module that writes contents, or a space's locales or default locale, follows inside its own transaction
- * (docs/server-architecture.md#shared). What the public API serves for content is stored (`content_snapshots` per
+ * (docs/server/architecture.md#shared). What the public API serves for content is stored (`content_snapshots` per
  * document, `content_link_snapshots` per `/links` stage), each answering to `cv` = its `built_at`: drafts and the links
  * lists are built on the first request after a change dropped them, published documents are written by a publish.
  *

@@ -7,7 +7,14 @@
           <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
         }
       </span>
-      <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add Assets" [disabled]="locked()" (click)="openAssetSelectDialog()">
+      <button
+        hlmBtn
+        variant="ghost"
+        size="sm"
+        hlmTooltip="Add Assets"
+        aria-label="Add Assets"
+        [disabled]="locked()"
+        (click)="openAssetSelectDialog()">
         <ng-icon hlm size="sm" name="lucideFilePlusCorner" />
       </button>
     </legend>
@@ -15,8 +22,8 @@
       <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
     }
     <hlm-field-separator />
-    <div hlmItemGroup class="gap-2" cdkDropList [cdkDropListDisabled]="locked()" (cdkDropListDropped)="assetDropDrop($event)">
-      @for (asset of assets(); track asset.id; let idx = $index) {
+    <div hlmItemGroup role="list" class="gap-2" cdkDropList [cdkDropListDisabled]="locked()" (cdkDropListDropped)="assetDropDrop($event)">
+      @for (asset of assets(); track asset.id) {
         <div
           hlmItem
           variant="outline"
@@ -26,7 +33,7 @@
           cdkDragPreviewContainer="parent"
           (click)="openImagePreview(asset)"
           (keydown)="openImagePreview(asset)">
-          @if (asset.type.startsWith('image/')) {
+          @if (filePreview(asset.type)) {
             <div hlmItemMedia variant="image">
               <img
                 [llImagePreview]="2.5"
@@ -35,8 +42,7 @@
                 height="200"
                 alt="thumbnail"
                 loading="lazy"
-                [loaderParams]="{ thumbnail: true }"
-                ngSrc="/api/v1/spaces/{{ space().id }}/assets/{{ asset.id }}" />
+                src="/api/app/spaces/{{ space().id }}/assets/{{ asset.id }}/thumbnail" />
             </div>
           } @else {
             <div hlmItemMedia variant="icon">
@@ -53,7 +59,14 @@
             </p>
           </div>
           <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-            <button hlmBtn size="icon" variant="outline" [disabled]="locked()" (click)="deleteAsset(idx)" hlmTooltip="Delete">
+            <button
+              hlmBtn
+              size="icon"
+              variant="outline"
+              [disabled]="locked()"
+              (click)="deleteAsset(asset.id)"
+              hlmTooltip="Delete"
+              aria-label="Delete">
               <ng-icon hlm size="sm" name="lucideTrash" />
             </button>
             <button
@@ -63,7 +76,8 @@
               cdkDragHandle
               [disabled]="locked()"
               class="cursor-grab active:cursor-grabbing"
-              hlmTooltip="Move">
+              hlmTooltip="Move"
+              aria-label="Move">
               <ng-icon hlm size="sm" name="lucideGripVertical" />
             </button>
           </div>

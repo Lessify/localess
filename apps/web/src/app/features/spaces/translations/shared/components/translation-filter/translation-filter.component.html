@@ -1,9 +1,11 @@
 <form [formGroup]="filterForm">
   <fieldset hlmFieldSet>
-    <div hlmFieldGroup class="mb-3 grid grid-cols-4 gap-2">
-      <div hlmField>
+    <!-- A toolbar row: what doesn't fit moves to the next line. -->
+    <div class="mb-3 flex flex-wrap items-center gap-2">
+      <div class="w-56 shrink-0">
+        <label class="sr-only" for="translation-filter-locale">Locale</label>
         <hlm-select formControlName="locale" [itemToString]="localeIdToString">
-          <hlm-select-trigger class="w-full">
+          <hlm-select-trigger class="w-full" buttonId="translation-filter-locale">
             <hlm-select-placeholder>Search Locale</hlm-select-placeholder>
             <ng-template hlmSelectValueTemplate let-value>
               <div class="flex items-center">
@@ -22,13 +24,27 @@
           </hlm-select-content>
         </hlm-select>
       </div>
-      <div hlmInputGroup>
-        <input hlmInputGroupInput placeholder="Search..." formControlName="search" type="search" />
+      <div hlmInputGroup class="max-w-md min-w-64 flex-1" [attr.data-search-pending]="searchPending() || null">
+        <input hlmInputGroupInput placeholder="Search..." formControlName="search" type="search" (keydown.enter)="applySearch($event)" />
         <div hlmInputGroupAddon>
           <ng-icon hlm size="sm" name="lucideSearch" />
         </div>
+        <div hlmInputGroupAddon align="inline-end">
+          <button
+            type="button"
+            hlmInputGroupButton
+            [variant]="searchPending() ? 'default' : 'secondary'"
+            [disabled]="!searchPending()"
+            [attr.aria-label]="searchPending() ? 'Search (not applied yet)' : 'Search'"
+            (click)="applySearch()">
+            Search
+            @if (searchPending()) {
+              <kbd class="text-[10px] opacity-70" aria-hidden="true">⏎</kbd>
+            }
+          </button>
+        </div>
       </div>
-      <div hlmField class="col-span-2 flex w-fit flex-row">
+      <div class="flex flex-wrap items-center gap-2">
         <hlm-popover sideOffset="5">
           <div hlmButtonGroup>
             <button class="justify-between" hlmPopoverTrigger hlmBtn variant="outline">
@@ -112,7 +128,7 @@
           </hlm-command>
         </hlm-popover>
         @if (isFormChanged()) {
-          <button hlmBtn variant="outline" class="!w-fit" (click)="filterReset()">
+          <button type="button" hlmBtn variant="outline" class="!w-fit" (click)="filterReset()">
             Reset
             <ng-icon hlm name="lucideX" size="sm" class="ml-2" />
           </button>

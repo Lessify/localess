@@ -1,6 +1,8 @@
 import { randomInt } from 'node:crypto';
 import { crc32 } from 'node:zlib';
+
 import { TokenType } from '@localess/shared';
+
 import { hashToken } from '../../auth/utils/token-hash.js';
 
 /*

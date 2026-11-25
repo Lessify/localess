@@ -1,10 +1,11 @@
+import { DEFAULT_LOCALE } from '@localess/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
-import { DEFAULT_LOCALE } from '@localess/shared';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { spaceLocales, spaces, userCredentials, users } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 
 /**
@@ -15,18 +16,13 @@ import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 export class FirstAdminRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async countUsers(): Promise<number> {
-    const [{ count }] = await this.db.select({ count: sql<number>`count(*)::int` }).from(users);
-    return count;
+  countUsers(): Promise<number> {
+    return this.db.$count(users);
   }
 
   /** Case-insensitive. */
   async existsEmail(email: string): Promise<boolean> {
-    const [user] = await this.db
-      .select({ id: users.id })
-      .from(users)
-      .where(sql`lower(${users.email}) = ${email.toLowerCase()}`);
-    return user !== undefined;
+    return (await this.db.$count(users, sql`lower(${users.email}) = ${email.toLowerCase()}`)) > 0;
   }
 
   /** The admin with an argon2id password, and the "Hello World" space with the default locale and its preview token, in one transaction. */

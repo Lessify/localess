@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnDestroy } from '@angular/core';
-import { AbstractControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TranslateService } from '@core/services/translate.service';
@@ -53,7 +53,7 @@ export class RichTextEditorComponent implements OnDestroy {
 
   // Input
   data = input.required<ContentData>();
-  form = input.required<AbstractControl>();
+  form = input.required<FormControl>();
   component = input.required<SchemaFieldRichText>();
   selectedLocale = input.required<Locale>();
   availableLocales = input.required<Locale[]>();

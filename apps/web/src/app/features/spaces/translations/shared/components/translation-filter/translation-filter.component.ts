@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject, input, output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Locale } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -15,7 +15,6 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmPopoverImports } from '@spartan-ng/helm/popover';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
-import { debounceTime } from 'rxjs';
 
 import { LocaleStatus, TRANSLATION_STATUS_LABELS, TranslationStatus } from '../../models/translation-status.model';
 
@@ -86,13 +85,10 @@ export class TranslationFilterComponent {
     this.filterForm.controls.locale.valueChanges.pipe(takeUntilDestroyed()).subscribe(locale => {
       this.localeChange.emit(locale || '');
     });
-    this.filterForm.valueChanges.pipe(debounceTime(500), takeUntilDestroyed()).subscribe(value => {
-      this.filterChange.emit({
-        locale: value.locale || '',
-        search: value.search || '',
-        labels: value.labels || [],
-        states: value.states || [],
-      });
+    // Labels, statuses and the locale apply at once; the search only on Enter (`applySearch`), or when the box is emptied.
+    this.filterForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(value => {
+      if (!value.search?.trim()) this.appliedSearch.set('');
+      this.emitFilter();
     });
     effect(() => {
       const fallbackId = this.defaultLocaleId();
@@ -100,6 +96,35 @@ export class TranslationFilterComponent {
         this.filterForm.patchValue({ locale: fallbackId });
       }
     });
+  }
+
+  /** The search the list and tree show: what was in the box at the last Enter. */
+  private readonly appliedSearch = signal('');
+  private readonly typedSearch = toSignal(this.filterForm.controls.search.valueChanges, { initialValue: '' });
+  /** The box holds text the list doesn't show yet: the box is marked and the Search button waits for Enter or a click. */
+  readonly searchPending = computed(() => (this.typedSearch() ?? '').trim() !== this.appliedSearch());
+  /** The last criteria sent: typing changes the form, but sends nothing new until Enter. */
+  private emitted = '';
+
+  /** Enter in the search box: search now (and keep the browser from submitting the form). */
+  applySearch(event?: Event): void {
+    event?.preventDefault();
+    this.appliedSearch.set(this.filterForm.controls.search.value?.trim() ?? '');
+    this.emitFilter();
+  }
+
+  private emitFilter(): void {
+    const value = this.filterForm.getRawValue();
+    const criteria: TranslationFilterCriteria = {
+      locale: value.locale || '',
+      search: this.appliedSearch(),
+      labels: value.labels || [],
+      states: value.states || [],
+    };
+    const key = JSON.stringify(criteria);
+    if (key === this.emitted) return;
+    this.emitted = key;
+    this.filterChange.emit(criteria);
   }
 
   localeIdToString = (id: string): string => this.availableLocales().find(l => l.id === id)?.name ?? id;

@@ -1,8 +1,10 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
 import { Logger } from '@nestjs/common';
 import type { TestProject } from 'vitest/node';
+
 import { startEmbeddedPostgres } from '../src/infra/database/embedded-postgres.js';
 import { freePort } from './free-port.js';
 
@@ -24,6 +26,6 @@ export default async function setup(project: TestProject): Promise<() => Promise
     // embedded-postgres registers async-exit-hook, whose `beforeExit` handler calls `process.exit(0)` and would
     // overwrite the failure code vitest records (`process.exitCode = 1`): a red run would exit 0. Keep the failure.
     const exit = process.exit.bind(process);
-    process.exit = ((code?: number | string | null) => exit(code === 0 && process.exitCode ? process.exitCode : code)) as typeof process.exit;
+    process.exit = (code?: number | string | null) => exit(code === 0 && process.exitCode ? process.exitCode : code);
   };
 }

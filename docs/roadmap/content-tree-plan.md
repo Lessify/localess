@@ -17,7 +17,7 @@
 - After code changes: `pnpm build`, `pnpm lint:fix`, `pnpm server:build`.
 - Shared model changes: rebuild with `pnpm --filter @localess/shared build` before compiling the server.
 - Schema change: `pnpm --filter @localess/server db:regenerate` (rewrites `0000_init.sql`; local `.data` must be recreated).
-- Layers (docs/server-architecture.md): controller → service (business checks, wording of 400/404/409) → repository (all database work; answers results such as `{ taken }`, `undefined`).
+- Layers (docs/server/architecture.md): controller → service (business checks, wording of 400/404/409) → repository (all database work; answers results such as `{ taken }`, `undefined`).
 - Angular: OnPush, signals, `inject()`, `input()`/`output()`, `@if`/`@for`, no `standalone: true`.
 - Tables stay plural. Domain types only in `@localess/shared`.
 - Server tests: `cd apps/server && npx vitest run <file>`; web specs: `cd apps/web && npx ng test --include=<glob> --watch=false`.
@@ -472,7 +472,7 @@ export function toContentMetadata(row: ContentWithPath): ContentMetadata {
 }
 ```
 
-If importing a module type into `shared/transformers` breaks the module-independence rule (docs/server-architecture.md: shared must not import modules), declare `ContentWithPath` in `shared/queries/content-tree.query.ts` instead (`export type ContentWithPath = typeof contents.$inferSelect & { parentSlug: string; fullSlug: string }`) and re-export it from the repository. Prefer that.
+If importing a module type into `shared/transformers` breaks the module-independence rule (docs/server/architecture.md: shared must not import modules), declare `ContentWithPath` in `shared/queries/content-tree.query.ts` instead (`export type ContentWithPath = typeof contents.$inferSelect & { parentSlug: string; fullSlug: string }`) and re-export it from the repository. Prefer that.
 
 - [ ] **Step 5: Repository** (`contents.repository.ts`). Replace the slug-based logic:
 

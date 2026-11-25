@@ -21,7 +21,8 @@ export interface PublicAppConfig {
     passwordResetByEmail: boolean;
   };
   plugins: { unsplash: boolean };
-  translate: { enabled: boolean };
+  /** The locales the connected providers can translate from and to (empty when none is connected). */
+  translate: { enabled: boolean; sourceLocales: string[]; targetLocales: string[] };
   /** Absent when the instance is not named. */
   instance?: InstanceLabel;
 }

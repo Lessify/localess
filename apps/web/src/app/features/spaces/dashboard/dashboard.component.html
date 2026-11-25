@@ -74,7 +74,7 @@
               </div>
               <div hlmCardContent>
                 {{ localeRatio | percent: '1.0-2' }} - {{ locale.translated }} of {{ overview.progress.total }}
-                <hlm-progress [value]="localeRatio * 100">
+                <hlm-progress [value]="localeRatio * 100" [attr.aria-label]="locale.name + ' translated'">
                   <hlm-progress-indicator />
                 </hlm-progress>
               </div>

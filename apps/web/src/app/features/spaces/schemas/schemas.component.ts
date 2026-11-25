@@ -5,7 +5,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   inject,
   Injector,
   input,
@@ -14,14 +13,15 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { FEATURE_FLAGS } from '@core/feature-flags';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
+import { SpaceStore } from '@core/stores/space.store';
+import { apiErrorMessage } from '@core/utils/api-error';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
-import { Schema, SchemaCreate, SchemaFieldKind, SchemaType } from '@localess/shared';
+import { Schema, SchemaCreate, SchemaFieldKind, SchemaType, TaskKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -34,6 +34,7 @@ import {
   lucideUploadCloud,
   lucideWorkflow,
 } from '@ng-icons/lucide';
+import { ActiveTasksComponent } from '@shared/components/active-tasks';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
   ConfirmationDialogComponent,
@@ -50,7 +51,7 @@ import {
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -76,7 +77,7 @@ import { describeSchemaUsage } from './shared/schema-usage';
   styleUrls: ['./schemas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     LlTableImports,
     LlPaginatorImports,
@@ -87,6 +88,7 @@ import { describeSchemaUsage } from './shared/schema-usage';
     HlmProgressImports,
     HlmTooltipImports,
     HlmBadgeImports,
+    ActiveTasksComponent,
   ],
   providers: [
     provideIcons({
@@ -103,13 +105,14 @@ import { describeSchemaUsage } from './shared/schema-usage';
   ],
 })
 export class SchemasComponent implements OnInit, AfterViewInit {
-  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly router = inject(Router);
   private readonly schemaService = inject(SchemaService);
   private readonly taskService = inject(TaskService);
+  private readonly taskNotifier = inject(TaskNotifierService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
+  private readonly spaceStore = inject(SpaceStore);
 
   sort = viewChild.required(TableSort);
   paginator = viewChild.required(Paginator);
@@ -117,19 +120,25 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   // Inputs
   spaceId = input.required<string>();
 
-  schemaTypeDescriptions = schemaTypeDescriptions;
+  /** The tasks that change (or read) the schemas shown: told in the action bar while queued or running. */
+  readonly schemaTaskKinds: readonly TaskKind[] = [TaskKind.SCHEMA_IMPORT, TaskKind.SCHEMA_EXPORT];
+
+  /** A schema type's name, icon and description (typed key: the table and the select hand over untyped values). */
+  protected readonly schemaTypeDescription = (type: SchemaType) => schemaTypeDescriptions[type];
 
   displayedColumns: string[] = ['type', 'name', 'description', 'labels', /*'createdAt',*/ 'updatedAt', 'actions'];
-  schemas = signal<Schema[]>([]);
+  /**
+   * Every schema of the space, from `SpaceStore` (live): the editors need them all anyway, so the list is not paged on
+   * the server; search, label filter, sort and paging run here (docs/server/pagination.md#not-paged-and-why).
+   */
+  readonly schemas = computed(() => [...this.spaceStore.schemas()].sort(sortSchema));
   readonly dataSource = new TableDataSource<Schema>(this.schemas, this.injector);
   /** Names (shown as IDs) already taken; content and fields refer to schemas by name. */
   schemaNames = computed(() => this.schemas().map(it => it.name));
   schemasInUse = computed(() => this.inUseSchema(this.schemas()));
 
-  private destroyRef = inject(DestroyRef);
-
   // Loading
-  isLoading = signal(true);
+  readonly isLoading = computed(() => !this.spaceStore.schemasLoaded());
 
   //Labels
   readonly labelOptions: Signal<FilterOption[]> = computed(() => {
@@ -152,7 +161,6 @@ export class SchemasComponent implements OnInit, AfterViewInit {
       searchFields: schema => [schema.name, schema.displayName, schema.description],
       filterFields: [{ key: 'labels', accessor: schema => schema.labels }],
     });
-    this.loadData(this.spaceId());
   }
 
   onFilterChange(value: FilterToolbarValue): void {
@@ -163,18 +171,6 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     this.dataSource.sort = this.sort();
     this.dataSource.paginator = this.paginator();
-  }
-
-  loadData(spaceId: string): void {
-    this.schemaService
-      .findAll(spaceId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: schemas => {
-          this.schemas.set(schemas.sort(sortSchema));
-          this.isLoading.set(false);
-        },
-      });
   }
 
   openAddDialog(): void {
@@ -205,7 +201,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
     event.preventDefault();
     event.stopImmediatePropagation();
     this.schemaService
-      .usage(this.spaceId(), element.id)
+      .findUsage(this.spaceId(), element.id)
       .pipe(
         // Without the usage, the rename is still offered.
         catchError(() => of(undefined)),
@@ -222,7 +218,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
             .closed$.pipe(take(1)),
         ),
         filter(it => it !== undefined),
-        switchMap(it => this.schemaService.updateName(this.spaceId(), element, it!)),
+        switchMap(it => this.schemaService.rename(this.spaceId(), element.id, it!)),
       )
       .subscribe({
         next: () => {
@@ -248,7 +244,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
     event.preventDefault();
     event.stopImmediatePropagation();
     this.schemaService
-      .usage(this.spaceId(), element.id)
+      .findUsage(this.spaceId(), element.id)
       .pipe(
         // Without the usage, the delete is still offered; the server refuses it if the schema is in use.
         map(usage => describeSchemaUsage(usage)),
@@ -272,7 +268,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
             .closed$.pipe(take(1)),
         ),
         filter(it => it || false),
-        switchMap(() => this.schemaService.delete(this.spaceId(), element.id)),
+        switchMap(() => this.schemaService.remove(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
@@ -287,54 +283,29 @@ export class SchemasComponent implements OnInit, AfterViewInit {
 
   openImportDialog() {
     this.dialog
-      .open<ImportDialogResult>(ImportDialogComponent, {
-        contentClass: DIALOG_WIDTH_SM,
-      })
+      .open<ImportDialogResult>(ImportDialogComponent, { contentClass: DIALOG_WIDTH_SM })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createSchemaImportTask(this.spaceId(), it!.file)),
+        switchMap(it => this.taskService.createSchemaImport(this.spaceId(), it.file)),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Schema Import Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: () => {
-          this.notificationService.error('Schema Import Task can not be created.');
-        },
+        next: task => this.taskNotifier.watch(this.spaceId(), task),
+        error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Schemas can not be imported.')),
       });
   }
 
   openExportDialog() {
     this.dialog
-      .open<ExportDialogResult>(ExportDialogComponent, {
-        contentClass: DIALOG_WIDTH_SM,
-      })
+      .open<ExportDialogResult>(ExportDialogComponent, { contentClass: DIALOG_WIDTH_SM })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(() => this.taskService.createSchemaExportTask(this.spaceId())),
+        switchMap(() => this.taskService.createSchemaExport(this.spaceId())),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Schema Export Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: (err: unknown) => {
-          console.error(err);
-          this.notificationService.error('Schema Export Task can not be created.');
-        },
+        next: task => this.taskNotifier.watch(this.spaceId(), task),
+        error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Schemas can not be exported.')),
       });
   }
 

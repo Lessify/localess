@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { AssetKind } from './asset.model.js';
+
+import { ASSET_SORT_FIELDS, AssetKind } from './asset.model.js';
+import { zPageable, zSearch } from './page.zod.js';
+import { AssetFileType } from './schema.model.js';
 
 export const assetBaseSchema = z.object({
   id: z.string(),
@@ -31,3 +34,58 @@ export const assetFileSchema = assetBaseSchema.extend({
 export const assetSchema = z.union([assetFileSchema, assetFolderSchema]);
 
 export const zAssetExportArraySchema = z.array(assetSchema);
+
+// App API requests.
+
+/** The folder; null or absent: the root. */
+const zParentId = z.uuid().nullable().optional();
+const zAssetName = z.string().trim().min(1).max(500);
+
+/**
+ * `GET …/assets`: one page, folders first, then by name unless sorted otherwise. `?parentId=` (absent: the root),
+ * `?deep=true` (everything under it), `?kind=`, `?fileType=` (files of that type; folders stay listed), `?search=` (the
+ * name, anywhere).
+ */
+export const zAssetPageable = zPageable(ASSET_SORT_FIELDS, 'name').extend({
+  // The folder; absent: the root.
+  parentId: z.uuid().optional(),
+  // true: everything under the folder at any depth (under the root: the whole space); else its children only.
+  deep: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(it => it === 'true'),
+  kind: z.enum(['FOLDER', 'FILE']).optional(),
+  fileType: z.enum(AssetFileType).optional(),
+  search: zSearch,
+});
+export type AssetPageable = z.infer<typeof zAssetPageable>;
+
+/** `GET …/assets/count?kind=`: every asset, or one kind. */
+export const zAssetCountQuery = z.object({ kind: z.enum(['FOLDER', 'FILE']).optional() });
+export type AssetCountQuery = z.infer<typeof zAssetCountQuery>;
+
+/** `POST …/assets/folders`. A folder is a name in a place: file fields are refused, not ignored. */
+export const zAssetFolderCreate = z.strictObject({ parentId: zParentId, name: zAssetName });
+export type AssetFolderCreate = z.infer<typeof zAssetFolderCreate>;
+
+/** `PATCH …/assets/:assetId`: rename (name; alt for a file) and/or move (`parentId`; null is the root), as contents. */
+export const zAssetUpdate = z.strictObject({
+  name: zAssetName.optional(),
+  alt: z.string().max(2000).optional(),
+  parentId: z.uuid().nullable().optional(),
+});
+export type AssetUpdate = z.infer<typeof zAssetUpdate>;
+
+/** `POST …/assets/files`: the multipart fields before the `file` part; an unknown field is refused. */
+export const zAssetUpload = z.strictObject({
+  // A multipart field: absent or '' for the root.
+  parentId: z.union([z.uuid(), z.literal('')]).optional(),
+  name: zAssetName.optional(),
+  extension: z
+    .string()
+    .regex(/^(\.[^./\\\s]{1,31})?$/, 'extension is empty or starts with a dot (.png)')
+    .optional(),
+  alt: z.string().max(2000).optional(),
+  source: z.string().max(2048).optional(),
+});
+export type AssetUpload = z.infer<typeof zAssetUpload>;

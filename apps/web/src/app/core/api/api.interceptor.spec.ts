@@ -1,5 +1,6 @@
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { UserStore } from '@core/stores/user.store';
@@ -7,12 +8,14 @@ import { firstValueFrom } from 'rxjs';
 import { vi } from 'vitest';
 
 import { apiInterceptor } from './api.interceptor';
+import { SaveActivityService } from './save-activity.service';
 
 describe('apiInterceptor', () => {
   let http: HttpTestingController;
   let client: HttpClient;
   const signedOut = vi.fn();
   const navigate = vi.fn();
+  const path = vi.fn(() => '/features/spaces');
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -21,6 +24,7 @@ describe('apiInterceptor', () => {
         provideHttpClientTesting(),
         { provide: UserStore, useValue: { signedOut } },
         { provide: Router, useValue: { navigate } },
+        { provide: Location, useValue: { path } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -39,6 +43,24 @@ describe('apiInterceptor', () => {
     expect(http.expectOne('https://api.github.com/repos/x').request.headers.has('X-Requested-With')).toBe(false);
   });
 
+  it('counts writes to the API as saves, not reads', () => {
+    const track = vi.spyOn(TestBed.inject(SaveActivityService), 'track');
+
+    void firstValueFrom(client.get('/api/app/spaces'));
+    http.expectOne('/api/app/spaces').flush([]);
+    expect(track).not.toHaveBeenCalled();
+
+    for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+      void firstValueFrom(client.request(method, '/api/app/spaces/1'));
+      http.expectOne('/api/app/spaces/1').flush({});
+    }
+    expect(track).toHaveBeenCalledTimes(4);
+
+    void firstValueFrom(client.post('https://example.com/hook', {}));
+    http.expectOne('https://example.com/hook').flush({});
+    expect(track).toHaveBeenCalledTimes(4);
+  });
+
   it('signs out and goes to the login page on a 401 from the app API', async () => {
     const call = firstValueFrom(client.get('/api/app/spaces'));
     http.expectOne('/api/app/spaces').flush({}, { status: 401, statusText: 'Unauthorized' });
@@ -52,5 +74,14 @@ describe('apiInterceptor', () => {
     http.expectOne('/api/auth/login').flush({}, { status: 401, statusText: 'Unauthorized' });
     await expect(call).rejects.toBeTruthy();
     expect(signedOut).not.toHaveBeenCalled();
+  });
+
+  it("stays on a sign-in page (the login page keeps its ?error=) on the session check's 401", async () => {
+    path.mockReturnValue('/auth/login?error=no-account');
+    const call = firstValueFrom(client.get('/api/auth/me'));
+    http.expectOne('/api/auth/me').flush({}, { status: 401, statusText: 'Unauthorized' });
+    await expect(call).rejects.toBeTruthy();
+    expect(signedOut).toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

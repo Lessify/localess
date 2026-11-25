@@ -18,6 +18,12 @@
   <div hlmField>
     <label hlmFieldLabel for="url">URL</label>
     <input hlmInput id="url" type="url" formControlName="url" required autocomplete="off" class="w-full" />
+    @if (hasMaskedUrl) {
+      <hlm-field-description>
+        Query values (often a key or secret, e.g. Cloud Build's <code>?key=&secret=</code>) are never shown again: a <code>••••</code> keeps
+        the stored value, a typed one replaces it.
+      </hlm-field-description>
+    }
     @if (form.controls['url'].errors; as errors) {
       <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
     }
@@ -29,7 +35,7 @@
       <hlm-combobox-chips>
         <ng-container *hlmComboboxValues="let values">
           @for (value of values; track value) {
-            <hlm-combobox-chip [value]="value">{{ value }}</hlm-combobox-chip>
+            <hlm-combobox-chip [value]="value" [llChipRemoveLabel]="'Remove ' + value">{{ value }}</hlm-combobox-chip>
           }
         </ng-container>
         <input hlmComboboxChipInput placeholder="Select events..." autocomplete="off" />
@@ -49,20 +55,58 @@
   </div>
 
   <div hlmField>
-    <label hlmFieldLabel for="secret">Secret (Optional)</label>
-    <input
-      hlmInput
-      id="secret"
-      type="password"
-      formControlName="secret"
-      autocomplete="new-password"
-      data-1p-ignore
-      data-lpignore="true"
-      data-bwignore="true"
-      data-form-type="other"
-      class="w-full" />
-    <hlm-field-description>Used to sign webhook payloads.</hlm-field-description>
+    <span hlmFieldLabel id="headers-label">Headers (Optional)</span>
+    <hlm-field-description>
+      Sent with every delivery, e.g. <code>Authorization</code> for an API. A value is never shown again: leave a kept one empty to keep it.
+    </hlm-field-description>
+    <div formArrayName="headers" class="flex flex-col gap-2" role="group" aria-labelledby="headers-label">
+      @for (header of headers.controls; track header; let i = $index) {
+        <div [formGroupName]="i" class="flex items-start gap-2">
+          <input
+            hlmInput
+            formControlName="name"
+            placeholder="Name"
+            autocomplete="off"
+            class="w-2/5"
+            [attr.aria-label]="'Header ' + (i + 1) + ' name'" />
+          <input
+            hlmInput
+            type="password"
+            formControlName="value"
+            autocomplete="new-password"
+            data-1p-ignore
+            data-lpignore="true"
+            data-bwignore="true"
+            data-form-type="other"
+            class="flex-1"
+            [placeholder]="header.controls['kept'].value ? '•••••• kept' : 'Value'"
+            [attr.aria-label]="'Header ' + (i + 1) + ' value'" />
+          <button hlmBtn type="button" size="icon" variant="ghost" (click)="removeHeader(i)" [attr.aria-label]="'Remove header ' + (i + 1)">
+            <ng-icon hlm size="sm" name="lucideX" />
+          </button>
+        </div>
+      }
+    </div>
+    @if (headers.length < headersMax) {
+      <button hlmBtn type="button" variant="outline" size="sm" class="self-start" (click)="addHeader()">
+        <ng-icon hlm size="sm" name="lucidePlus" />
+        Add Header
+      </button>
+    }
   </div>
+
+  @if (!isEdit) {
+    <div hlmField class="flex-row items-start gap-3">
+      <hlm-checkbox inputId="signed" formControlName="signed" />
+      <div class="grid gap-1.5 leading-none">
+        <label hlmFieldLabel for="signed">Sign deliveries</label>
+        <hlm-field-description>
+          Localess makes a signing secret, shown once, so your receiver can check that a delivery is genuine (Standard Webhooks). Not needed
+          for build hooks or automation tools: their URL carries the secret.
+        </hlm-field-description>
+      </div>
+    </div>
+  }
 </form>
 <hlm-dialog-footer>
   <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>

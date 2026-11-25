@@ -144,6 +144,14 @@ describe('Paginator', () => {
     expect(fixture.nativeElement.querySelector('[aria-label="Last page"]')).not.toBeNull();
   });
 
+  it('labels the page-size select with "Rows per page"', () => {
+    const { fixture } = setup(25);
+    const label = fixture.nativeElement.querySelector('label') as HTMLLabelElement;
+    expect(label.textContent?.trim()).toBe('Rows per page');
+    const trigger = fixture.nativeElement.querySelector(`#${label.htmlFor}`) as HTMLElement | null;
+    expect(trigger?.getAttribute('role')).toBe('combobox');
+  });
+
   it('has aria-labels on the previous/next nav buttons', () => {
     const { fixture } = setup(25);
     expect(fixture.nativeElement.querySelector('[aria-label="Previous page"]')).not.toBeNull();

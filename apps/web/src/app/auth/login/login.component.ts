@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -37,7 +38,8 @@ export class LoginComponent {
   readonly userStore = inject(UserStore);
   readonly settingsStore = inject(LocalSettingsStore);
 
-  hasAuthError = signal(false);
+  /** Why the last email and password sign-in failed: wrong credentials, or too many attempts (429). */
+  authError = signal<string | undefined>(undefined);
   pending = signal(false);
 
   form = this.fb.group({
@@ -61,16 +63,20 @@ export class LoginComponent {
     const { email, password } = this.form.value;
     if (!email || !password) return;
     this.pending.set(true);
-    this.hasAuthError.set(false);
+    this.authError.set(undefined);
     this.authApi.login(email, password).subscribe({
       next: user => {
         this.userStore.signedIn(user);
         // A full load, so every store starts from the new session.
         this.redirect('/features');
       },
-      error: () => {
+      error: (error: unknown) => {
         this.pending.set(false);
-        this.hasAuthError.set(true);
+        this.authError.set(
+          error instanceof HttpErrorResponse && error.status === 429
+            ? 'Too many sign-in attempts. Try again in a minute.'
+            : 'User or password is wrong',
+        );
       },
     });
   }

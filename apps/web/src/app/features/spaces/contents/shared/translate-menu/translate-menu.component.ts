@@ -4,7 +4,7 @@ import { LocaleService } from '@core/services/locale.service';
 import { Locale } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideLanguages } from '@ng-icons/lucide';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
@@ -23,7 +23,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
   templateUrl: './translate-menu.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
-  imports: [CommonModule, HlmTooltipImports, HlmIconImports, HlmInputGroupImports, HlmDropdownMenuImports, CanUserPerformPipe],
+  imports: [CommonModule, HlmTooltipImports, HlmIconImports, HlmInputGroupImports, HlmDropdownMenuImports, HasRolePipe],
   providers: [provideIcons({ lucideLanguages })],
 })
 export class TranslateMenuComponent {

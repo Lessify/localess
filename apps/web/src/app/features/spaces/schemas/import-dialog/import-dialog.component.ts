@@ -9,6 +9,9 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 
 import { ImportDialogResult } from './import-dialog.model';
 
+/** A Localess file, or an old export. */
+const EXTENSIONS = ['.localess.zip', '.lls.zip'];
+
 @Component({
   selector: 'll-content-import-dialog',
   templateUrl: './import-dialog.component.html',
@@ -25,19 +28,23 @@ export class ImportDialogComponent {
   fileWrong = false;
   fileName = '';
 
-  form: FormGroup = this.fb.group({
-    file: this.fb.control<File | undefined>(undefined, [Validators.required]),
-  });
+  readonly fileAccept = EXTENSIONS.join(',');
+
+  form: FormGroup = this.fb.group(
+    { file: this.fb.control<File | undefined>(undefined, [Validators.required]) },
+    { validators: () => (this.fileWrong ? { file: true } : null) },
+  );
 
   async onFileChange(event: Event): Promise<void> {
     if (event.target && event.target instanceof HTMLInputElement) {
       const target = event.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
         this.fileName = target.files[0].name;
-        this.fileWrong = !this.fileName.endsWith('.lls.zip');
+        this.fileWrong = !EXTENSIONS.some(it => this.fileName.toLowerCase().endsWith(it));
         this.form.patchValue({
           file: target.files[0],
         });
+        this.form.updateValueAndValidity();
       }
     }
     this.cd.markForCheck();

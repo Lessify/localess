@@ -4,6 +4,7 @@ import { mkdir, readdir, readFile, rename, rm, stat, unlink } from 'node:fs/prom
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+
 import { ByteRange, StorageDriver, StoredObjectInfo } from './storage.driver.js';
 
 const isMissing = (error: unknown) => (error as NodeJS.ErrnoException)?.code === 'ENOENT';
@@ -75,13 +76,19 @@ export class FsStorageDriver implements StorageDriver {
 
   async deletePrefix(prefix: string): Promise<void> {
     // Prefixes are folder-shaped in practice (`spaces/{id}/`); a partial last segment is not supported.
-    await rm(this.path(prefix.replace(/\/+$/, '')), { recursive: true, force: true });
+    // Retries: on Windows a file just written is often still held (antivirus, a reader closing) and `rm` fails with
+    // EBUSY or EPERM; a failed upload's file would then wait an hour for the sweeper.
+    await rm(this.path(prefix.replace(/\/+$/, '')), { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
   }
 
   async move(from: string, to: string): Promise<void> {
     const target = this.path(to);
     await mkdir(dirname(target), { recursive: true });
     await rename(this.path(from), target);
+  }
+
+  localPath(key: string): string | undefined {
+    return this.path(key);
   }
 
   async sizeOfPrefix(prefix: string): Promise<number> {

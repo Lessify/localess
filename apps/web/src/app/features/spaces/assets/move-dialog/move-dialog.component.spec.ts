@@ -1,13 +1,13 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
+import { SpaceStore } from '@core/stores/space.store';
 import { Asset, AssetFolderSummary } from '@localess/shared';
-import { AssetService } from '@core/services/asset.service';
-import { of } from 'rxjs';
 import { vi } from 'vitest';
 
-import { MoveDialogContext } from './move-dialog.model';
-import { MoveDialogComponent } from './move-dialog.component';
+import { MoveDialogContext, MoveTarget } from './move-dialog.model';
+import { MOVE_ROOT_KEY, MoveDialogComponent } from './move-dialog.component';
 
 // Blog, Blog/2026, Blog/2026/June, News
 const FOLDERS: AssetFolderSummary[] = [
@@ -20,68 +20,76 @@ const FOLDERS: AssetFolderSummary[] = [
 describe('MoveDialogComponent', () => {
   function setup(asset: Partial<Asset>) {
     const close = vi.fn();
-    const findAllFolders = vi.fn().mockReturnValue(of(FOLDERS));
     const context: MoveDialogContext = { spaceId: 'space-1', asset: { id: 'a1', kind: 'FILE', ...asset } as Asset };
     TestBed.overrideComponent(MoveDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: AssetService, useValue: { findAllFolders } },
+        { provide: SpaceStore, useValue: { assetFolders: signal(FOLDERS) } },
       ],
     });
     const fixture = TestBed.createComponent(MoveDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, close, findAllFolders };
+    return { component: fixture.componentInstance, close };
   }
-  const paths = (component: MoveDialogComponent) => component.options().map(it => it.path);
 
-  it('starts with nothing chosen, from the folders of the space', () => {
-    const { component, findAllFolders } = setup({ parentId: 'news' });
-    expect(findAllFolders).toHaveBeenCalledWith('space-1');
-    expect(component.selected()).toBeNull();
-    expect(component.form.invalid).toBe(true);
+  /** The tree as `name` lines, indented two spaces a level; `*` marks where the item is. */
+  const outline = (component: MoveDialogComponent): string[] => {
+    const lines: string[] = [];
+    const visit = (nodes: MoveTarget[] | undefined, depth: number) => {
+      for (const it of nodes ?? []) {
+        lines.push(`${'  '.repeat(depth)}${it.name}${it.current ? ' *' : ''}`);
+        visit(it.children, depth + 1);
+      }
+    };
+    visit(component.nodes(), 0);
+    return lines;
+  };
+
+  it('shows the root with every folder under it, by name; where the item is marked and open', () => {
+    const { component } = setup({ parentId: 'june' });
+    expect(outline(component)).toEqual(['Root', '  Blog', '    2026', '      June *', '  News']);
+    expect([...component.expandedKeys()].sort()).toEqual([MOVE_ROOT_KEY, 'blog', 'june', 'y2026'].sort());
+    expect(component.canMove()).toBe(false);
   });
 
-  it('offers the root and every folder by path, leaving out the current folder', () => {
-    const { component } = setup({ parentId: 'news' });
-    expect(paths(component)).toEqual(['', 'Blog', 'Blog/2026', 'Blog/2026/June']);
-  });
-
-  it('does not offer the root to an item already there', () => {
+  it('gives each folder its path of names, and marks the root when the item is there', () => {
     const { component } = setup({});
-    expect(paths(component)).toEqual(['Blog', 'Blog/2026', 'Blog/2026/June', 'News']);
+    expect(outline(component)[0]).toBe('Root *');
+    expect(component.nodes()[0].children?.[0].children?.[0].path).toBe('Blog/2026');
   });
 
   it('leaves out a moved folder and everything under it', () => {
     const { component } = setup({ id: 'y2026', kind: 'FOLDER', parentId: 'blog' } as Partial<Asset>);
-    expect(paths(component)).toEqual(['', 'News']);
+    expect(outline(component)).toEqual(['Root', '  Blog *', '  News']);
   });
 
-  it('filters by name or path', () => {
+  it('filters by name or path, keeping the parents, with every branch open', () => {
     const { component } = setup({ parentId: 'news' });
     component.search.set('jun');
-    expect(paths(component)).toEqual(['Blog/2026/June']);
-    component.search.set('2026');
-    expect(paths(component)).toEqual(['Blog/2026', 'Blog/2026/June']);
+    expect(outline(component)).toEqual(['Root', '  Blog', '    2026', '      June']);
+    expect(component.shownExpandedKeys().has('y2026')).toBe(true);
+    component.search.set('blog/2026');
+    expect(outline(component)).toEqual(['Root', '  Blog', '    2026', '      June']);
+    component.search.set('nothing');
+    expect(component.nodes()[0].children).toBeUndefined();
   });
 
-  it('closes with the chosen folder, or null for the root', () => {
+  it('moves only to another place: the folder chosen, or null for the root', () => {
     const { component, close } = setup({ parentId: 'news' });
-    component.choose(component.options().find(it => it.path === 'Blog')!);
-    expect(component.form.valid).toBe(true);
+    component.selectedKey.set('news');
+    expect(component.canMove()).toBe(false);
+    component.save();
+    expect(close).not.toHaveBeenCalled();
+
+    component.selectedKey.set('blog');
+    expect(component.canMove()).toBe(true);
     component.save();
     expect(close).toHaveBeenCalledWith({ parentId: 'blog' });
 
-    component.choose(component.options().find(it => it.path === '')!);
+    component.selectedKey.set(MOVE_ROOT_KEY);
     component.save();
     expect(close).toHaveBeenLastCalledWith({ parentId: null });
-  });
-
-  it('shows a target as its name and path', () => {
-    const { component } = setup({ parentId: 'news' });
-    expect(component['displayItem'](component.options()[1])).toBe('Blog | Blog');
-    expect(component['displayItem'](component.options()[0])).toBe('Root | ~');
-    expect(component['displayItem'](undefined)).toBe('');
   });
 });

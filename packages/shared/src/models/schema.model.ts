@@ -227,16 +227,7 @@ export type SchemaComponentExport = Omit<SchemaComponent, 'id' | 'name' | 'creat
 
 export type SchemaEnumExport = Omit<SchemaEnum, 'id' | 'name' | 'createdAt' | 'updatedAt'> & { /** The name. */ id: string };
 
-// App API requests
-export interface SchemaCreate {
-  name: string;
-  type: SchemaType;
-  displayName?: string;
-}
-
-export type SchemaComponentUpdate = Omit<SchemaComponent, 'id' | 'name' | 'type' | 'createdAt' | 'updatedAt'>;
-
-export type SchemaEnumUpdate = Omit<SchemaEnum, 'id' | 'name' | 'type' | 'createdAt' | 'updatedAt'>;
+// App API requests: schema.zod.ts (SchemaCreate, SchemaUpdate, SchemaRename).
 
 /**
  * App API `GET …/schemas/:id/usage`: what uses a schema by name. A schema in use can be neither renamed nor deleted.
@@ -280,4 +271,12 @@ export function isSchemaArray(schema: SchemaField): boolean {
     schema.kind === SchemaFieldKind.OPTIONS ||
     schema.kind === SchemaFieldKind.ASSETS
   );
+}
+
+/**
+ * The file type an Asset or Assets field accepts: `fileType` (what the schema editor saves), else the first of
+ * `fileTypes` (older schemas and the space templates), else ANY.
+ */
+export function assetFieldFileType(field: SchemaFieldAsset | SchemaFieldAssets): AssetFileType {
+  return field.fileType ?? field.fileTypes?.[0] ?? AssetFileType.ANY;
 }

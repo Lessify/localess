@@ -2,10 +2,25 @@
 export const FIREBASE_IMPORT_STATUSES = ['RUNNING', 'FINISHED', 'FAILED'] as const;
 export type FirebaseImportStatus = (typeof FIREBASE_IMPORT_STATUSES)[number];
 export type FirebaseImportStageName =
-  | 'space' | 'locales' | 'environments' | 'webhooks'
-  | 'translations' | 'schemas' | 'assets' | 'contents' | 'contentMigration';
+  | 'space'
+  | 'locales'
+  | 'environments'
+  | 'webhooks'
+  | 'translations'
+  | 'schemas'
+  | 'assets'
+  | 'contents'
+  | 'contentMigration';
 export const FIREBASE_IMPORT_STAGES: readonly FirebaseImportStageName[] = [
-  'space', 'locales', 'environments', 'webhooks', 'translations', 'schemas', 'assets', 'contents', 'contentMigration',
+  'space',
+  'locales',
+  'environments',
+  'webhooks',
+  'translations',
+  'schemas',
+  'assets',
+  'contents',
+  'contentMigration',
 ];
 export interface FirebaseImportStage {
   stage: FirebaseImportStageName;

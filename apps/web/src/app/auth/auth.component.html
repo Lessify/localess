@@ -1,7 +1,7 @@
 <div class="flex min-h-full">
   <div class="flex flex-1 flex-col">
     <div class="flex items-center justify-between px-4 py-3 sm:px-6">
-      <img class="h-8 w-auto" ngSrc="assets/logo-adaptive.svg" alt="Localess" height="16" width="16" />
+      <ll-logo [open]="true" />
       <button hlmBtn size="icon-sm" variant="ghost" aria-label="Switch theme" hlmTooltip="Switch theme" (click)="switchTheme()">
         <ng-icon hlm [name]="settingsStore.theme() === 'light' ? 'lucideMoon' : 'lucideSun'" size="sm" />
       </button>

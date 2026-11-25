@@ -9,6 +9,7 @@ import {
   OnInit,
   output,
   Signal,
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -21,7 +22,6 @@ import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmCommandImports } from '@spartan-ng/helm/command';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmPopoverImports } from '@spartan-ng/helm/popover';
-import { debounceTime } from 'rxjs';
 
 import { FilterDef, FilterToolbarValue } from './filter-toolbar.model';
 
@@ -58,7 +58,17 @@ export class FilterToolbar implements OnInit {
     search: new FormControl<FilterControlValue>('', { nonNullable: true }),
   });
 
+  /** The search the page shows: the box's text at the last Enter or Search click. */
+  private readonly appliedSearch = signal('');
+  /** The last value sent: typing changes the form but sends nothing until Enter. */
+  private emitted = '';
+
   private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+
+  /** The box holds text the list doesn't show yet: the box is marked and the Search button waits for Enter or a click. */
+  readonly searchPending: Signal<boolean> = computed(
+    () => ((this.formValue()['search'] as string | undefined) ?? '').trim() !== this.appliedSearch(),
+  );
 
   readonly hasActiveValues: Signal<boolean> = computed(() => {
     const value = this.formValue();
@@ -74,9 +84,19 @@ export class FilterToolbar implements OnInit {
     for (const def of this.filters()) {
       this.form.addControl(def.key, new FormControl<FilterControlValue>(def.mode === 'multiple' ? [] : '', { nonNullable: true }));
     }
-    this.form.valueChanges.pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef)).subscribe(value => {
-      this.filterChange.emit(this.toFilterToolbarValue(value));
+    this.emitted = JSON.stringify({ ...this.form.getRawValue(), search: '' });
+    // A selection applies at once; the search only on Enter or the Search button (`applySearch`), or when emptied.
+    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(value => {
+      if (!(value['search'] as string | undefined)?.trim()) this.appliedSearch.set('');
+      this.emitFilter();
     });
+  }
+
+  /** Enter in the search box, or its Search button: search now (Enter is kept from submitting a form around it). */
+  applySearch(event?: Event): void {
+    event?.preventDefault();
+    this.appliedSearch.set(((this.form.controls['search']?.value as string) ?? '').trim());
+    this.emitFilter();
   }
 
   isSelected(def: FilterDef, optionValue: string): boolean {
@@ -112,7 +132,12 @@ export class FilterToolbar implements OnInit {
     this.form.setValue(value);
   }
 
-  private toFilterToolbarValue(raw: Partial<Record<string, FilterControlValue>>): FilterToolbarValue {
-    return { ...raw, search: (raw['search'] as string) ?? '' } as FilterToolbarValue;
+  /** The value sent, with the search last applied (not what is being typed); nothing when it didn't change. */
+  private emitFilter(): void {
+    const value = { ...this.form.getRawValue(), search: this.appliedSearch() } as FilterToolbarValue;
+    const key = JSON.stringify(value);
+    if (key === this.emitted) return;
+    this.emitted = key;
+    this.filterChange.emit(value);
   }
 }

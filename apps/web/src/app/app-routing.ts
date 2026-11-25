@@ -1,16 +1,21 @@
 import { inject } from '@angular/core';
 import { Router, Routes, UrlTree } from '@angular/router';
 import { UserStore } from '@core/stores/user.store';
-import { Observable } from 'rxjs';
+import { filter, map, Observable, take } from 'rxjs';
 
-export function authGuard(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+/**
+ * Decides on the session check (`/api/auth/me`), not on the `isAuthenticated` flag cached in localStorage: without
+ * the flag (a private window, cleared site data) a signed-in user's deep link went to the login page, which sent them
+ * on to the welcome page instead.
+ */
+export function authGuard(): Observable<boolean | UrlTree> {
   const userStore = inject(UserStore);
   const router = inject(Router);
-  if (userStore.isAuthenticated()) {
-    return true;
-  } else {
-    return router.createUrlTree(['auth', 'login']);
-  }
+  return userStore.loaded$.pipe(
+    filter(Boolean),
+    take(1),
+    map(() => userStore.isAuthenticated() || router.createUrlTree(['auth', 'login'])),
+  );
 }
 
 export const routes: Routes = [

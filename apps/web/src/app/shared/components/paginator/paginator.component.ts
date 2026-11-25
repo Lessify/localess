@@ -41,6 +41,8 @@ export interface PaginatorDefaultOptions {
 /** Injection token that can be used to provide the default options for the paginator, mirroring MAT_PAGINATOR_DEFAULT_OPTIONS. */
 export const PAGINATOR_DEFAULT_OPTIONS = new InjectionToken<PaginatorDefaultOptions>('PAGINATOR_DEFAULT_OPTIONS');
 
+let nextId = 0;
+
 @Component({
   selector: 'll-paginator',
   templateUrl: './paginator.component.html',
@@ -62,6 +64,8 @@ export class Paginator {
   readonly pageIndex: ModelSignal<number> = model<number>(0);
   readonly pageSize: ModelSignal<number> = model<number>(this.defaults?.pageSize ?? 10);
   readonly page = output<PageEvent>();
+  /** The page size select's id, for its "Rows per page" label (one per paginator: a page may have several). */
+  readonly pageSizeId = `ll-paginator-page-size-${nextId++}`;
 
   readonly pageCount: Signal<number> = computed(() => Math.max(1, Math.ceil(this.length() / this.pageSize())));
   readonly isFirstPage: Signal<boolean> = computed(() => this.pageIndex() === 0);
@@ -100,8 +104,9 @@ export class Paginator {
    * still be displayed using the new page size, mirroring MatPaginator's
    * _changePageSize (rather than always resetting to page 0).
    */
-  onPageSizeChange(pageSize: number): void {
-    if (this.disabled()) return;
+  /** A cleared select (`null` / `undefined`) keeps the page size. */
+  onPageSizeChange(pageSize: number | null | undefined): void {
+    if (this.disabled() || pageSize == null) return;
     const previousPageIndex = this.pageIndex();
     const startIndex = previousPageIndex * this.pageSize();
     this.pageSize.set(pageSize);

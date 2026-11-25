@@ -14,8 +14,10 @@ export interface LiveScope {
 }
 
 const matches = (scope: LiveScope) => (event: ChangeEvent) =>
-  event.entity === '*' ||
-  (scope.entities.includes(event.entity) && (scope.id === undefined || event.id === undefined || event.id === scope.id));
+  // A task's progress is live state, not a change of its row: nothing to read again.
+  event.op !== 'progress' &&
+  (event.entity === '*' ||
+    (scope.entities.includes(event.entity) && (scope.id === undefined || event.id === undefined || event.id === scope.id)));
 
 /** Network failure, or the server/proxy not ready (a deploy or restart): worth retrying. */
 const TRANSIENT_STATUSES = new Set([0, 502, 503, 504]);

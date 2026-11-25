@@ -1,33 +1,29 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { schemas } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { EventsService } from '../../../infra/events/events.service.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
+import { EventService } from '../../../infra/events/event.service.js';
+import type { SchemaEntity } from '../../../shared/entities/schema.entity.js';
 import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
 import type { SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
-
-export type SchemaEntity = typeof schemas.$inferSelect;
 
 /** The `schemas` rows the schema export reads and the schema import writes. */
 @Injectable()
 export class SchemaTransferRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventsService,
+    private readonly eventService: EventService,
   ) {}
 
   findAll(spaceId: string): Promise<SchemaEntity[]> {
-    return this.db.select().from(schemas).where(eq(schemas.spaceId, spaceId));
+    return this.db.query.schemas.findMany({ where: eq(schemas.spaceId, spaceId) });
   }
 
   /** By name, byte order (`collate "C"`), so exports are stable. */
   findAllByName(spaceId: string): Promise<SchemaEntity[]> {
-    return this.db
-      .select()
-      .from(schemas)
-      .where(eq(schemas.spaceId, spaceId))
-      .orderBy(sql`${schemas.name} collate "C"`);
+    return this.db.query.schemas.findMany({ where: eq(schemas.spaceId, spaceId), orderBy: [sql`${schemas.name} collate "C"`] });
   }
 
   /**
@@ -42,7 +38,7 @@ export class SchemaTransferRepository {
       if (lost.length) return [`Schemas renamed or deleted meanwhile: ${lost.join(', ')}`];
       await applySchemaPushPlan(t, spaceId, plan);
       if (plan.creates.length || plan.updates.length) {
-        await this.events.publish({ spaceId, entity: 'schemas', op: 'updated' }, t);
+        await this.eventService.publish({ spaceId, entity: 'schemas', op: 'updated' }, t);
       }
       return [];
     });

@@ -8,7 +8,8 @@
         </button>
       }
     </hlm-tabs-list>
-    <div>
+    <!-- The routed page is the active tab's panel (the tabs point at it). -->
+    <div role="tabpanel" [id]="'brn-tabs-content-' + activeTab()" [attr.aria-labelledby]="'brn-tabs-label-' + activeTab()">
       <router-outlet></router-outlet>
     </div>
   </hlm-tabs>

@@ -23,9 +23,9 @@ describe('guestGuard', () => {
   }
 
   const run = () =>
-    TestBed.runInInjectionContext(() =>
-      guestGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
-    ) as Observable<boolean | UrlTree>;
+    TestBed.runInInjectionContext(() => guestGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)) as Observable<
+      boolean | UrlTree
+    >;
 
   it('sends a signed-in user to the app', async () => {
     setup(true);

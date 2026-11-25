@@ -1,6 +1,6 @@
 import { hash, verify } from '@node-rs/argon2';
 
-export const PASSWORD_MIN_LENGTH = 6;
+export { PASSWORD_MIN_LENGTH } from '@localess/shared';
 
 export interface StoredCredential {
   passwordHash: string;

@@ -1,4 +1,5 @@
 import { TokenType } from '@localess/shared';
+
 import { newUuid } from '../../infra/database/id.js';
 import { tokens } from '../../infra/database/schema.js';
 import type { Transaction } from '../../infra/database/transaction.js';

@@ -200,10 +200,11 @@ export class ContentHelperService {
           break;
         }
         case SchemaFieldKind.NUMBER: {
-          if (field.minValue) {
+          // `!= null`, not truthiness: 0 is a real limit (a price can't be negative).
+          if (field.minValue != null) {
             validators.push(Validators.min(field.minValue));
           }
-          if (field.maxValue) {
+          if (field.maxValue != null) {
             validators.push(Validators.max(field.maxValue));
           }
           form.setControl(

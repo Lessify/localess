@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
 import type { ContentData } from '@localess/shared';
-import { ContentImportRepository } from '../repositories/content-import.repository.js';
+import { Injectable } from '@nestjs/common';
+
 import { pathOf } from '../../../shared/queries/content-tree.query.js';
+import { ContentImportRepository } from '../repositories/content-import.repository.js';
 import type { ImportStage } from '../utils/firebase-import.utils.js';
 import { type ReferenceMaps, rewriteData, rewriteIds } from '../utils/rewrite-references.js';
 
@@ -14,16 +15,16 @@ const PAGE_SIZE = 500;
  */
 @Injectable()
 export class ReferenceRewriteService {
-  constructor(private readonly contents: ContentImportRepository) {}
+  constructor(private readonly contentImportRepository: ContentImportRepository) {}
 
   /** Answers the number of contents rewritten. */
   async rewrite(stage: ImportStage, maps: ReferenceMaps): Promise<number> {
     const sid = stage.spaceId;
     let rewritten = 0;
     let after: string | undefined;
-    const folders = await this.contents.folderPaths(sid);
+    const folders = await this.contentImportRepository.folderPaths(sid);
     for (;;) {
-      const rows = await this.contents.findReferencesPage(sid, after, PAGE_SIZE);
+      const rows = await this.contentImportRepository.findReferencesPage(sid, after, PAGE_SIZE);
       if (!rows.length) break;
       for (const row of rows) {
         const data = rewriteData(row.data, maps);
@@ -35,7 +36,7 @@ export class ReferenceRewriteService {
         );
         for (const it of missing) stage.warn(`${pathOf(row, folders).fullSlug}: no ${it}`);
         if (data.changed || assetRefs.changed || links.changed || references.changed) {
-          await this.contents.updateReferences(sid, row.id, {
+          await this.contentImportRepository.updateReferences(sid, row.id, {
             data: data.value as ContentData | null,
             assets: assetRefs.value,
             links: links.value,

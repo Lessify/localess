@@ -1,26 +1,20 @@
+import { ContentKind } from '@localess/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, inArray, isNotNull, or } from 'drizzle-orm';
-import { ContentKind } from '@localess/shared';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import {
-  assets,
-  contentLinkSnapshots,
-  contents,
-  contentSnapshots,
-  schemas,
-  type SnapshotVersion,
-} from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { assets, contentLinkSnapshots, contents, contentSnapshots, schemas, type SnapshotVersion } from '../../../infra/database/schema.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { lockContents } from '../../../shared/data-rules/content-snapshots.js';
+import type { AssetEntity } from '../../../shared/entities/asset.entity.js';
+import type { ContentLinkSnapshotEntity } from '../../../shared/entities/content-link-snapshot.entity.js';
+import type { ContentSnapshotEntity } from '../../../shared/entities/content-snapshot.entity.js';
 import { type ContentWithPath, findIdByPath, folderPaths, withPaths } from '../../../shared/queries/content-tree.query.js';
-import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { toContentMetadata } from '../../../shared/transformers/content.transformer.js';
+import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
 
-export type AssetEntity = typeof assets.$inferSelect;
-export type SchemaEntity = typeof schemas.$inferSelect;
-export type ContentSnapshotEntity = Pick<typeof contentSnapshots.$inferSelect, 'contentId' | 'data' | 'builtAt'>;
-export type ContentLinkSnapshotEntity = typeof contentLinkSnapshots.$inferSelect;
+export type StoredContentSnapshot = Pick<ContentSnapshotEntity, 'contentId' | 'data' | 'builtAt'>;
 
 /**
  * The reads of the public v1 content API: the stored snapshots (`content_snapshots`, `content_link_snapshots`), built
@@ -37,12 +31,12 @@ export class ContentDeliveryRepository {
   }
 
   /** The published snapshots of `ids` in `locale`; documents never published (in it) are absent. */
-  findPublished(spaceId: string, ids: string[], locale: string): Promise<ContentSnapshotEntity[]> {
+  findPublished(spaceId: string, ids: string[], locale: string): Promise<StoredContentSnapshot[]> {
     return this.findSnapshots(this.db, spaceId, 'published', ids, locale);
   }
 
   /** The drafts of `ids` in `locale`, building the missing ones; ids that are no document of the space are absent. */
-  async findDrafts(spaceId: string, ids: string[], locale: string): Promise<ContentSnapshotEntity[]> {
+  async findDrafts(spaceId: string, ids: string[], locale: string): Promise<StoredContentSnapshot[]> {
     const stored = await this.findSnapshots(this.db, spaceId, 'draft', ids, locale);
     if (stored.length === ids.length) return stored;
     return transaction(this.db, undefined, async t => {
@@ -125,7 +119,7 @@ export class ContentDeliveryRepository {
     version: SnapshotVersion,
     ids: string[],
     locale: string,
-  ): Promise<ContentSnapshotEntity[]> {
+  ): Promise<StoredContentSnapshot[]> {
     if (!ids.length) return [];
     return executor
       .select({ contentId: contentSnapshots.contentId, data: contentSnapshots.data, builtAt: contentSnapshots.builtAt })

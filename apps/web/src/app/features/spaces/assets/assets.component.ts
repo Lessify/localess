@@ -1,31 +1,21 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  Injector,
-  input,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { FEATURE_FLAGS } from '@core/feature-flags';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, input } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
-import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
+import { UnsplashService } from '@core/services/unsplash.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
-import { breadcrumbs } from '@core/utils/folder-tree';
+import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
+import { assetLocation, breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { uploadErrorMessage } from '@core/utils/upload-error';
-import { Asset, AssetFile, AssetFolder, AssetFolderSummary, AssetKind } from '@localess/shared';
+import { pagedResource } from '@core/utils/paged-resource';
+import { UploadQueue } from '@core/utils/upload-queue';
+import { Asset, AssetFile, AssetFolder, AssetKind, TaskKind } from '@localess/shared';
+import { UnsplashPhoto } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -39,6 +29,7 @@ import {
   lucideFileText,
   lucideFileUp,
   lucideFileVideoCamera,
+  lucideFileX,
   lucideFolder,
   lucideFolderInput,
   lucideFolderPlus,
@@ -53,6 +44,7 @@ import {
   lucideUploadCloud,
 } from '@ng-icons/lucide';
 import { tablerBrandUnsplash } from '@ng-icons/tabler-icons';
+import { ActiveTasksComponent } from '@shared/components/active-tasks';
 import { AssetCardComponent } from '@shared/components/asset-card/asset-card.component';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
@@ -61,23 +53,24 @@ import {
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_FULL_SCREEN, DIALOG_WIDTH_IMAGE_PREVIEW, DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
+import { LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogContext } from '@shared/components/unsplash-assets-select-dialog';
+import { UploadQueueComponent } from '@shared/components/upload-queue';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
   AssetFileImport,
   AssetFileUpdateForm,
-  AssetFolderCreate,
+  AssetFolderCreateForm,
   AssetFolderUpdateForm,
   fileIcon as resolveFileIcon,
   filePreview as isPreviewableFileType,
 } from '@shared/models/asset.model';
-import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
@@ -86,22 +79,16 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { EMPTY, of, Subject } from 'rxjs';
-import { catchError, concatMap, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
-import { AddFolderDialogContext } from './add-folder-dialog/add-folder-dialog.model';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
 import { EditFileDialogContext } from './edit-file-dialog/edit-file-dialog.model';
 import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
 import { EditFolderDialogContext } from './edit-folder-dialog/edit-folder-dialog.model';
-import { ExportDialogComponent } from './export-dialog/export-dialog.component';
-import { ExportDialogContext, ExportDialogResult } from './export-dialog/export-dialog.model';
-import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ImportDialogResult } from './import-dialog/import-dialog.model';
 import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move-dialog';
 
 @Component({
@@ -114,14 +101,14 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
   },
   imports: [
     AssetCardComponent,
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     FileDragAndDropDirective,
     LlTableImports,
     LlPaginatorImports,
+    LlFilterToolbarImports,
     TimeDurationPipe,
     FormatFileSizePipe,
-    NgOptimizedImage,
     HlmButtonImports,
     HlmIconImports,
     HlmBadgeImports,
@@ -130,12 +117,14 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
     HlmTooltipImports,
     HlmBreadcrumbImports,
     HlmProgressImports,
-    HlmSpinnerImports,
+    ActiveTasksComponent,
+    UploadQueueComponent,
   ],
   providers: [
     provideIcons({
       lucideLoaderCircle,
       lucideFileUp,
+      lucideFileX,
       lucideFolderPlus,
       lucideUpload,
       lucideFileSymlink,
@@ -161,102 +150,69 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
     }),
   ],
 })
-export class AssetsComponent implements OnInit, AfterViewInit {
-  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
+export class AssetsComponent {
   private readonly assetService = inject(AssetService);
   private readonly taskService = inject(TaskService);
+  private readonly taskNotifier = inject(TaskNotifierService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
-  readonly unsplashPluginService = inject(UnsplashPluginService);
-
-  sort = viewChild(TableSort);
-  paginator = viewChild.required(Paginator);
+  readonly unsplashService = inject(UnsplashService);
 
   // Input
   spaceId = input.required<string>();
 
+  /** The tasks that change the assets shown: told in the action bar while queued or running. */
+  readonly assetTaskKinds: readonly TaskKind[] = [TaskKind.ASSET_REGEN_METADATA];
+
   spaceStore = inject(SpaceStore);
 
   private destroyRef = inject(DestroyRef);
-  private readonly assets = signal<Asset[]>([]);
-  readonly dataSource = new TableDataSource<Asset>(this.assets, this.injector);
+  /** The folder shown (`SpaceStore.assetFolderId`): paged, sorted and searched on the server (`GET …/assets`). */
+  readonly assetList = new FolderList(this.spaceStore.assetFolderId);
+  readonly filters = FOLDER_LIST_FILTERS;
+  /** The page shown, in both layouts, live. */
+  readonly page = pagedResource({
+    list: this.assetList.list,
+    load: params => this.assetService.findAll(this.spaceId(), params),
+    error: 'Assets can not be loaded.',
+  });
+  readonly dataSource = new TableDataSource<Asset>(this.page.items, this.injector);
   displayedColumns: string[] = ['icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
-  fileUploadQueue = signal<Array<File | AssetFileImport>>([]);
+  /** The files being uploaded, three at a time; `ll-upload-queue` shows them. */
+  readonly uploads = new UploadQueue(message => this.notificationService.error(message));
   now = Date.now();
 
-  /** Every folder of the space, live: the breadcrumbs are built from it. */
-  private readonly folders = toSignal(toObservable(this.spaceId).pipe(switchMap(spaceId => this.assetService.findAllFolders(spaceId))), {
-    initialValue: [] as AssetFolderSummary[],
-  });
-  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
+  /** Every folder of the space, from `SpaceStore` (live): the breadcrumbs and the paths are built from it. */
+  private readonly folderMap = computed(() => new Map(this.spaceStore.assetFolders().map(it => [it.id, it])));
   /** The folders from the root down to the one shown. */
   readonly trail = computed(() => breadcrumbs(this.folderMap(), this.spaceStore.assetFolderId()));
+  /** Where each asset is (`~/Images`), for a list from several folders (`deep`); `undefined` otherwise. */
+  readonly location = computed(() => {
+    const folders = this.folderMap();
+    return this.assetList.deep() ? (asset: Asset) => assetLocation(folders, asset.parentId) : () => undefined;
+  });
 
   /** The folder shown; `undefined`: the root. */
   private get folderId(): string | undefined {
     return this.spaceStore.assetFolderId() ?? undefined;
   }
 
-  // Subscriptions
-  private fileUploadQueue$ = new Subject<File | AssetFileImport>();
-
-  // Loading
-  isLoading = signal(true);
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
 
-  constructor() {
-    // `sort` is only present in list layout — re-bind whenever the table (and its
-    // llTableSort directive) is created/destroyed by the list/grid toggle.
-    effect(() => {
-      this.dataSource.sort = this.sort() ?? null;
-    });
-
-    toObservable(this.spaceStore.assetFolderId)
-      .pipe(
-        filter(it => it !== undefined), // Skip initial data
-        switchMap(() => this.assetService.findAll(this.spaceId(), this.folderId)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: assets => {
-          this.assets.set(assets);
-          this.isLoading.set(false);
-        },
-      });
-  }
-
-  ngOnInit(): void {
-    this.fileUploadQueue$
-      .pipe(
-        // Each upload handles its own failure: an error reaching this stream would end it, and every later
-        // upload on the page with it.
-        concatMap(item =>
-          (item instanceof File
-            ? this.assetService.createFile(this.spaceId(), this.folderId, item)
-            : this.assetService.importFile(this.spaceId(), this.folderId, item)
-          ).pipe(
-            catchError((error: unknown) => {
-              this.notificationService.error(uploadErrorMessage(item instanceof File ? item.name : `${item.name}${item.extension}`, error));
-              return EMPTY;
-            }),
-            finalize(() => this.fileUploadQueue.update(items => items.filter(it => it !== item))),
-          ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-  }
-
-  /** Shows the item in the "Uploading … (n)" count and uploads it after the ones before it. */
+  /**
+   * Uploads the item into the folder shown now: it may start after the user has moved on to another folder, and must
+   * not land there.
+   */
   private enqueue(item: File | AssetFileImport): void {
-    this.fileUploadQueue.update(items => [...items, item]);
-    this.fileUploadQueue$.next(item);
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator();
+    const spaceId = this.spaceId();
+    const folderId = this.folderId;
+    if (item instanceof File) {
+      this.uploads.add(item.name, item.size, progress => this.assetService.createFile(spaceId, folderId, item, progress));
+    } else {
+      this.uploads.add(`${item.name}${item.extension}`, 0, progress => this.assetService.importFile(spaceId, folderId, item, progress));
+    }
   }
 
   onFileUpload(event: Event): void {
@@ -335,10 +291,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   openAddFolderDialog(): void {
     this.dialog
-      .open<AssetFolderCreate, AddFolderDialogContext>(AddFolderDialogComponent, {
-        context: {
-          reservedNames: this.assets().map(it => it.name),
-        },
+      .open<AssetFolderCreateForm>(AddFolderDialogComponent, {
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
@@ -368,7 +321,6 @@ export class AssetsComponent implements OnInit, AfterViewInit {
     this.dialog
       .open<AssetFolderUpdateForm, EditFolderDialogContext>(EditFolderDialogComponent, {
         context: {
-          reservedNames: this.assets().map(it => it.name),
           asset: ObjectUtils.clone(element) as AssetFolder,
         },
         contentClass: DIALOG_WIDTH_SM,
@@ -376,7 +328,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFolder(this.spaceId(), element.id, it)),
+        switchMap(it => this.assetService.update(this.spaceId(), element.id, { name: it.name })),
       )
       .subscribe({
         next: () => {
@@ -392,7 +344,6 @@ export class AssetsComponent implements OnInit, AfterViewInit {
     this.dialog
       .open<AssetFileUpdateForm, EditFileDialogContext>(EditFileDialogComponent, {
         context: {
-          reservedNames: this.assets().map(it => it.name),
           asset: ObjectUtils.clone(element) as AssetFile,
         },
         contentClass: DIALOG_WIDTH_SM,
@@ -400,7 +351,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFile(this.spaceId(), element.id, it)),
+        switchMap(it => this.assetService.update(this.spaceId(), element.id, { name: it.name, alt: it.alt || '' })),
       )
       .subscribe({
         next: () => {
@@ -424,7 +375,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       content = `Are you sure about deleting Asset with name: ${element.name}.`;
     }
     this.assetService
-      .usage(this.spaceId(), element.id)
+      .findUsage(this.spaceId(), element.id)
       .pipe(
         // Without the count, the delete is still offered.
         catchError(() => of({ contents: 0 })),
@@ -443,7 +394,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
             .closed$.pipe(take(1)),
         ),
         filter(it => it || false),
-        switchMap(() => this.assetService.delete(this.spaceId(), element.id)),
+        switchMap(() => this.assetService.remove(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
@@ -481,7 +432,11 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   }
 
   onAssetSelect(element: Asset): void {
-    if (element.kind === AssetKind.FILE && this.filePreview(element.type)) {
+    if (element.kind === AssetKind.FILE && element.missingFile) {
+      this.notificationService.warning(`'${element.name}' has no file`, {
+        description: 'It was imported from Firebase without it. Upload one from its menu.',
+      });
+    } else if (element.kind === AssetKind.FILE && this.filePreview(element.type)) {
       this.dialog
         .open<void, ImagePreviewDialogContext>(ImagePreviewDialogComponent, {
           context: {
@@ -493,7 +448,6 @@ export class AssetsComponent implements OnInit, AfterViewInit {
         .closed$.pipe(take(1))
         .subscribe();
     } else if (element.kind === AssetKind.FOLDER) {
-      this.isLoading.set(true);
       this.spaceStore.changeAssetFolder(element.id);
     }
   }
@@ -501,7 +455,6 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   /** A breadcrumb: a folder, or `null` for the root. */
   navigateToFolder(folderId: string | null) {
     if (folderId === this.spaceStore.assetFolderId()) return;
-    this.isLoading.set(true);
     this.spaceStore.changeAssetFolder(folderId);
   }
 
@@ -511,63 +464,6 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   filePreview(type: string): boolean {
     return isPreviewableFileType(type);
-  }
-
-  openImportDialog() {
-    this.dialog
-      .open<ImportDialogResult>(ImportDialogComponent, {
-        contentClass: DIALOG_WIDTH_SM,
-      })
-      .closed$.pipe(
-        take(1),
-        filter(it => it !== undefined),
-        tap(console.log),
-        switchMap(it => this.taskService.createAssetImportTask(this.spaceId(), it!.file)),
-      )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Assets Import Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: () => {
-          this.notificationService.error('Assets Import Task can not be created.');
-        },
-      });
-  }
-
-  openExportDialog() {
-    this.dialog
-      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, {
-        context: {
-          spaceId: this.spaceId(),
-        },
-        contentClass: DIALOG_WIDTH_SM,
-      })
-      .closed$.pipe(
-        take(1),
-        filter(it => it !== undefined),
-        switchMap(it => this.taskService.createAssetExportTask(this.spaceId(), it?.path)),
-      )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Assets Export Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: (err: unknown) => {
-          console.error(err);
-          this.notificationService.error('Assets Export Task can not be created.');
-        },
-      });
   }
 
   openRegenerateMetadataDialog(): void {
@@ -582,28 +478,39 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.taskService.createAssetRegenerateMetadataTask(this.spaceId())),
+        switchMap(() => this.taskService.createAssetRegenerateMetadata(this.spaceId())),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Assets Regenerate Metadata Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: (err: unknown) => {
-          console.error(err);
-          this.notificationService.error(`Assets Regenerate Metadata Task can not be created.`);
-        },
+        next: task => this.taskNotifier.watch(this.spaceId(), task),
+        error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Metadata can not be regenerated.')),
       });
+  }
+
+  /** The asset `Upload file` was chosen for, until the file picker answers. */
+  private missingFileFor: Asset | undefined;
+
+  /** Opens the file picker for an asset imported without its file. */
+  chooseMissingFile(element: Asset, input: HTMLInputElement): void {
+    this.missingFileFor = element;
+    input.value = '';
+    input.click();
+  }
+
+  /** Uploads the picked file into the asset (same id, so the contents using it keep working). */
+  onMissingFileUpload(event: Event): void {
+    const element = this.missingFileFor;
+    const file = event.target instanceof HTMLInputElement ? event.target.files?.[0] : undefined;
+    this.missingFileFor = undefined;
+    if (!element || !file) return;
+    this.assetService.uploadMissingFile(this.spaceId(), element.id, file).subscribe({
+      next: () => this.notificationService.success(`The file of '${element.name}' has been uploaded.`),
+      error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, `The file of '${element.name}' can not be uploaded.`)),
+    });
   }
 
   onDownload(element: Asset): void {
     if (element.kind !== AssetKind.FILE) return;
-    window.open(`/api/v1/spaces/${this.spaceId()}/assets/${element.id}/download`);
+    window.open(`/api/app/spaces/${this.spaceId()}/assets/${element.id}/download`);
   }
 
   filesUpload(event: File[]) {
@@ -619,7 +526,6 @@ export class AssetsComponent implements OnInit, AfterViewInit {
     const files: File[] = [];
 
     for (let i = 0; i < clipboardData.items.length; i++) {
-      console.log(event);
       const item = clipboardData.items[i];
       if (item.kind !== 'file') continue;
       const file = item.getAsFile();

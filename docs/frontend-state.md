@@ -1,6 +1,6 @@
 # Frontend State Management
 
-> Related: [Frontend Architecture](frontend-architecture.md) · [User Roles & Permissions](frontend-permissions.md)
+> Related: [Frontend Architecture](frontend-architecture.md) · [User Roles](frontend-permissions.md)
 
 ## Overview
 
@@ -12,7 +12,7 @@ State is managed with **NgRx Signals** (`@ngrx/signals`). Four global signal sto
 
 | Store | Key | Persisted | Purpose |
 |-------|-----|-----------|---------|
-| `UserStore` | `LL-USER-STATE` | `isAuthenticated` only | Session user (`GET /api/auth/me`), role, permissions |
+| `UserStore` | `LL-USER-STATE` | `isAuthenticated` only | Session user (`GET /api/auth/me`), role |
 | `SpaceStore` | `LL-SPACE-STATE` | `selectedSpaceId`, `selectedEnvironmentBySpaceId` | Active workspace, content path, schemas |
 | `LocalSettingsStore` | `LL-SETTINGS-STATE` | All fields | User preferences (theme, layouts, editor) |
 
@@ -22,23 +22,20 @@ State is managed with **NgRx Signals** (`@ngrx/signals`). Four global signal sto
 
 **File:** `apps/web/src/app/core/stores/user.store.ts`
 
-Reads the session from `GET /api/auth/me` (via `load()`, run in `onInit`). The response carries the user's identity, linked sign-in providers, `role`, `permissions` and `lock`, read from the `users` row — there are no token claims.
+Reads the session from `GET /api/auth/me` (via `load()`, run in `onInit`). The response carries the user's identity, linked sign-in providers and `role`, read from the `users` row — there are no token claims.
 
 ```typescript
 // Key state
 {
-  id, displayName, initials, email, emailVerified, photoURL,
-  role: 'ADMIN' | 'CUSTOM' | undefined,
-  permissions: string[] | undefined,
-  lock: boolean | undefined,
+  id, displayName, initials, email, emailVerified, photoUrl,
+  role: UserRole | undefined,   // ADMIN, DEVELOPER, EDITOR, TRANSLATOR, VIEWER
   isAuthenticated: boolean,
   loaded: boolean,            // the /api/auth/me check has answered at least once
-  isPasswordProvider, isGoogleProvider, isMicrosoftProvider, numberProviders
+  hasPassword, hasGoogleLogin, hasMicrosoftLogin   // from the user's hasPassword and identities
 }
 
 // Key computed
 isRoleAdmin: computed(() => role() === 'ADMIN')
-isLocked:    computed(() => lock() === true)
 
 // Key methods
 load()            // GET /api/auth/me → signedIn(user), or signedOut() on error (401 = no session)
@@ -48,7 +45,7 @@ signedOut()       // resets to the initial state with loaded: true, persists isA
 
 Auth providers supported: **Email/Password**, **Google**, **Microsoft**.
 
-`role`, `permissions` and `lock` drive all route-level permission guards (`permissionGuard` waits for `loaded`). `MeService` calls `load()` again after profile, email or password changes, and the `apiInterceptor` calls `signedOut()` on a `401` from the app API. A role/permission change made by an admin reaches the server immediately and the UI on the next `load()` (e.g. a reload).
+`role` drives every route guard (`roleGuard` waits for `loaded`) and the `hasRole` pipe. `MeService` calls `load()` again after profile, email or password changes, and the `apiInterceptor` calls `signedOut()` on a `401` from the app API. A role change made by an admin reaches the server immediately and the UI on the next `load()` (e.g. a reload).
 
 ---
 
@@ -56,40 +53,57 @@ Auth providers supported: **Email/Password**, **Google**, **Microsoft**.
 
 **File:** `apps/web/src/app/core/stores/space.store.ts`
 
-Loads all spaces the user has access to (a `liveQuery` over `GET /api/app/spaces`, refetched on `spaces` change events). Tracks the currently selected space and environment.
+Holds the sidebar's list of spaces, and the selected space with what its screens need. The list is `IdName[]` (`{ id, name }`) from `GET /api/app/spaces/names`, a `liveQuery` refetched on `spaces` change events; the server leaves out spaces being imported or whose import failed. Once a space is selected (and listed), the store reads it (`GET /api/app/spaces/:spaceId`: the space with `defaultLocale` and `spaceLocales`) and its environments (`GET /api/app/spaces/:spaceId/environments`), both live.
 
 ```typescript
 // Key state
 {
-  spaces: Space[],
+  spaces: IdName[],          // the sidebar list: every space the user can open, by name
+  currentSpace: Space | undefined,      // the selected space with its default locale and locales, once it arrived
+  environments: SpaceEnvironment[],     // the selected space's environments, in their order
   loaded: boolean,           // true once load() has resolved (success, empty, or error)
   selectedSpaceId: string | undefined,
   selectedEnvironmentBySpaceId: Record<string, string>,
   environment: SpaceEnvironment | undefined,
   contentFolderId: string | null, // content folder shown (null: root); breadcrumbs come from the live folder map
   assetFolderId: string | null,   // asset folder shown (null: root); breadcrumbs come from the live folder map
-  schemas: Schema[],         // schemas for the selected space
-  documents: ContentDocument[] // documents for the selected space
+  schemas: Schema[],         // schemas for the selected space (every one: the editors and the Schemas page read them)
+  schemasLoaded: boolean,    // whether schemas arrived for the selected space (false again on a space change)
+  contentFolderSummaries: ContentFolderSummary[],     // every content folder, light (GET …/contents/folders)
+  contentDocumentSummaries: ContentDocumentSummary[], // every document, light, no data (GET …/contents/documents)
+  contentFoldersLoaded: boolean, contentDocumentsLoaded: boolean,
+  assetFolders: AssetFolderSummary[], // every asset folder, light (GET …/assets/folders)
+  assetFoldersLoaded: boolean,
+  assetFiles: AssetFileSummary[],     // every file, light (GET …/assets/files), only once asked (loadAssetFiles())
+  assetFilesWanted: boolean,          // an editor showed an Asset field; false again on a space change
+  assetFilesLoaded: boolean
 }
 
 // Key computed
-selectedSpace: computed(() => spaces().find(s => s.id === selectedSpaceId()))
+selectedSpace: computed(() => currentSpace()?.id === selectedSpaceId() ? currentSpace() : undefined)
+locales:       computed(() => selectedSpace()?.spaceLocales.map(it => it.locale))  // the one place the web reads spaceLocales
+defaultLocale: computed(() => selectedSpace()?.defaultLocale)
+// `spaces`: SpaceService.findAllNames(), again on each `spaces` event; the space guard reads the same list
 hasNoSpaces:   computed(() => loaded() && spaces().length === 0)  // gated on loaded so it is not true before the first response
+contents / contentFolders / contentDocuments / contentById  // the content light lists with their paths (withFullSlugs)
+contentsLoaded: computed(() => contentFoldersLoaded() && contentDocumentsLoaded())
+assetFileById: computed(() => new Map(assetFiles().map(it => [it.id, it])))  // the Asset and Assets fields read it
 ```
 
 Key methods:
-- `load()` — `rxMethod` that streams `SpaceService.findAll()`; called from `onInit`. Sets `loaded`, and clears the selection when the list is empty
+- `load()` — `rxMethod` that streams `SpaceService.findAllNames()`; called from `onInit`. Sets `loaded`; keeps the selected space (and its open folders) while it is listed, else selects the first (none when the list is empty)
 - `spaceById(id)` — returns a `computed` signal of the space with that id (or `undefined`)
-- `changeSpace(space)` — switch active workspace, reset paths, resolve environment
+- `changeSpace(space: IdName)` — switch active workspace (a listed one, else the first), reset paths; the environment resolves once the space's environments arrive (the remembered one by id, else the first)
 - `changeContentPath(path)` / `changeAssetPath(path)` — update breadcrumb navigation
 - `changeEnvironment(env)` — switch preview environment (persisted per space)
-- `_syncSpaceData(spaceId)` — private `rxMethod`, fed from `onInit` with `selectedSpaceId` (or `undefined` while signed out). Owns the `schemas`/`documents` live queries (HTTP fetch + refetch on the space's SSE change events): on every id change it clears both, then `switchMap`s to the new space's queries, closing the old ones (and, with the last subscriber, that space's `EventSource`). Each query retries with exponential backoff (1s → 30s cap) and an error toast. Gated on `UserStore.isAuthenticated` because this root store outlives the signed-in shell
+- Contents (computed from `contentSummaries`, each with its `fullSlug` worked out from the folder chain, `core/utils/content-summaries.ts`): `contents`, `contentFolders` (breadcrumbs, the Move dialog), `contentDocuments` (the Link field), `contentById` (the References / Reference fields show their documents from it, live). Read again on every `contents` change event; when spaces grow, patch it from the event instead ([roadmap](roadmap/content-store-patch.md))
+- `_syncSpaceData(spaceId)` — private `rxMethod`, fed from `onInit` with `selectedSpaceId` (or `undefined` while signed out). Owns the live queries of the selected space (`spaceService.findOne`, `findEnvironments`) and its `schemas` and contents (`GET …/contents/names`; HTTP fetch + refetch on the space's SSE change events): on every id change it clears the space, its environments, `schemas` and contents, then `switchMap`s to the new space's queries, closing the old ones (and, with the last subscriber, that space's `EventSource`). Each query retries with exponential backoff (1s → 30s cap) and an error toast. Gated on `UserStore.isAuthenticated` because this root store outlives the signed-in shell
 
 **The URL selects the space, not the store.** Every space route lives under a componentless `spaces/:spaceId` parent in `features-routing.module.ts`, guarded by `spaceSelectionGuard` (`apps/web/src/app/core/guards/space-selection.guard.ts`). The guard waits for `loaded$` (a `withProps` observable of `loaded`, created once so guards don't leave an effect behind per navigation), then:
 - `:spaceId` is in `spaces` → `changeSpace()` if it differs from the stored selection, allow.
 - otherwise (deleted, mistyped, another install) → warning toast, redirect to the stored space's dashboard, or the first space if that one is gone too (never back to an id that would fail again), or `/features/welcome` when there are none.
 
-This is what makes shared links work: the persisted `selectedSpaceId` is only a default for when the URL names no space. Don't call `changeSpace()` before navigating — navigate and let the guard select, so an unsaved-changes `canDeactivate` can still cancel the switch. Selecting the space is all it takes: the store then moves its own documents/schemas live queries to it (see `_syncSpaceData`).
+This is what makes shared links work: the persisted `selectedSpaceId` is only a default for when the URL names no space. Don't call `changeSpace()` before navigating — navigate and let the guard select, so an unsaved-changes `canDeactivate` can still cancel the switch. Selecting the space is all it takes: the store then moves its own contents/schemas live queries to it (see `_syncSpaceData`).
 
 **Space Environments** — a Space can have multiple environments (e.g. staging, production URLs). The selected environment is persisted per space in `selectedEnvironmentBySpaceId`, **by id** (names may repeat); a stored id that no longer matches (or a name stored by an older version) falls back to the first environment.
 

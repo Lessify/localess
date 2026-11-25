@@ -1,6 +1,16 @@
 import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import pg from 'pg';
 import { inject } from 'vitest';
+
+import { MIGRATIONS_FOLDER } from '../src/infra/database/migrate.js';
+
+/** How many migrations a database gets up to date with: the entries of the Drizzle journal. */
+export const MIGRATION_COUNT: number = (
+  JSON.parse(readFileSync(join(MIGRATIONS_FOLDER, 'meta/_journal.json'), 'utf8')) as { entries: unknown[] }
+).entries.length;
 
 export interface TestDatabase {
   url: string;

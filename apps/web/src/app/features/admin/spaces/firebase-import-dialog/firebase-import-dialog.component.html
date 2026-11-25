@@ -1,43 +1,90 @@
 <hlm-dialog-header>
   <h2 hlmDialogTitle>Import from Firebase</h2>
 </hlm-dialog-header>
-@if (run(); as current) {
-  <p class="text-sm">{{ current.sourceSpaceName }}: {{ current.status }}</p>
-  @if (current.status === 'RUNNING') {
-    <button hlmBtn variant="outline" size="sm" class="self-start" (click)="cancel()">Cancel import</button>
+<ll-firebase-import-steps class="mb-2 block" [current]="step()" />
+
+@switch (step()) {
+  @case (1) {
+    <form [formGroup]="form" class="flex flex-col gap-4" (ngSubmit)="connect()">
+      <div hlmField>
+        <label hlmFieldLabel for="origin">Firebase environment URL</label>
+        <input hlmInput id="origin" formControlName="origin" placeholder="https://cms.example.com" autocomplete="off" />
+      </div>
+      <div hlmField>
+        <label hlmFieldLabel for="token">Migration token</label>
+        <input hlmInput id="token" type="password" formControlName="token" autocomplete="off" />
+        <p hlmFieldDescription>Generated in the Firebase environment under Admin → Settings → Migration.</p>
+      </div>
+      <div class="flex justify-end">
+        <button hlmBtn type="submit" [disabled]="form.invalid || busy()">
+          @if (busy()) {
+            <hlm-spinner class="size-4" />
+          }
+          Connect
+        </button>
+      </div>
+    </form>
   }
-  <!-- The dialog box grows with its content and nothing scrolls it: long lists scroll on their own. -->
-  <ll-firebase-import-progress class="block max-h-[50vh] overflow-y-auto" [run]="current" />
-} @else {
-  <form [formGroup]="form" class="flex flex-col gap-3" (ngSubmit)="connect()">
-    <div hlmField>
-      <label hlmFieldLabel for="origin">Firebase environment URL</label>
-      <input hlmInput id="origin" formControlName="origin" placeholder="https://cms.example.com" autocomplete="off" />
+  @case (2) {
+    @if (spaces()?.length) {
+      <!-- The dialog box grows with its content and nothing scrolls it: a long list scrolls on its own. -->
+      <div class="max-h-[50vh] overflow-y-auto pr-1">
+        <hlm-radio-group class="gap-2" aria-label="Firebase spaces" [value]="selected()" (valueChange)="selectSpace($event)">
+          @for (space of spaces(); track space.id) {
+            <label hlmFieldLabel [for]="'firebase-space-' + space.id">
+              <div hlmField orientation="horizontal">
+                <hlm-radio
+                  [value]="space.id"
+                  [inputId]="'firebase-space-' + space.id"
+                  [disabled]="!isSelectable(space)"
+                  [aria-labelledby]="'firebase-space-' + space.id + '-name'">
+                  <hlm-radio-indicator indicator />
+                </hlm-radio>
+                <div hlmFieldContent>
+                  <div hlmFieldTitle [id]="'firebase-space-' + space.id + '-name'">{{ space.name }}</div>
+                  @if (space.createdAt) {
+                    <div hlmFieldDescription>Created {{ space.createdAt | date: 'mediumDate' }}</div>
+                  }
+                </div>
+                @if (space.importedAs; as imported) {
+                  <span hlmBadge variant="outline" class="max-w-40 truncate">Imported as {{ imported.name }}</span>
+                }
+              </div>
+            </label>
+          }
+        </hlm-radio-group>
+      </div>
+    } @else {
+      <p class="text-muted-foreground text-sm">This Firebase environment has no spaces.</p>
+    }
+    <div class="flex justify-end gap-2">
+      <button hlmBtn variant="outline" (click)="back()">Back</button>
+      <button hlmBtn [disabled]="!selected() || busy()" (click)="startImport()">
+        @if (busy()) {
+          <hlm-spinner class="size-4" />
+        }
+        Import{{ selectedName() ? ' ' + selectedName() : '' }}
+      </button>
     </div>
-    <div hlmField>
-      <label hlmFieldLabel for="token">Migration token</label>
-      <input hlmInput id="token" type="password" formControlName="token" autocomplete="off" />
-      <p class="text-muted-foreground text-xs">Generated in the Firebase environment under Admin → Settings → Migration.</p>
-    </div>
-    <button hlmBtn type="submit" [disabled]="form.invalid || busy()">Connect</button>
-  </form>
-  @if (spaces().length) {
-    <ul class="flex max-h-[50vh] flex-col gap-1 overflow-y-auto">
-      @for (space of spaces(); track space.id) {
-        <li>
-          <label class="flex items-center gap-2" [class.opacity-50]="!isSelectable(space)">
-            <input type="radio" name="space" [value]="space.id" [disabled]="!isSelectable(space)" (change)="selected.set(space.id)" />
-            {{ space.name }}
-            @if (space.importedAs; as imported) {
-              <span class="text-muted-foreground text-xs">Imported as {{ imported.name }}</span>
-            }
-          </label>
-        </li>
-      }
-    </ul>
-    <button hlmBtn [disabled]="!selected()" (click)="startImport()">Import</button>
+  }
+  @case (3) {
+    @if (run(); as current) {
+      <ll-firebase-import-run-header [run]="current" />
+      <!-- The dialog box grows with its content and nothing scrolls it: long lists scroll on their own. -->
+      <ll-firebase-import-progress class="block max-h-[50vh] overflow-y-auto" [run]="current" />
+      <div class="flex justify-end gap-2">
+        @if (current.status === 'RUNNING') {
+          <button hlmBtn variant="outline" (click)="cancel()">Cancel import</button>
+        } @else {
+          @if (current.status === 'FINISHED' && current.spaceId) {
+            <button hlmBtn variant="outline" (click)="openSpace()">Open space</button>
+          }
+          <button hlmBtn (click)="close()">Close</button>
+        }
+      </div>
+    }
   }
 }
 @if (error()) {
-  <p class="text-destructive text-sm">{{ error() }}</p>
+  <p class="text-destructive text-sm" role="alert">{{ error() }}</p>
 }

@@ -1,4 +1,3 @@
-
 /** Firebase id → new UUID, per entity, for one imported space. */
 export interface ReferenceMaps {
   assets: Map<string, string>;
@@ -35,7 +34,12 @@ export function rewriteData(data: unknown, maps: ReferenceMaps): RewriteResult<u
     const out: Record<string, unknown> = {};
     for (const [key, item] of Object.entries(node)) out[key] = walk(item);
     if (typeof node['uri'] === 'string') {
-      const kind = node['kind'] === 'ASSET' ? 'asset' : node['kind'] === 'REFERENCE' || (node['kind'] === 'LINK' && node['type'] === 'content') ? 'content' : undefined;
+      const kind =
+        node['kind'] === 'ASSET'
+          ? 'asset'
+          : node['kind'] === 'REFERENCE' || (node['kind'] === 'LINK' && node['type'] === 'content')
+            ? 'content'
+            : undefined;
       if (kind) {
         const uri = lookup(node['uri'], kind === 'asset' ? maps.assets : maps.contents, kind, missing);
         if (uri !== node['uri']) changed = true;

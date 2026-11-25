@@ -1,12 +1,70 @@
-import { type AssetMetadata, type Content, ContentKind, type ContentMetadata } from '@localess/shared';
-import type { assets } from '../../infra/database/schema.js';
+import {
+  type AssetMetadata,
+  type Content,
+  type ContentDocumentSummary,
+  type ContentFolderSummary,
+  ContentKind,
+  type ContentMetadata,
+} from '@localess/shared';
+
+import { present } from '../../infra/database/without-nulls.js';
+import type { AssetEntity } from '../entities/asset.entity.js';
+import type { ContentEntity } from '../entities/content.entity.js';
 import type { ContentWithPath } from '../queries/content-tree.query.js';
-import { toDto } from './dto.transformer.js';
 
-type AssetEntity = typeof assets.$inferSelect;
+/**
+ * A `contents` row with its computed paths as the App API's model: a folder, or a document with its schema, data,
+ * references and publish time; `null` columns left out, and the data and references when not read (the list), `spaceId`
+ * dropped, timestamps as ISO strings.
+ */
+export function toContent(
+  entity: Omit<ContentWithPath, 'data' | 'assets' | 'links' | 'references'> &
+    Partial<Pick<ContentWithPath, 'data' | 'assets' | 'links' | 'references'>>,
+): Content {
+  const base = {
+    id: entity.id,
+    name: entity.name,
+    slug: entity.slug,
+    parentSlug: entity.parentSlug,
+    fullSlug: entity.fullSlug,
+    ...present({ parentId: entity.parentId }),
+    createdAt: entity.createdAt.toISOString(),
+    updatedAt: entity.updatedAt.toISOString(),
+  };
+  if (entity.kind === 'FOLDER') return { ...base, kind: ContentKind.FOLDER };
+  return {
+    ...base,
+    kind: ContentKind.DOCUMENT,
+    schema: entity.schema ?? '',
+    ...present({
+      data: entity.data,
+      publishedAt: entity.publishedAt?.toISOString(),
+      assets: entity.assets,
+      links: entity.links,
+      references: entity.references,
+    }),
+  };
+}
 
-/** A `contents` row with its computed paths as the App API's DTO: `null` columns left out and `spaceId` dropped. */
-export const toContent = (entity: ContentWithPath): Content => toDto(entity) as unknown as Content;
+/** A folder of the light list of every folder (`GET …/contents/folders`). */
+export function toContentFolderSummary(entity: Pick<ContentEntity, 'id' | 'parentId' | 'name' | 'slug'>): ContentFolderSummary {
+  return { id: entity.id, kind: ContentKind.FOLDER, ...present({ parentId: entity.parentId }), name: entity.name, slug: entity.slug };
+}
+
+/** A document of the light list of every document (`GET …/contents/documents`). */
+export function toContentDocumentSummary(
+  entity: Pick<ContentEntity, 'id' | 'parentId' | 'name' | 'slug' | 'publishedAt' | 'updatedAt'>,
+): ContentDocumentSummary {
+  return {
+    id: entity.id,
+    kind: ContentKind.DOCUMENT,
+    ...present({ parentId: entity.parentId }),
+    name: entity.name,
+    slug: entity.slug,
+    ...present({ publishedAt: entity.publishedAt?.toISOString() }),
+    updatedAt: entity.updatedAt.toISOString(),
+  };
+}
 
 /** A content item as a link on the public API (`GET /links`, `resolveLink`). */
 export function toContentMetadata(row: ContentWithPath): ContentMetadata {
@@ -20,7 +78,7 @@ export function toContentMetadata(row: ContentWithPath): ContentMetadata {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
-  if (row.kind === ContentKind.DOCUMENT) {
+  if (row.kind === 'DOCUMENT') {
     link.publishedAt = row.publishedAt?.toISOString();
   }
   return link;

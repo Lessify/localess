@@ -1,4 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
+
 import { AppConfig } from '../infra/config/config.js';
 import { ConfigModule } from '../infra/config/config.module.js';
 import { DatabaseModule } from '../infra/database/database.module.js';

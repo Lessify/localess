@@ -57,6 +57,23 @@ describe('AssetCardComponent', () => {
     expect(spy).toHaveBeenCalledWith(file());
   });
 
+  it('the preview area is a button named after the asset, opened with Enter or Space only', () => {
+    const { fixture } = setup(file());
+    const spy = vi.fn();
+    fixture.componentInstance.assetSelect.subscribe(spy);
+    const area = fixture.nativeElement.querySelector('[role="button"]') as HTMLElement;
+
+    expect(area.getAttribute('aria-label')).toBe('Open photo.png');
+    expect(area.getAttribute('tabindex')).toBe('0');
+    expect(area.hasAttribute('aria-hidden')).toBe(false);
+
+    area.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(spy).not.toHaveBeenCalled();
+    area.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    area.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
   it('renders a folder icon for folders', () => {
     const { fixture } = setup(folder());
 

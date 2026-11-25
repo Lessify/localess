@@ -1,28 +1,30 @@
-import { Inject, Injectable } from '@nestjs/common';
 import type { FirebaseImportStage } from '@localess/shared';
-import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { locales, spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { EventsService } from '../../../infra/events/events.service.js';
-import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
-import { FirebaseImportsRepository } from './firebase-imports.repository.js';
-import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
+import { Inject, Injectable } from '@nestjs/common';
 
-export type NewImportedSpace = typeof spaces.$inferInsert & { id: string };
-export type NewImportedEnvironment = typeof spaceEnvironments.$inferInsert;
+import { DATABASE, type Database } from '../../../infra/database/database.module.js';
+import { spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
+import { EventService } from '../../../infra/events/event.service.js';
+import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
+import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
+import type { SpaceInsertEntity } from '../../../shared/entities/space.entity.js';
+import type { SpaceEnvironmentInsertEntity } from '../../../shared/entities/space-environment.entity.js';
+import { FirebaseImportRepository } from './firebase-import.repository.js';
+
+export type NewImportedSpace = SpaceInsertEntity & { id: string };
 
 /** The imported space: its `spaces` row, its `space_locales` and `space_environments`, and the end of the import. */
 @Injectable()
 export class SpaceImportRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly runs: FirebaseImportsRepository,
-    private readonly events: EventsService,
+    private readonly firebaseImportRepository: FirebaseImportRepository,
+    private readonly eventService: EventService,
   ) {}
 
   /** The ids of the `locales` table, the locales a space may have. */
   async findLocaleIds(): Promise<Set<string>> {
-    return new Set((await this.db.select({ id: locales.id }).from(locales)).map(it => it.id));
+    return new Set((await this.db.query.locales.findMany({ columns: { id: true } })).map(it => it.id));
   }
 
   /**
@@ -35,11 +37,11 @@ export class SpaceImportRepository {
       await t.insert(spaceLocales).values(localeIds.map((localeId, position) => ({ spaceId: space.id, localeId, position })));
       // Tokens are not imported: the space starts with its own preview token, as a new space does.
       await createPreviewToken(t, space.id);
-      await this.runs.linkSpace(runId, space.id, stages, t);
+      await this.firebaseImportRepository.linkSpace(runId, space.id, stages, t);
     });
   }
 
-  insertEnvironments(rows: NewImportedEnvironment[], tx?: Transaction): Promise<void> {
+  insertEnvironments(rows: SpaceEnvironmentInsertEntity[], tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t.insert(spaceEnvironments).values(rows);
     });
@@ -55,6 +57,6 @@ export class SpaceImportRepository {
 
   /** Announces the finished space (a `spaces` change event): clients list it from now on. */
   publishCreated(spaceId: string): Promise<void> {
-    return this.events.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'created' });
+    return this.eventService.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'created' });
   }
 }

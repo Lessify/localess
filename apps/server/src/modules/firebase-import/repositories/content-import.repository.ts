@@ -1,13 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, gt, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { contents, keepUpdatedAt } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
+import type { ContentEntity, ContentInsertEntity } from '../../../shared/entities/content.entity.js';
 import { folderPaths } from '../../../shared/queries/content-tree.query.js';
 
-export type NewImportedContent = typeof contents.$inferInsert;
 /** The columns the reference rewrite reads and writes (`parentId`, `slug`: for the path in its warnings). */
-export type ContentReferences = Pick<typeof contents.$inferSelect, 'id' | 'parentId' | 'slug' | 'data' | 'assets' | 'links' | 'references'>;
+export type ContentReferences = Pick<ContentEntity, 'id' | 'parentId' | 'slug' | 'data' | 'assets' | 'links' | 'references'>;
 /** Where an imported item goes in the tree. */
 export type ContentLink = { id: string; parentId: string | null; slug: string };
 
@@ -16,7 +17,7 @@ export type ContentLink = { id: string; parentId: string | null; slug: string };
 export class ContentImportRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  insertMany(rows: NewImportedContent[], tx?: Transaction): Promise<void> {
+  insertMany(rows: ContentInsertEntity[], tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t.insert(contents).values(rows);
     });
@@ -49,24 +50,21 @@ export class ContentImportRepository {
 
   /** A page of the space's contents by id, after `after` (keyset paging). */
   findReferencesPage(spaceId: string, after: string | undefined, limit: number): Promise<ContentReferences[]> {
-    return this.db
-      .select({
-        id: contents.id,
-        parentId: contents.parentId,
-        slug: contents.slug,
-        data: contents.data,
-        assets: contents.assets,
-        links: contents.links,
-        references: contents.references,
-      })
-      .from(contents)
-      .where(after ? and(eq(contents.spaceId, spaceId), gt(contents.id, after)) : eq(contents.spaceId, spaceId))
-      .orderBy(asc(contents.id))
-      .limit(limit);
+    return this.db.query.contents.findMany({
+      columns: { id: true, parentId: true, slug: true, data: true, assets: true, links: true, references: true },
+      where: after ? and(eq(contents.spaceId, spaceId), gt(contents.id, after)) : eq(contents.spaceId, spaceId),
+      orderBy: asc(contents.id),
+      limit,
+    });
   }
 
   /** Writes rewritten references; `updated_at` stays the one Firebase had. */
-  updateReferences(spaceId: string, id: string, values: Omit<ContentReferences, 'id' | 'parentId' | 'slug'>, tx?: Transaction): Promise<void> {
+  updateReferences(
+    spaceId: string,
+    id: string,
+    values: Omit<ContentReferences, 'id' | 'parentId' | 'slug'>,
+    tx?: Transaction,
+  ): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t
         .update(contents)

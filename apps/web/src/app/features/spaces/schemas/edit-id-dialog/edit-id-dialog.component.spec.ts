@@ -56,7 +56,9 @@ describe('EditIdDialogComponent', () => {
   });
 
   it('saves when nothing uses the schema', () => {
-    expect(setup({ name: 'card', reservedNames: [], usage: { fields: [], contents: { count: 0, first: [] } } }).component.canSave()).toBe(true);
+    expect(setup({ name: 'card', reservedNames: [], usage: { fields: [], contents: { count: 0, first: [] } } }).component.canSave()).toBe(
+      true,
+    );
   });
 
   it('saves when the usage could not be read: the server still checks', () => {

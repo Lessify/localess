@@ -16,14 +16,11 @@ export interface UserState {
   email: string | undefined | null;
   emailVerified: boolean;
   role: UserRole | undefined;
-  permissions: string[] | undefined;
-  lock: boolean | undefined;
-  photoURL: string | undefined;
-  // Provider Data
-  isPasswordProvider: boolean;
-  isGoogleProvider: boolean;
-  isMicrosoftProvider: boolean;
-  numberProviders: number;
+  photoUrl: string | undefined;
+  // How they sign in: a password, and the linked OAuth logins
+  hasPassword: boolean;
+  hasGoogleLogin: boolean;
+  hasMicrosoftLogin: boolean;
   // Authenticated
   isAuthenticated: boolean;
   /** The session check (`GET /api/auth/me`) has answered at least once. */
@@ -37,13 +34,10 @@ export const initialState: UserState = {
   email: undefined,
   emailVerified: false,
   role: undefined,
-  photoURL: undefined,
-  permissions: undefined,
-  lock: undefined,
-  isPasswordProvider: false,
-  isGoogleProvider: false,
-  isMicrosoftProvider: false,
-  numberProviders: 0,
+  photoUrl: undefined,
+  hasPassword: false,
+  hasGoogleLogin: false,
+  hasMicrosoftLogin: false,
   isAuthenticated: false,
   loaded: false,
 };
@@ -56,7 +50,7 @@ const initialStateFactory = (): UserState => {
   return { ...initialState };
 };
 
-/** The signed-in user as state: identity, providers, role and permissions (from the session, not token claims). */
+/** The signed-in user as state: identity, how they sign in and role (from the session). */
 export function userToState(user: User): Partial<UserState> {
   return {
     id: user.id,
@@ -70,14 +64,11 @@ export function userToState(user: User): Partial<UserState> {
       : undefined,
     email: user.email,
     emailVerified: user.emailVerified,
-    photoURL: user.photoURL || undefined,
+    photoUrl: user.photoUrl || undefined,
     role: user.role,
-    permissions: user.permissions,
-    lock: user.lock,
-    numberProviders: user.providers.length,
-    isPasswordProvider: user.providers.includes('password'),
-    isGoogleProvider: user.providers.includes('google.com'),
-    isMicrosoftProvider: user.providers.includes('microsoft.com'),
+    hasPassword: user.hasPassword === true,
+    hasGoogleLogin: user.identities?.some(it => it.provider === 'google') ?? false,
+    hasMicrosoftLogin: user.identities?.some(it => it.provider === 'microsoft') ?? false,
     isAuthenticated: true,
     loaded: true,
   };
@@ -118,7 +109,6 @@ export const UserStore = signalStore(
   withComputed(state => {
     return {
       isRoleAdmin: computed(() => state.role() === 'ADMIN'),
-      isLocked: computed(() => state.lock() === true),
     };
   }),
   withHooks({

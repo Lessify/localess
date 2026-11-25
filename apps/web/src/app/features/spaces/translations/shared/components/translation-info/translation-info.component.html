@@ -1,0 +1,102 @@
+@if (translation(); as translation) {
+  <div>
+    <div class="align-items-start flex gap-2 p-2">
+      @if ('CONTENT_WRITERS' | hasRole | async) {
+        <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit Key" aria-label="Edit Key" (click)="editKey.emit(translation)">
+          <ng-icon hlm size="sm" name="lucideReplace" />
+        </button>
+        <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit" aria-label="Edit" (click)="edit.emit(translation)">
+          <ng-icon hlm size="sm" name="lucidePencil" />
+        </button>
+      }
+      @if ('CONTENT_WRITERS' | hasRole | async) {
+        <button hlmBtn size="icon" variant="outline" hlmTooltip="Delete" aria-label="Delete" (click)="remove.emit(translation)">
+          <ng-icon hlm size="sm" name="lucideTrash" />
+        </button>
+      }
+    </div>
+    <hlm-separator />
+    <ul role="list" aria-label="Translation details" class="divide-y">
+      <li role="listitem" class="relative flex items-center p-2">
+        <div class="min-w-0 flex-auto">
+          <div class="flex items-center gap-x-3">
+            <div class="text-sm leading-6 font-semibold break-all">Key</div>
+          </div>
+          <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+            <code>{{ translation.key }}</code>
+            <button
+              hlmBtn
+              size="icon"
+              variant="ghost"
+              hlmTooltip="Copy Key"
+              aria-label="Copy Key"
+              [cdkCopyToClipboard]="translation.key"
+              (cdkCopyToClipboardCopied)="copied()">
+              <ng-icon hlm size="sm" name="lucideCopy" />
+            </button>
+          </div>
+        </div>
+      </li>
+      <li role="listitem" class="relative flex items-center p-2">
+        <div class="min-w-0 flex-auto">
+          <div class="flex items-center gap-x-3">
+            <div class="text-sm leading-6 font-semibold break-all"> Status</div>
+          </div>
+          <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+            {{ statusLabel(translation) }}
+          </div>
+        </div>
+      </li>
+      <li role="listitem" class="relative flex items-center p-2">
+        <div class="min-w-0 flex-auto">
+          <div class="flex items-center gap-x-3">
+            <div class="text-sm leading-6 font-semibold break-all"> Description</div>
+          </div>
+          <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+            @if (translation.description) {
+              {{ translation.description }}
+            } @else {
+              No description available.
+            }
+          </div>
+        </div>
+      </li>
+      <li role="listitem" class="relative flex items-center p-2">
+        <div class="min-w-0 flex-auto">
+          <div class="flex items-center gap-x-3">
+            <div class="text-sm leading-6 font-semibold break-all"> Labels</div>
+          </div>
+          <div class="flex items-center gap-2 text-xs leading-5 break-words">
+            @for (label of translation.labels; track label) {
+              <span hlmBadge [variant]="selectedLabels().includes(label) ? 'secondary' : 'outline'">
+                {{ label }}
+              </span>
+            } @empty {
+              No label available.
+            }
+          </div>
+        </div>
+      </li>
+      <li role="listitem" class="relative flex items-center p-2">
+        <div class="min-w-0 flex-auto">
+          <div class="flex items-center gap-x-3">
+            <div class="text-sm leading-6 font-semibold break-all"> Created At</div>
+          </div>
+          <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+            {{ translation.createdAt | date: 'medium' }}
+          </div>
+        </div>
+      </li>
+      <li role="listitem" class="relative flex items-center p-2">
+        <div class="min-w-0 flex-auto">
+          <div class="flex items-center gap-x-3">
+            <div class="text-sm leading-6 font-semibold break-all"> Updated At</div>
+          </div>
+          <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
+            {{ translation.updatedAt | date: 'medium' }}
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+}

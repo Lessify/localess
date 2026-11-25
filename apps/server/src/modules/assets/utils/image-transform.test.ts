@@ -1,6 +1,7 @@
 import sharp, { type Sharp } from 'sharp';
 import { describe, expect, it } from 'vitest';
 
+import { buildAssetETag } from './asset-etag.js';
 import {
   applySharpTransforms,
   canonicalTransformSize,
@@ -14,7 +15,6 @@ import {
   VALID_FITS,
   VALID_FORMATS,
 } from './image-transform.js';
-import { buildAssetETag } from './asset-etag.js';
 
 /** A 200x100 solid-colour source — deliberately non-square so fit modes differ visibly. */
 function source(): Sharp {

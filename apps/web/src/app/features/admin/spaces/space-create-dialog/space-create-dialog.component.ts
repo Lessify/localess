@@ -1,10 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { UserStore } from '@core/stores/user.store';
-import { UserPermission } from '@localess/shared';
+import { SpaceService } from '@core/services/space.service';
+import { SpaceTemplateId } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFile, lucideLayoutTemplate, lucideNewspaper, lucideShoppingCart } from '@ng-icons/lucide';
+import {
+  lucideFile,
+  lucideFileStack,
+  lucideFolderTree,
+  lucideImages,
+  lucideLanguages,
+  lucideLayoutTemplate,
+  lucideNewspaper,
+  lucideShoppingCart,
+} from '@ng-icons/lucide';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -13,9 +23,13 @@ import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmRadioGroupImports } from '@spartan-ng/helm/radio-group';
+import { catchError, of } from 'rxjs';
 
-import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES } from '../templates';
 import { SpaceCreateDialogResult } from './space-create-dialog.model';
+import { NO_TEMPLATE_VIEW, SPACE_TEMPLATE_VIEWS } from './space-templates';
+
+/** The form's value for Empty: a radio needs a value, the request gets no template. */
+const NO_TEMPLATE = '';
 
 /** Creating a space, optionally from a template. Renaming lives in SpaceEditDialogComponent. */
 @Component({
@@ -32,41 +46,54 @@ import { SpaceCreateDialogResult } from './space-create-dialog.model';
     HlmInputGroupImports,
     HlmRadioGroupImports,
   ],
-  providers: [provideIcons({ lucideFile, lucideLayoutTemplate, lucideNewspaper, lucideShoppingCart })],
+  providers: [
+    provideIcons({
+      lucideFile,
+      lucideFileStack,
+      lucideFolderTree,
+      lucideImages,
+      lucideLanguages,
+      lucideLayoutTemplate,
+      lucideNewspaper,
+      lucideShoppingCart,
+    }),
+  ],
 })
 export class SpaceCreateDialogComponent {
   private readonly fb = inject(FormBuilder);
-  private readonly userStore = inject(UserStore);
   private readonly dialogRef = inject<BrnDialogRef<SpaceCreateDialogResult>>(BrnDialogRef);
   readonly fe = inject(FormErrorHandlerService);
 
-  readonly templates = SPACE_TEMPLATES;
+  /**
+   * What the server offers this user (by permission, and test templates only in development and e2e). A list that
+   * fails to load leaves the name alone: no template is sent, and the space is created on its own.
+   */
+  private readonly offered = toSignal(
+    inject(SpaceService)
+      .findTemplates()
+      .pipe(catchError(() => of([]))),
+    { initialValue: [] },
+  );
 
   /**
-   * Templates are offered only to someone who may create schemas.
-   *
-   * The client is the writer here, so a user without SCHEMA_CREATE would have the batch rejected by
-   * firestore.rules. Rather than show a control that cannot work, the whole thing is hidden - such
-   * a user simply gets a name field, and EMPTY is the effective behaviour.
-   *
-   * A computed rather than the shared `canUserPerform` pipe, because this is read in TypeScript as
-   * well as the template. The pipe is deliberately left untouched: its array form is `.some()` -
-   * any-of - which would silently be the wrong check once seeding content adds CONTENT_CREATE to
-   * this condition.
+   * The choice cards: Empty (no template, the form's `''`) first, then the offered ones in the server's order. `key`
+   * names the card's elements (Empty's value can not).
    */
-  readonly canChooseTemplate = computed(() => {
-    const role = this.userStore.role();
-    if (role === 'ADMIN') return true;
-    return role === 'CUSTOM' && (this.userStore.permissions() ?? []).includes(UserPermission.SCHEMA_CREATE);
-  });
+  readonly templates = computed(() => [
+    { id: NO_TEMPLATE, key: 'EMPTY', ...NO_TEMPLATE_VIEW },
+    ...this.offered().map(id => ({ id, key: id, ...SPACE_TEMPLATE_VIEWS[id] })),
+  ]);
 
-  // `template` is always present and always defaulted, so the caller never has to handle undefined.
+  /** Nothing offered leaves no choice to make: the control stays hidden and no template is sent. */
+  readonly canChooseTemplate = computed(() => this.offered().length > 0);
+
   form: FormGroup = this.fb.group({
     name: this.fb.control('', SpaceValidator.NAME),
-    template: this.fb.control(EMPTY_TEMPLATE_ID),
+    template: this.fb.control<SpaceTemplateId | typeof NO_TEMPLATE>(NO_TEMPLATE),
   });
 
   save(): void {
-    this.dialogRef.close(this.form.value as SpaceCreateDialogResult);
+    const { name, template } = this.form.value as { name: string; template: SpaceTemplateId | typeof NO_TEMPLATE };
+    this.dialogRef.close(template === NO_TEMPLATE ? { name } : { name, template });
   }
 }

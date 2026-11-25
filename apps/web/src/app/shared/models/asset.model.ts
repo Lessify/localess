@@ -1,4 +1,4 @@
-import { AssetFile, AssetFileType, AssetFolder } from '@localess/shared';
+import { AssetFile, AssetFileType, AssetFolder, AssetFolderCreate } from '@localess/shared';
 
 import { assetFileTypeDescriptions } from './schema.model';
 
@@ -36,9 +36,8 @@ export const webImages: Record<string, string> = {
   '.tiff': 'Safari',
 };
 
-export interface AssetFolderCreate {
-  name: string;
-}
+/** What the Add Folder dialog asks for (the folder it goes into comes from where it was opened). */
+export type AssetFolderCreateForm = Pick<AssetFolderCreate, 'name'>;
 
 export type AssetFolderUpdateForm = Pick<AssetFolder, 'name'>;
 

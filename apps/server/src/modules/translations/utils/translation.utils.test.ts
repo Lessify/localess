@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { Translation } from '@localess/shared';
+import { describe, expect, it } from 'vitest';
+
 import { planTranslationUpdate, storedLocaleValues } from './translation.utils.js';
 
 // What a stored row adds to a model; the functions under test key rows by the map key, not by `id`.

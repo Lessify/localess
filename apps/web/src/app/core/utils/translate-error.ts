@@ -2,9 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { apiErrorMessage } from './api-error';
 
-/** What a 412 from `/api/app/translate*` means: the server has no machine translation provider configured. */
+/** What a 412 from `/api/app/translate*` means: no machine translation provider is connected. */
 export const TRANSLATE_NOT_CONFIGURED =
-  'Translation is not available: Google Translate is not configured on this environment. Ask an administrator to set it up.';
+  'Machine translation is not set up. Ask an admin to connect DeepL or Google in Admin → Settings → Integrations.';
 
 /** The notification for a failed machine translation; `fallback` is the action's own failure message, ending in a period. */
 export function translateErrorMessage(error: unknown, fallback: string): string {

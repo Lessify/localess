@@ -85,6 +85,8 @@ These are the `MatPaginator` behaviours it reproduces on purpose. Each is covere
   page 0 emits no `page` event.
 - **`disabled` blocks navigation and page-size changes**, not just pointer events.
 - `pageCount` is `max(1, ceil(length / pageSize))`, so an empty list still reports one page.
+- **The page-size select is labelled "Rows per page"** (a `<label for>` on the select's button, with an id unique per
+  paginator), and the navigation buttons have `aria-label`s; the e2e accessibility scan checks every list page.
 
 ## Working on this component
 

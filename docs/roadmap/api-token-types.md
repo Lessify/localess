@@ -135,7 +135,7 @@ The old dev-tools URLs are removed (404). CORS stays on `/api/v1/**` only; `/api
 - `POST` `{ name, type, cacheTtl? }` returns the token with its full value.
 - `PUT` `{ name, cacheTtl? }`: the type can't be changed.
 - `POST /:id/regenerate` returns the new full value (shown once for `management`).
-- Business rules (type immutable, `cacheTtl` only for `public`/`preview`) in `TokensService`; the repository writes
+- Business rules (type immutable, `cacheTtl` only for `public`/`preview`) in `SpaceTokenService`; the repository writes
   `token`, `token_hash` and `hint` together.
 
 ### Auto-generated preview token
@@ -145,7 +145,7 @@ preview sites and the app's "open in API" links (draft and published) work witho
 it can be renamed, regenerated or deleted.
 
 It is written by a data rule, `createPreviewToken(tx, spaceId)` in `apps/server/src/shared/data-rules/space-tokens.ts`, inside
-the transaction that inserts the space. Both paths that create a space call it: `SpacesRepository.create` (App API, with or
+the transaction that inserts the space. Both paths that create a space call it: `SpaceRepository.create` (App API, with or
 without a template) and the Firebase import's space stage, so an imported space has one too. The token generator
 (`newApiToken(type)`) moves next to it in `shared/` so the tokens module and the rule use the same one.
 
@@ -174,7 +174,7 @@ their sites and CI.
   (`localess login --origin … --space … --token …`), and "You won't see this token again".
 - List: a Type badge instead of the Permissions count and the Usage column; the Token column shows `hint`; Copy Token only for
   `public`/`preview`; Copy CLI Login is removed from the row (it lives in the show-once dialog).
-- Contents, Edit document and Translations "open in API" links use `TokenService.firstValue(spaceId, types)`, asked on every
+- Contents, Edit document and Translations "open in API" links use `SpaceTokenService.firstValue(spaceId, types)`, asked on every
   click (never cached, so a regenerated token is picked up): published links take a `public` token, or the space's
   `preview` token when it has no public one (a preview token reads published content too, so the links work on a new
   space); draft links take a `preview` token. No token: "Please create a … Token"; a failed lookup: "Tokens could not be

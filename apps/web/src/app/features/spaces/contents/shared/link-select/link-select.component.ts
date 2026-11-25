@@ -4,7 +4,8 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { ContentDocument, ContentLink, LinkContentType, SchemaFieldKind, SchemaFieldLink } from '@localess/shared';
+import { ContentSummaryWithPath } from '@core/utils/content-summaries';
+import { ContentLink, LinkContentType, SchemaFieldKind, SchemaFieldLink } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFileSymlink, lucideInfo, lucideLanguages, lucideLink } from '@ng-icons/lucide';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
@@ -51,7 +52,7 @@ export class LinkSelectComponent implements OnInit {
   // Input
   form = input.required<FormGroup>();
   component = input.required<SchemaFieldLink>();
-  documents = input.required<ContentDocument[]>();
+  documents = input.required<ContentSummaryWithPath[]>();
   default = input<ContentLink>();
 
   defaultDocument = computed(() => {
@@ -86,7 +87,7 @@ export class LinkSelectComponent implements OnInit {
   });
 
   // Combobox selected value
-  selectedDocument = signal<ContentDocument | null>(null);
+  selectedDocument = signal<ContentSummaryWithPath | null>(null);
 
   // Stores
   settingsStore = inject(LocalSettingsStore);
@@ -116,18 +117,19 @@ export class LinkSelectComponent implements OnInit {
     this.selectedDocument.set(null);
   }
 
-  onDocumentSelect(doc: ContentDocument | null): void {
-    this.selectedDocument.set(doc);
+  /** Cleared: `undefined` from the combobox, kept as `null`. */
+  onDocumentSelect(doc: ContentSummaryWithPath | null | undefined): void {
+    this.selectedDocument.set(doc ?? null);
     this.form()
       .get('uri')
       ?.setValue(doc?.id ?? null);
   }
 
-  itemToString = (item: ContentDocument): string => {
+  itemToString = (item: ContentSummaryWithPath): string => {
     return item ? `${item.name} | ${item.fullSlug}` : '';
   };
 
-  displayContent(content?: ContentDocument): string {
+  displayContent(content?: ContentSummaryWithPath): string {
     return content ? `${content.name} | ${content.fullSlug}` : '';
   }
 

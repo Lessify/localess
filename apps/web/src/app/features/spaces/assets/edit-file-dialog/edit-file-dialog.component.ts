@@ -3,7 +3,6 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideSave } from '@ng-icons/lucide';
-import { CommonValidator } from '@shared/validators/common.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
@@ -33,7 +32,8 @@ export class EditFileDialogComponent implements OnInit {
   isImage = this.context.asset.type.startsWith('image/');
 
   form: FormGroup = this.fb.group({
-    name: this.fb.control('', [...AssetValidator.NAME, CommonValidator.reservedName(this.context.reservedNames, this.context.asset.name)]),
+    // A name the folder already has is allowed (docs/roadmap/asset-names.md): the folder's list is paged.
+    name: this.fb.control('', AssetValidator.NAME),
     alt: this.fb.control(''),
   });
 

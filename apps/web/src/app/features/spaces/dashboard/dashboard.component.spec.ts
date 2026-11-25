@@ -23,7 +23,7 @@ describe('DashboardComponent', () => {
     const responses = new Subject<SpaceOverview>();
     const overviewOf = vi.fn().mockReturnValue(responses);
     if (template !== undefined) TestBed.overrideComponent(DashboardComponent, { set: { template } });
-    TestBed.configureTestingModule({ providers: [{ provide: SpaceService, useValue: { overview: overviewOf } }] });
+    TestBed.configureTestingModule({ providers: [{ provide: SpaceService, useValue: { findOverview: overviewOf } }] });
     const fixture = TestBed.createComponent(DashboardComponent);
     fixture.componentRef.setInput('spaceId', 'space-1');
     fixture.detectChanges();

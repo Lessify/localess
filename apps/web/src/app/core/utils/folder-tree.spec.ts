@@ -1,7 +1,12 @@
-import type { ContentFolderSummary } from '@localess/shared';
+import type { TreeFolder } from './folder-tree';
 import { breadcrumbs, folderPath, subtreeIds } from './folder-tree';
 
-const f = (id: string, slug: string, parentId?: string): ContentFolderSummary => ({ id, slug, name: slug.toUpperCase(), parentId });
+const f = (id: string, slug: string, parentId?: string): TreeFolder & { slug: string; name: string } => ({
+  id,
+  slug,
+  name: slug.toUpperCase(),
+  parentId,
+});
 const list = [f('a', 'blog'), f('b', '2026', 'a'), f('c', 'june', 'b'), f('d', 'news')];
 const map = new Map(list.map(it => [it.id, it]));
 

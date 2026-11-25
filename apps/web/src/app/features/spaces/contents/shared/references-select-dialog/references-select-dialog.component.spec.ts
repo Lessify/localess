@@ -1,10 +1,13 @@
+import { HttpParams } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Content, ContentFolder, ContentKind, Schema, SchemaType } from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
-import { SchemaService } from '@core/services/schema.service';
-import { of } from 'rxjs';
+import { NotificationService } from '@core/services/notification.service';
+import { SpaceStore } from '@core/stores/space.store';
+import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { ReferencesSelectDialogContext } from './references-select-dialog.model';
@@ -14,11 +17,18 @@ function folder(overrides: Partial<ContentFolder> = {}): ContentFolder {
   return { id: 'f1', kind: ContentKind.FOLDER, name: 'Docs', fullSlug: '', ...overrides } as unknown as ContentFolder;
 }
 
+/** Lets the page's resource take the answer (it resolves through a promise), then runs the effects. */
+const settle = async () => {
+  TestBed.tick();
+  await new Promise(resolve => setTimeout(resolve));
+  TestBed.tick();
+};
+
 describe('ReferencesSelectDialogComponent', () => {
   function setup(context: ReferencesSelectDialogContext, contents: Content[] = [], schemas: Schema[] = []) {
     const close = vi.fn();
-    const findAllSchemas = vi.fn().mockReturnValue(of(schemas));
-    const findAllContents = vi.fn().mockReturnValue(of(contents));
+    const findAll = vi.fn().mockReturnValue(of({ items: contents, page: 0, size: 20, total: contents.length }));
+    const error = vi.fn();
 
     TestBed.overrideComponent(ReferencesSelectDialogComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -27,32 +37,45 @@ describe('ReferencesSelectDialogComponent', () => {
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: SchemaService, useValue: { findAll: findAllSchemas } },
+        {
+          provide: SpaceStore,
+          useValue: {
+            schemas: signal(schemas),
+            contentFolders: signal([
+              { id: 'a', kind: ContentKind.FOLDER, name: 'A', slug: 'a', fullSlug: 'a', updatedAt: '' },
+              { id: 'b', kind: ContentKind.FOLDER, name: 'B', slug: 'b', parentId: 'a', fullSlug: 'a/b', updatedAt: '' },
+            ]),
+          },
+        },
+        { provide: NotificationService, useValue: { error } },
         {
           provide: ContentService,
           useValue: {
-            findAll: findAllContents,
-            findAllFolders: () => of([{ id: 'a', name: 'A', slug: 'a' }, { id: 'b', name: 'B', slug: 'b', parentId: 'a' }]),
+            findAll,
           },
         },
       ],
     });
     const fixture = TestBed.createComponent(ReferencesSelectDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, close, findAllSchemas, findAllContents };
+    return { component: fixture.componentInstance, close, findAll, error };
   }
 
-  it('loads root schemas and content on init', () => {
+  /** The query of the last page read. */
+  const lastQuery = (findAll: ReturnType<typeof setup>['findAll']) => (findAll.mock.calls.at(-1)?.[1] as HttpParams).toString();
+
+  it("loads the root's first page, the same query as the Contents table", async () => {
     const items = [folder({ id: 'f1' })];
     const schemas = [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema];
-    const { component, findAllSchemas, findAllContents } = setup({ spaceId: 'space-1' }, items, schemas);
+    const { component, findAll } = setup({ spaceId: 'space-1' }, items, schemas);
+    await settle();
 
-    expect(findAllSchemas).toHaveBeenCalledWith('space-1', SchemaType.ROOT);
-    expect(findAllContents).toHaveBeenCalledWith('space-1', undefined);
-    expect(component.schemas()).toEqual(schemas);
+    expect(findAll.mock.calls.at(-1)?.[0]).toBe('space-1');
+    expect(lastQuery(findAll)).toBe('page=0&size=20');
     expect(component.dataSource.filteredData()).toEqual(items);
+    expect(component.page.total()).toBe(1);
     expect(component.schemasMapByName().get('s1')).toEqual(schemas[0]);
-    expect(component.isLoading()).toBe(false);
+    expect(component.page.loading()).toBe(false);
   });
 
   it('onRowSelect() toggles selection for documents', () => {
@@ -64,14 +87,33 @@ describe('ReferencesSelectDialogComponent', () => {
     expect(component.selection.isSelected(doc as never)).toBe(true);
   });
 
-  it('onRowSelect() navigates into folders', () => {
-    const { component, findAllContents } = setup({ spaceId: 'space-1' });
-    findAllContents.mockClear();
+  it('onRowSelect() navigates into folders, keeping the search and the scope', () => {
+    const { component, findAll } = setup({ spaceId: 'space-1' });
+    component.contentList.onFilterChange({ search: 'home', scope: 'deep' });
 
     component.onRowSelect(folder({ id: 'f1', name: 'Docs', fullSlug: 'docs' }));
     TestBed.tick();
 
-    expect(findAllContents).toHaveBeenCalledWith('space-1', 'f1');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&search=home&deep=true&parentId=f1');
+  });
+
+  it('keeps the selection across pages and folders', () => {
+    const { component } = setup({ spaceId: 'space-1', multiple: true });
+    const one = { id: 'c1', kind: ContentKind.DOCUMENT, name: 'One' } as unknown as Content;
+    component.onRowSelect(one);
+    component.contentList.list.page.set(1);
+    component.onRowSelect(folder({ id: 'f1' }));
+    component.onRowSelect({ id: 'c2', kind: ContentKind.DOCUMENT, name: 'Two' } as unknown as Content);
+
+    expect(component.selection.selected.map(it => it.id)).toEqual(['c1', 'c2']);
+  });
+
+  it('tells a failed load', async () => {
+    const { component, findAll, error } = setup({ spaceId: 'space-1' });
+    findAll.mockReturnValueOnce(throwError(() => new Error('boom')));
+    component.contentList.onFilterChange({ search: 'x', scope: '' });
+    await settle();
+    expect(error).toHaveBeenCalledWith('Contents can not be loaded.');
   });
 
   it('builds the breadcrumbs from the folder map, and goes back by folder id', () => {

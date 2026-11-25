@@ -1,41 +1,38 @@
-# Import / Export: hidden until fixed
+# Import / Export
 
-**Status:** hidden in the UI (`FEATURE_FLAGS.importExport = false` in `apps/web/src/app/core/feature-flags.ts`). The server API (`/api/app/spaces/:spaceId/tasks`) and the task runner stay as they are.
+**Status (2026-10-23):** Translations and Schemas import and export are on, reworked
+([design](../superpowers/specs/2026-10-23-tasks-import-export-design.md), [Tasks](../features/spaces/tasks.md)).
+Contents and Assets import and export are removed; they move with the full export
+([Space export and backups](space-export-backup.md)).
 
-## What is hidden
+## What shipped
 
-- Import and Export in the ⋮ menus of Contents, Schemas, Assets and Translations.
-- The **Tasks** side menu entry and the `spaces/:spaceId/tasks` route (an old link lands on `/features`). Tasks only report on those imports and exports.
-- Not hidden: *Regenerate Metadata* in Assets (an asset task, admins only). Its progress shows only as the notification, since the Tasks page is hidden.
+- **The rule:** read-only and small → a direct download; anything that writes, or uses the Localess file format → a task.
+- **Translations:** one locale as key-value JSON downloads at once (`GET …/translations/export/:locale`, the draft
+  values); all translations export as a `.localess.zip` (a task); import a `.localess.zip` (or an old `.llt.zip`), or a
+  key-value JSON into a chosen locale (a task). Missing keys are added in both imports; nothing is deleted.
+- **Schemas:** export and import a `.localess.zip` (or an old `.lls.zip`), schemas identified by name (no database ids:
+  the relations between schemas are names, so they hold in any space).
+- **One file format:** `.localess.zip` with a `manifest.json` and the entities as JSON Lines, streamed both ways.
+- **Translate Locale** is a task too (`TRANSLATION_TRANSLATE`).
+- **The engine:** one task at a time per space, `LOCALESS_TASK_CONCURRENCY` per instance (default 1), progress, a
+  structured result, all-or-nothing imports, who started each task; a progress dialog follows a task, a notification
+  tells its end; each role sees the kinds it may start.
+- `FEATURE_FLAGS.importExport` is gone.
 
-To turn it back on, set `importExport: true` once the items below are fixed.
+## Why Contents and Assets are not here
 
-**Content and asset export and import are switched off on the server** (`CONTENT_EXPORT` / `CONTENT_IMPORT` / `ASSET_EXPORT` / `ASSET_IMPORT` end as `ERROR` "… import and export are being redesigned"; `ASSET_REGEN_METADATA` still runs) since both trees moved to `parent_id` ([Content and asset trees](content-asset-tree.md)): their file format (paths) is redesigned once those decisions are stable. The items below predate that change.
+They are referenced by generated ids: contents from other contents (links, references), assets from contents and from
+external sites (CDN asset URLs). Imported into another space, their ids are taken or meaningless, and every reference
+would have to be rewritten through an id map; a re-import would duplicate them unless the import remembered that map.
+The Firebase-era content import did exactly that wrong (every entry inserted again on a re-import), which is why this
+feature was hidden. Translations and Schemas have names a person chose (`key`, `name`) that mean the same in any space.
 
-## To be fixed
+Contents and Assets move with the full export instead, imported as a new space (everything remapped in one go). If
+syncing contents between environments becomes a need, see the options in
+[space-export-backup.md](space-export-backup.md).
 
-### 1. Re-importing a Firebase-era content export duplicates every entry (High)
+## Related
 
-`ContentTransferService.import()` (`apps/server/src/modules/tasks/services/content-transfer.service.ts`) gives every entry whose id is not a UUID (every Firestore id) a new UUIDv7, so nothing matches the space's existing rows:
-
-- every folder and document is inserted again at the same `full_slug` (no unique index stops it), and the v1 slug lookup then returns either copy;
-- every re-run adds another full copy. On Firebase the import matched by id, so re-running a file changed nothing;
-- references inside `data` (content links, asset ids) keep Firestore ids and resolve to nothing.
-
-Proposed fix (not yet approved):
-
-1. Match by id, then by `full_slug`: a UUID found in the space updates that row; otherwise an entry with an existing `full_slug` updates that row and keeps its UUID; only unmatched entries get a new UUID.
-2. Rewrite references in `data` with `rewriteData` (`apps/server/src/modules/firebase-import/utils/rewrite-references.ts`): content ids from the file → the UUIDs chosen in step 1; asset Firestore ids → UUIDs via `assets.legacy_id`. Unresolved references are kept and counted.
-3. Log `matched by slug`, `created`, rewritten and unresolved reference counts in the task log.
-4. Open question: when a slug matches but the id differs, overwrite (what an import implies) or skip.
-
-### 2. Review the other import kinds for the same id problem
-
-Check schemas (matched by `name`, likely fine), translations (by `key`, likely fine) and assets (Firestore ids in the export, files, folders) for duplicates on re-import and for references that keep Firestore ids.
-
-### 3. Related
-
-- A unique index on `contents (space_id, full_slug)` would make duplicates impossible, but existing data may already hold some. It needs its own migration decision.
-- Tasks in `ERROR` keep their Download button enabled.
-
-Spaces moving from Firebase use **Admin → Spaces → Import from Firebase** ([firebase-space-import.md](firebase-space-import.md)), which does not depend on this feature.
+- A unique index on `contents (space_id, full_slug)` (would make duplicate slugs impossible) is still an open migration
+  decision ([content and asset trees](content-asset-tree.md)).

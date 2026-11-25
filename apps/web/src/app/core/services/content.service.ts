@@ -5,19 +5,23 @@ import { liveQueryWith } from '@core/api/live-query';
 import { normalizeContent } from '@core/utils/content-data';
 import {
   Content,
+  ContentCreate,
   ContentData,
+  ContentDataUpdate,
   ContentDocument,
   ContentDocumentCreate,
+  ContentDocumentSummary,
   ContentFolder,
   ContentFolderCreate,
   ContentFolderSummary,
   ContentKind,
   ContentUpdate,
+  Page,
 } from '@localess/shared';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-/** Contents of a space (`/api/app/spaces/:spaceId/contents`); reads are live. */
+/** Contents of a space (`/api/app/spaces/:spaceId/contents`, the server's `ContentController`); reads are live. */
 @Injectable({ providedIn: 'root' })
 export class ContentService {
   private readonly http = inject(HttpClient);
@@ -27,66 +31,55 @@ export class ContentService {
     return `/api/app/spaces/${spaceId}/contents`;
   }
 
-  private list<T extends Content>(spaceId: string, params: HttpParams): Observable<T[]> {
-    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () => this.http.get<T[]>(this.base(spaceId), { params }));
+  /**
+   * One page of a folder (the root without `parentId`), or with `deep` of everything under it; folders first, without
+   * the documents' data. Live: a change in the space reads the page again.
+   */
+  findAll(spaceId: string, params: HttpParams): Observable<Page<Content>> {
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
+      this.http.get<Page<Content>>(this.base(spaceId), { params }),
+    );
   }
 
-  private byName(name: string, max: number, kind?: ContentKind): HttpParams {
-    let params = new HttpParams().set('name', name);
-    if (kind) params = params.set('kind', kind);
-    return params.set('limit', max);
-  }
-
-  /** Children of folder `parentId` (the root when absent), folders first then by name. */
-  findAll(spaceId: string, parentId?: string): Observable<Content[]> {
-    return this.list(spaceId, new HttpParams().set('parentId', parentId ?? ''));
-  }
-
-  /** Every folder of the space, live: the editor's folder map (breadcrumbs, paths, move targets). */
-  findAllFolders(spaceId: string): Observable<ContentFolderSummary[]> {
+  /** Every folder of the space, light (no paths), live: `SpaceStore` holds it for the breadcrumbs, the Move dialog, the paths. */
+  findFolders(spaceId: string): Observable<ContentFolderSummary[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
       this.http.get<ContentFolderSummary[]>(`${this.base(spaceId)}/folders`),
     );
   }
 
-  countAll(spaceId: string, kind?: ContentKind): Observable<number> {
-    const params = kind ? new HttpParams().set('kind', kind) : undefined;
+  /** Every document of the space, light (no data, no paths), live: `SpaceStore` holds it for the Link and References fields. */
+  findDocuments(spaceId: string): Observable<ContentDocumentSummary[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
-      this.http.get<{ count: number }>(`${this.base(spaceId)}/count`, { params }),
-    ).pipe(map(it => it.count));
-  }
-
-  findAllDocuments(spaceId: string): Observable<ContentDocument[]> {
-    return this.list(spaceId, new HttpParams().set('kind', ContentKind.DOCUMENT));
-  }
-
-  findAllByName(spaceId: string, name: string, max = 20): Observable<Content[]> {
-    return this.list(spaceId, this.byName(name, max));
-  }
-
-  findAllDocumentsByName(spaceId: string, name: string, max = 20): Observable<ContentDocument[]> {
-    return this.list(spaceId, this.byName(name, max, ContentKind.DOCUMENT));
-  }
-
-  findById(spaceId: string, id: string): Observable<Content> {
-    return liveQueryWith(this.events, { spaceId, entities: ['contents'], id }, () => this.http.get<Content>(`${this.base(spaceId)}/${id}`));
-  }
-
-  findDocumentById(spaceId: string, id: string): Observable<ContentDocument> {
-    return liveQueryWith(this.events, { spaceId, entities: ['contents'], id }, () =>
-      this.http.get<ContentDocument>(`${this.base(spaceId)}/${id}`),
+      this.http.get<ContentDocumentSummary[]>(`${this.base(spaceId)}/documents`),
     );
   }
 
-  findByIds(spaceId: string, ids: string[]): Observable<Content[]> {
-    if (ids.length === 0) return of([]);
-    return this.list(spaceId, new HttpParams().set('ids', ids.join(',')));
+  /** The first `max` contents whose name or slug contains `search`, anywhere in the space. */
+  search<T extends Content>(spaceId: string, search: string, max = 20, kind?: ContentKind): Observable<T[]> {
+    let params = new HttpParams().set('search', search).set('deep', true).set('size', max);
+    if (kind) params = params.set('kind', kind);
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
+      this.http.get<Page<T>>(this.base(spaceId), { params }).pipe(map(it => it.items)),
+    );
+  }
+
+  /** One document with its data (the editor), live. */
+  findOne(spaceId: string, contentId: string): Observable<ContentDocument> {
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'], id: contentId }, () =>
+      this.http.get<ContentDocument>(`${this.base(spaceId)}/${contentId}`),
+    );
+  }
+
+  /** A folder or a document, by `kind`; `createDocument` and `createFolder` fill the body. */
+  create<T extends Content>(spaceId: string, body: ContentCreate): Observable<T> {
+    return this.http.post<T>(this.base(spaceId), body);
   }
 
   /** `parentId` absent: the root. */
   createDocument(spaceId: string, parentId: string | undefined, entity: ContentDocumentCreate): Observable<ContentDocument> {
-    return this.http.post<ContentDocument>(this.base(spaceId), {
-      kind: ContentKind.DOCUMENT,
+    return this.create<ContentDocument>(spaceId, {
+      kind: 'DOCUMENT',
       parentId,
       name: entity.name,
       slug: entity.slug,
@@ -96,49 +89,46 @@ export class ContentService {
 
   /** `parentId` absent: the root. */
   createFolder(spaceId: string, parentId: string | undefined, entity: ContentFolderCreate): Observable<ContentFolder> {
-    return this.http.post<ContentFolder>(this.base(spaceId), {
-      kind: ContentKind.FOLDER,
+    return this.create<ContentFolder>(spaceId, {
+      kind: 'FOLDER',
       parentId,
       name: entity.name,
       slug: entity.slug,
     });
   }
 
-  update(spaceId: string, id: string, entity: ContentUpdate): Observable<void> {
-    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name, slug: entity.slug });
+  /** Renames: the name and the slug (`PATCH`, as `move`). */
+  update(spaceId: string, contentId: string, entity: ContentUpdate): Observable<Content> {
+    return this.http.patch<Content>(`${this.base(spaceId)}/${contentId}`, { name: entity.name, slug: entity.slug } satisfies ContentUpdate);
   }
 
   /** Into folder `parentId`; `null`: the root. */
-  move(spaceId: string, id: string, parentId: string | null): Observable<void> {
-    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { parentId });
+  move(spaceId: string, contentId: string, parentId: string | null): Observable<Content> {
+    return this.http.patch<Content>(`${this.base(spaceId)}/${contentId}`, { parentId } satisfies ContentUpdate);
   }
 
-  /**
-   * Update Document Data
-   * @param refs Tuple of Sets: [assets, links, references]
-   */
-  updateDocumentData(spaceId: string, id: string, data: ContentData, refs: [Set<string>, Set<string>, Set<string>]): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${id}/data`, {
+  /** Saves the document's data; the server works out what it points to (assets, links, references). */
+  updateData(spaceId: string, contentId: string, data: ContentData): Observable<ContentDocument> {
+    return this.http.put<ContentDocument>(`${this.base(spaceId)}/${contentId}/data`, {
       data: normalizeContent(data),
-      assets: [...refs[0]],
-      links: [...refs[1]],
-      references: [...refs[2]],
-    });
+    } satisfies ContentDataUpdate);
   }
 
-  cloneDocument(spaceId: string, entity: ContentDocument): Observable<ContentDocument> {
-    return this.http.post<ContentDocument>(`${this.base(spaceId)}/${entity.id}/clone`, {});
+  /** A copy next to the document, with a random suffix, never published. */
+  clone(spaceId: string, contentId: string): Observable<ContentDocument> {
+    return this.http.post<ContentDocument>(`${this.base(spaceId)}/${contentId}/clone`, {});
   }
 
-  delete(spaceId: string, element: Content): Observable<void> {
-    return this.http.delete<void>(`${this.base(spaceId)}/${element.id}`);
+  /** A folder goes with everything under it. */
+  remove(spaceId: string, contentId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base(spaceId)}/${contentId}`);
   }
 
-  publish(spaceId: string, id: string): Observable<void> {
-    return this.http.post<void>(`${this.base(spaceId)}/${id}/publish`, {});
+  publish(spaceId: string, contentId: string): Observable<void> {
+    return this.http.post<void>(`${this.base(spaceId)}/${contentId}/publish`, {});
   }
 
-  unpublish(spaceId: string, id: string): Observable<void> {
-    return this.http.post<void>(`${this.base(spaceId)}/${id}/unpublish`, {});
+  unpublish(spaceId: string, contentId: string): Observable<void> {
+    return this.http.post<void>(`${this.base(spaceId)}/${contentId}/unpublish`, {});
   }
 }

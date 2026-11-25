@@ -1,4 +1,5 @@
 import type { FirebaseImportStageName } from '@localess/shared';
+
 import type { FirebaseClient } from './firebase-client.js';
 
 /** How often a running import proves it is alive (see `FirebaseImportService.failInterrupted`). */

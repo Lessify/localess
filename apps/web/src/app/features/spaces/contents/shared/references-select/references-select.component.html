@@ -2,7 +2,14 @@
   <fieldset hlmFieldSet class="gap-2">
     <legend hlmFieldLegend class="flex w-full justify-between">
       <span> {{ component().displayName || component().name }} </span>
-      <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add References" [disabled]="locked()" (click)="openReferenceSelectDialog()">
+      <button
+        hlmBtn
+        variant="ghost"
+        size="sm"
+        hlmTooltip="Add References"
+        aria-label="Add References"
+        [disabled]="locked()"
+        (click)="openReferenceSelectDialog()">
         <ng-icon hlm size="sm" name="lucideFileSymlink" />
       </button>
     </legend>
@@ -10,8 +17,14 @@
       <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
     }
     <hlm-field-separator />
-    <div hlmItemGroup class="gap-2" cdkDropList [cdkDropListDisabled]="locked()" (cdkDropListDropped)="referenceDropDrop($event)">
-      @for (content of contents(); track content.id; let index = $index) {
+    <div
+      hlmItemGroup
+      role="list"
+      class="gap-2"
+      cdkDropList
+      [cdkDropListDisabled]="locked()"
+      (cdkDropListDropped)="referenceDropDrop($event)">
+      @for (content of contents(); track content.id) {
         <div hlmItem variant="outline" role="listitem" cdkDrag cdkDragPreviewContainer="parent">
           <div hlmItemMedia>
             <ll-document-status [updatedAt]="content.updatedAt" [publishedAt]="content.publishedAt" />
@@ -23,7 +36,14 @@
             <p hlmItemDescription class="line-clamp-1 truncate"> {{ content.fullSlug }} </p>
           </div>
           <div role="none" hlmItemActions>
-            <button hlmBtn size="icon" variant="outline" [disabled]="locked()" (click)="deleteReference(index)" hlmTooltip="Delete">
+            <button
+              hlmBtn
+              size="icon"
+              variant="outline"
+              [disabled]="locked()"
+              (click)="deleteReference(content.id)"
+              hlmTooltip="Delete"
+              aria-label="Delete">
               <ng-icon hlm size="sm" name="lucideTrash" />
             </button>
             <button
@@ -33,7 +53,8 @@
               cdkDragHandle
               [disabled]="locked()"
               class="cursor-grab active:cursor-grabbing"
-              hlmTooltip="Move">
+              hlmTooltip="Move"
+              aria-label="Move">
               <ng-icon hlm size="sm" name="lucideGripVertical" />
             </button>
           </div>

@@ -1,108 +1,50 @@
 import type { Timestamp } from './timestamp.js';
 
-export interface User {
-  readonly id: string;
-  /**
-   * The user's primary email, if set.
-   */
-  readonly email?: string;
-  /**
-   * Whether or not the user's primary email is verified.
-   */
-  readonly emailVerified: boolean;
-  /**
-   * The user's display name.
-   */
-  readonly displayName?: string;
-  /**
-   * The user's photo URL.
-   */
-  readonly photoURL?: string;
-  /**
-   * The user's primary phone number, if set.
-   */
-  readonly phoneNumber?: string;
-  /**
-   * Whether or not the user is disabled: true for disabled; false for enabled.
-   */
-  readonly disabled: boolean;
+/** The OAuth providers a user may sign in with (`/api/auth/google`). */
+export const OAUTH_PROVIDERS = ['google', 'microsoft'] as const;
+export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
 
-  // Custom Claims
+/** An OAuth login linked to a user (a `user_identities` row, without the provider's subject id). */
+export interface UserIdentity {
+  provider: OAuthProvider;
+  createdAt: Timestamp;
+}
+
+/**
+ * A user as the App API answers it: the `users` row, with how they sign in. `identities` and `hasPassword` come with every
+ * answer about a user; `hasPassword` stands for the `user_credentials` row, whose hash is never sent.
+ */
+export interface User {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  displayName?: string;
+  photoUrl?: string;
+  disabled: boolean;
+  /** Absent: signed up or invited, no access yet. */
   role?: UserRole;
-  permissions?: UserPermission[];
-  lock?: boolean;
-  // Providers
-  providers: string[];
-  // Metadata
+  identities?: UserIdentity[];
+  hasPassword?: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-export interface UserInvite {
-  displayName?: string;
-  email: string;
-  password: string;
-  role?: UserRole;
-  permissions?: UserPermission[];
-  lock?: boolean;
+/** `POST /api/app/users/:id/password-reset-link`: a one-time link that sets a new password, until `expiresAt`. */
+export interface PasswordResetLink {
+  url: string;
+  expiresAt: Timestamp;
 }
 
-/** App API `PUT /api/app/users/{id}` body. */
-export interface UserUpdate {
-  role?: UserRole;
-  permissions?: UserPermission[];
-  lock?: boolean;
-}
+/** The shortest password a user may set. Request schemas: `user.zod.ts`, `auth.zod.ts`. */
+export const PASSWORD_MIN_LENGTH = 6;
 
-/** `ADMIN` may do everything; `CUSTOM` holds the permissions listed on the user. No role: signed up, no access yet. */
-export const USER_ROLES = ['ADMIN', 'CUSTOM'] as const;
+/** The fields Admin → Users may sort by (`name`: the display name). */
+export const USER_SORT_FIELDS = ['email', 'name', 'role', 'createdAt', 'updatedAt'] as const;
+export type UserSortField = (typeof USER_SORT_FIELDS)[number];
+
+/**
+ * A user's one role (what each may do: `roles.ts`, docs/frontend-permissions.md). No role (`null`): signed up or invited,
+ * no access yet.
+ */
+export const USER_ROLES = ['ADMIN', 'DEVELOPER', 'EDITOR', 'TRANSLATOR', 'VIEWER'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
-
-export enum UserPermission {
-  USER_MANAGEMENT = 'USER_MANAGEMENT',
-  SPACE_MANAGEMENT = 'SPACE_MANAGEMENT',
-  TRANSLATION_READ = 'TRANSLATION_READ',
-  TRANSLATION_CREATE = 'TRANSLATION_CREATE',
-  TRANSLATION_UPDATE = 'TRANSLATION_UPDATE',
-  TRANSLATION_DELETE = 'TRANSLATION_DELETE',
-  TRANSLATION_PUBLISH = 'TRANSLATION_PUBLISH',
-  TRANSLATION_EXPORT = 'TRANSLATION_EXPORT',
-  TRANSLATION_IMPORT = 'TRANSLATION_IMPORT',
-  SCHEMA_READ = 'SCHEMA_READ',
-  SCHEMA_CREATE = 'SCHEMA_CREATE',
-  SCHEMA_UPDATE = 'SCHEMA_UPDATE',
-  SCHEMA_DELETE = 'SCHEMA_DELETE',
-  SCHEMA_EXPORT = 'SCHEMA_EXPORT',
-  SCHEMA_IMPORT = 'SCHEMA_IMPORT',
-  CONTENT_READ = 'CONTENT_READ',
-  CONTENT_CREATE = 'CONTENT_CREATE',
-  CONTENT_UPDATE = 'CONTENT_UPDATE',
-  CONTENT_DELETE = 'CONTENT_DELETE',
-  CONTENT_PUBLISH = 'CONTENT_PUBLISH',
-  CONTENT_EXPORT = 'CONTENT_EXPORT',
-  CONTENT_IMPORT = 'CONTENT_IMPORT',
-  ASSET_READ = 'ASSET_READ',
-  ASSET_CREATE = 'ASSET_CREATE',
-  ASSET_UPDATE = 'ASSET_UPDATE',
-  ASSET_DELETE = 'ASSET_DELETE',
-  ASSET_EXPORT = 'ASSET_EXPORT',
-  ASSET_IMPORT = 'ASSET_IMPORT',
-  DEV_OPEN_API = 'DEV_OPEN_API',
-  DEV_WEBHOOK = 'DEV_WEBHOOK',
-}
-
-export const USER_PERMISSIONS_IMPORT = [
-  UserPermission.TRANSLATION_IMPORT,
-  UserPermission.SCHEMA_IMPORT,
-  UserPermission.CONTENT_IMPORT,
-  UserPermission.ASSET_IMPORT,
-];
-
-export const USER_PERMISSIONS_EXPORT = [
-  UserPermission.TRANSLATION_EXPORT,
-  UserPermission.SCHEMA_EXPORT,
-  UserPermission.CONTENT_EXPORT,
-  UserPermission.ASSET_EXPORT,
-];
-
-export const USER_PERMISSIONS_IMPORT_EXPORT = [...USER_PERMISSIONS_IMPORT, ...USER_PERMISSIONS_EXPORT];

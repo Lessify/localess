@@ -33,6 +33,9 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **Locale fallback** — If the requested locale doesn't exist in the space, falls back to the space's `defaultLocale`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
+- What a document points to (the ids `resolveLink`, `resolveReference` and `resolveAsset` look up) is stored with it and
+  worked out by the server from the data on every save (`shared/data-rules/content-refs.ts`); a field left empty
+  points to nothing.
 - **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `ContentDeliveryService.resolveAssets()` (`apps/server/src/modules/contents/services/content-delivery.service.ts`). References are asset UUIDs (an import from Firebase rewrites them).
 
 Space, document and asset ids are UUIDv7s; `GET /links` is keyed by UUID.
@@ -99,7 +102,7 @@ ignored and the untransformed image was returned; it now returns `400 invalid-ar
 | `GET`  | `/api/manage/v1/spaces/:spaceId/schemas`              | `SchemaExport[]` (id + type-specific fields, no timestamps) |
 | `POST` | `/api/manage/v1/spaces/:spaceId/schemas`              | `zSchemaPushSchema` (schema push, below) |
 | `GET`  | `/api/manage/v1/spaces/:spaceId/translations/:locale` | `Record<string, string>` — the values stored for `locale`, **without** fallback filling (keys with no or an empty value are absent); `400` for a locale not in the space. Used by `localess translation pull --raw` |
-| `POST` | `/api/manage/v1/spaces/:spaceId/translations/:locale` | `zTranslationManageUpdateSchema` (translation push, below) |
+| `POST` | `/api/manage/v1/spaces/:spaceId/translations/:locale` | `zTranslationPush` (translation push, below) |
 
 These were the dev-tools (`?token=` with `DEV_TOOLS`) and manage (`X-API-KEY`) routes under `/api/v1`; the old URLs now answer 404. `GET …/translations/:locale/values` lost its `/values` suffix. A space that is being imported (or whose import failed) answers `503` here too, but only after the token is checked: a caller without the space's management token gets the usual 401 and learns nothing about the import. (On the CDN API the 503 comes first, from the `space-id.ts` hook.)
 
@@ -107,7 +110,7 @@ These were the dev-tools (`?token=` with `DEV_TOOLS`) and manage (`X-API-KEY`) r
 
 ### Translation push (`POST …/translations/:locale`)
 
-**Request body (`zTranslationManageUpdateSchema`):**
+**Request body (`zTranslationPush`):**
 
 ```typescript
 {
@@ -174,7 +177,7 @@ Unlike the import Task, push rejects (400 `invalid-argument`) a `SCHEMA`/`SCHEMA
 }
 ```
 
-Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations drop the space's draft translation snapshots, so the next draft request builds them under a new `cv`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/shared/queries/schema.query.ts`, shared with the schema import task) in `SchemasRepository.applyPushPlan`; it moves no content `cv` (a content draft keeps the schemas it was built with until its document changes). With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
+Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations drop the space's draft translation snapshots, so the next draft request builds them under a new `cv`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/shared/queries/schema.query.ts`, shared with the schema import task) in `SchemaRepository.applyPushPlan`; it moves no content `cv` (a content draft keeps the schemas it was built with until its document changes). With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
 
 ---
 
@@ -246,12 +249,12 @@ Tokens are not imported from Firebase; every space starts with an Auto Generated
 
 | File                                                     | Purpose                                                                                   |
 |----------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `apps/server/src/modules/contents/controllers/contents.cdn.controller.ts` | CDN — links, documents by slug and id, `resolve*` options                                  |
-| `apps/server/src/modules/translations/controllers/translations.cdn.controller.ts` | CDN translations                                                                 |
-| `apps/server/src/modules/translations/controllers/translations.management.controller.ts` | Management — stored values, translation push                              |
-| `apps/server/src/modules/assets/controllers/assets.cdn.controller.ts` | CDN — asset delivery (transformed, original, download): ETag/304, Range, headers          |
-| `apps/server/src/modules/schemas/controllers/schemas.management.controller.ts` | Management — OpenAPI, schema export, schema push                                 |
-| `apps/server/src/modules/spaces/controllers/spaces.management.controller.ts` | Management — space metadata                                                        |
+| `apps/server/src/modules/contents/controllers/content.cdn.controller.ts` | CDN — links, documents by slug and id, `resolve*` options                                  |
+| `apps/server/src/modules/translations/controllers/translation.cdn.controller.ts` | CDN translations                                                                 |
+| `apps/server/src/modules/translations/controllers/translation.management.controller.ts` | Management — stored values, translation push                              |
+| `apps/server/src/modules/assets/controllers/asset.cdn.controller.ts` | CDN — asset delivery (transformed, original, download): ETag/304, Range, headers          |
+| `apps/server/src/modules/schemas/controllers/schema.management.controller.ts` | Management — OpenAPI, schema export, schema push                                 |
+| `apps/server/src/modules/spaces/controllers/space.management.controller.ts` | Management — space metadata                                                        |
 | `apps/server/src/auth/token-auth.decorators.ts`, `apps/server/src/auth/guards/` | `@CdnToken`, `@ManagementToken` and their guards                                 |
 | `apps/server/src/infra/http/v1/`                                         | Shared plumbing: `v1-request.ts` (`assertValidIdParams`, `validIdParams`, `cv` redirects, `isDraft`), `v1-error.ts`, responses, Cache-Control, ID checks |
 | `apps/server/src/modules/contents/services/content-delivery.service.ts`           | Published and draft documents, `resolveLinks`/`resolveReferences`/`resolveAssets`, links   |

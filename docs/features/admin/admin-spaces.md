@@ -9,7 +9,7 @@ Platform-level management of Spaces — create new spaces, edit space names, del
 ## Route
 
 ```
-/features/admin/spaces            [SPACE_MANAGEMENT permission]
+/features/admin/spaces            [ADMINS]
 ```
 
 ## Key Files
@@ -17,20 +17,19 @@ Platform-level management of Spaces — create new spaces, edit space names, del
 ```
 apps/web/src/app/features/admin/spaces/
   spaces.component.ts/html/scss      ← space list, and the whole create flow
-  space-create-dialog/               ← the form: name + template choice
+  space-create-dialog/               ← the form: name + template choice; each template's title, description, icon (space-templates.ts)
   space-edit-dialog/                 ← rename
-  templates/                         ← Empty / Blog / E-Commerce / Marketing schema sets
 ```
 
 ## SpacesComponent
 
-Displays a paginated `ll-table` (`LlTableImports`) of all spaces in the platform, with a `LlFilterToolbarImports` search toolbar. It is sorted by name by default, case-insensitively (`sortingDataAccessor` lowercases `name`), the order the server lists spaces in (`lower(name), id`).
+Displays one page of spaces (`ll-table`, `ll-paginator`), paged, sorted and searched on the server: `GET /api/app/spaces` answers a `Page<Space>` (`?page=&size=&sort=&direction=`, `?search=` on the name or any part of the id, `?importing=false` to leave out spaces being imported; sorts: `name` (default, case-insensitive), `id`, `updatedAt`; ties by id), each item with its `firebaseImport` when it has one. Admins only (`ADMINS`), as the page: the import carries who ran it and from where; every other user reads the sidebar list (`GET /api/app/spaces/names`, any role). A `PagedList` (`core/utils/paged-list.ts`) holds the query.
 
-**Injected services:** `SpaceService`, `SpaceTemplateService`, `HlmDialogService`, `NotificationService`, `Injector`
+**Injected services:** `SpaceService`, `HlmDialogService`, `NotificationService`, `Injector`
 
 **Key behaviour:**
 - `loadData()` — fetches all spaces via `SpaceService`
-- `onFilterChange(value: FilterToolbarValue)` — updates the table filter from the toolbar; the predicate is built in `ngOnInit()` via `FilterPredicateUtils.create()`, searching across space `id` and `name`
+- `onFilterChange(value: FilterToolbarValue)` — sends the toolbar's search to the server, from the first page; `onSortChange()` sends the sorted column and direction
 - `openEditDialog(space)` — opens `SpaceEditDialogComponent`
 - `openDeleteDialog(space)` — confirmation dialog then deletes space and all its content
 - `copied()` — shows snackbar when space ID is copied to clipboard
@@ -39,14 +38,23 @@ Displays a paginated `ll-table` (`LlTableImports`) of all spaces in the platform
 
 ## Importing a space from Firebase
 
-**Import from Firebase** (`firebase-import-dialog/`) connects to a running Firebase-era environment with its URL and
-migration token (generated there under Admin → Settings → Migration), lists its spaces (already imported ones are
-disabled, "Imported as …"), and imports the one picked into a new space. The dialog then polls the run every 2 s
-(`FirebaseImportService.poll`) and shows each stage — space, locales, environments, tokens, webhooks (imported
-disabled), translations, schemas, assets, contents, content migration — with its count, warnings and, on failure,
-the error (`firebase-import-progress/`). **Imports** (`firebase-imports-dialog/`) lists past runs. A space being
+**Import from Firebase** (`firebase-import-dialog/`) walks three steps, shown on top (`firebase-import-steps/`):
+**Connect** (the environment's URL and migration token, generated there under Admin → Settings → Migration),
+**Choose space** (its spaces as radio cards with their creation date; already imported ones are disabled, "Imported as
+…"; **Back** returns to the connection) and **Import**. The dialog then polls the run every 2 s
+(`FirebaseImportService.poll`). The run view (`firebase-import-run-header/` + `firebase-import-progress/`) shows the
+source space, its host and a status badge, then one segment per stage (done, at work, failed, waiting); while running,
+a card for the stage at work with its own bar (`count of total` when the stage has a total, a moving bar when not) and
+what is done and next; once finished, a tile per stage count (Webhooks are imported disabled; References are the
+documents whose links were updated) and **Open space**; once failed, the failing stage, its error (Firebase's own
+reason when it gave one) and what to do next. Warnings are listed per stage in an accordion. **Imports**
+(`firebase-imports-dialog/`) lists past runs, newest first, as Spartan Items: a status icon, the source space with
+its status and warning badges, the Firebase host and who started it, when and how long it took; **Open space** for a
+finished run, **Cancel** for a running one (followed by polling while the list is open). A row opens the same run view. A space being
 imported or whose import failed shows a badge, is left out of `SpaceStore` (so it cannot be opened), and a failed one
-can be deleted to import again. Server side: `apps/server/src/modules/firebase-import/`; design:
+can be deleted to import again. The table reads both from each space's `firebaseImport` (the list loads that
+relation): the badge from its `status` (`RUNNING` "Importing", `FAILED` "Import failed"), and, after the name,
+"Imported from Firebase: `<sourceSpaceId>`" (the Firestore id; Space Settings no longer shows it). Server side: `apps/server/src/modules/firebase-import/`; design:
 [firebase-space-import.md](../../roadmap/firebase-space-import.md).
 
 ## Creating a space
@@ -57,15 +65,15 @@ list can send a user into it with a link rather than code:
 | Where | How | When |
 |-------|-----|------|
 | Admin → Spaces, the "Add Space" button | `openAddDialog()` directly | always |
-| The shell sidebar | link to `?action=create` | `hasNoSpaces()` and `SPACE_MANAGEMENT` |
-| The welcome page | link to `?action=create` | `hasNoSpaces()` and `SPACE_MANAGEMENT` |
+| The shell sidebar | link to `?action=create` | `hasNoSpaces()` and an admin |
+| The welcome page | link to `?action=create` | `hasNoSpaces()` and an admin |
 
 The in-page button calls the method — it is already on this component, so a navigation would be
 ceremony. The param exists for the two entry points that are not.
 
 No new route was added: `admin/spaces` already exists and is already guarded by
-`permissionGuard(UserPermission.SPACE_MANAGEMENT)` (`features-routing.module.ts`). That guard is what keeps the flow
-honest — the server requires `ADMIN` or `SPACE_MANAGEMENT` to write a space (`@RequirePermission` on
+`roleGuard(ADMINS)` (`features-routing.module.ts`). That guard is what keeps the flow
+honest — the server lets only admins create or delete a space (`@RequireRole(ADMINS)` on
 `POST /api/app/spaces`), so an
 unpermitted user must not reach the dialog at all. The CTAs carry the same check so they don't link
 somewhere the guard will bounce.
@@ -117,17 +125,17 @@ normally, because the input passes through `undefined` on the way.
 
 ### After creation
 
-No manual refresh. `SpaceService.findAll()` is a `liveQuery` over `GET /api/app/spaces`, so the
-`spaces` change event the create emits over SSE makes it refetch, and the new space reaches the admin
-table and `SpaceStore` — and since the store selects `response[0]` when
+No manual refresh. `SpaceService.findAll()` (the admin table, `GET /api/app/spaces`) and `findAllNames()`
+(`SpaceStore`, `GET /api/app/spaces/names`) are `liveQuery`s, so the `spaces` change event the create emits over SSE
+makes them refetch, and the new space reaches the admin table and `SpaceStore` — and since the store selects the first when
 nothing is selected, a user's first space also becomes their current one, filling the sidebar behind
 the dialog. The user stays on the spaces list.
 
 ## Dialogs
 
 ### SpaceCreateDialogComponent
-Space `name` plus a [template](#space-templates) choice. Returns `{ name, template }`, or
-`undefined` when dismissed.
+Space `name` plus a [template](#space-templates) choice. Returns `{ name, template? }` (no `template` for
+Empty), or `undefined` when dismissed.
 
 ### SpaceEditDialogComponent
 Space `name` only. Returns `{ name }`.
@@ -142,55 +150,63 @@ inverted.
 
 | Service | Purpose |
 |---------|---------|
-| `SpaceService` | Fetch (live), create, update, delete spaces via `/api/app/spaces` |
-| `SpaceTemplateService` | Apply a template's schemas to a newly created space (`POST /api/app/spaces/:s/schemas/template`) |
+| `SpaceService` | Fetch (live), create (with a template), update, delete spaces via `/api/app/spaces`; the templates offered (`GET /api/app/spaces/templates`) |
 | `NotificationService` | Snackbar feedback |
 
 > **Warning:** Deleting a space is irreversible and removes all content, translations, schemas, assets, and tokens under it. The `spaces` row delete cascades to every child table, and the server then deletes the space's storage prefix (`spaces/{spaceId}/` under `$LOCALESS_STORAGE_DIR`).
 
 ## Space templates
 
-Creating a space offers a template, which seeds a set of schemas:
+Creating a space offers a template. The ids are one union in `@localess/shared` (`SPACE_TEMPLATE_IDS`,
+`SpaceTemplateId`). What a template creates lives on the server (`apps/server/src/modules/spaces/templates/`);
+its title, description and icon live in the dialog (`space-create-dialog/space-templates.ts`, a
+`Record<SpaceTemplateId, …>`, so a new id does not compile without them). The server lists the ids the user may
+choose (`GET /api/app/spaces/templates` → `SpaceTemplateId[]`), and the dialog sends the chosen one with the create
+request (`POST /api/app/spaces` `{ name, template? }`; an id outside the union is a 400 from validation). The server writes the space and everything the template holds **in one transaction**
+(`SpaceTemplateRepository`): the space is complete or not created at all. Design:
+[docs/roadmap/space-templates.md](../../roadmap/space-templates.md).
 
-| Template | Schemas |
-|----------|---------|
-| **Empty** | none — a blank space |
-| **Blog** | `author`, `category`, `blogtag` (ENUM), `blogpost` |
-| **E-Commerce** | `size` (ENUM), `variant` (NODE), `category`, `product` |
-| **Marketing Site** | `cta`, `hero`, `feature`, `featuregrid`, `testimonial` (all NODE), `page` |
+| Template | Writes |
+|----------|--------|
+| **Empty** (no `template`) | nothing — the space alone: its default locale and preview token |
+| **Blog** | schemas `author`, `category`, `blogtag` (ENUM), `blogpost` |
+| **E-Commerce** | schemas `size` (ENUM), `variant` (NODE), `category`, `product` |
+| **Marketing Site** | schemas `cta`, `hero`, `feature`, `featuregrid`, `testimonial` (all NODE), `page` |
+| **Translations (large)** — test only | locales German and French; 10,000 generated translations (nothing published) |
+| **Contents (large)** — test only | 2,000 documents and 67 folders: `Archive` (1,000), `Blog/<year>/<month>` (16 posts each), 40 pages at the root; English only — [design](../../roadmap/contents-large-template.md) |
+| **Assets (large)** — test only | 1,000 generated files in `Bulk` (every 10th a PNG, text file N is N bytes), `Nested/Deep`, `Empty`, a `Gallery` document for the picker — [design](../../roadmap/assets-template.md) |
+| **Contents (all fields)** — test only | locales German and French; schemas with all 18 field kinds (translatable and not, 5 nested levels); three generated files in `Media`; reference targets and three prefilled documents (nothing published) — [design](../../roadmap/contents-template.md) |
 
 Blog and E-Commerce are both lists of records that reference each other. **Marketing Site is a
 composed page**: `page.sections` is a single `SCHEMAS` field accepting *several* node types, so an
 editor assembles a page from interchangeable blocks rather than filling a fixed form. `hero.action`
 shows the other half of the pair — `SCHEMA`, one nested node rather than many.
 
-**Empty is selected by default and writes nothing**, so creating a space is unchanged unless you
-choose otherwise.
+**Empty is not a template**: it is the dialog's first card, selected by default, and sends no `template`; the
+server then creates the space alone. No template publishes anything or creates tokens (every space gets its Auto Generated
+Preview Token).
 
-Templates seed **schemas only**. Seeding example content is deferred until the schema sets settle —
-a content payload is shaped by the schema it references, so authoring it earlier would mean
-rewriting it on every revision.
-
-Definitions live in `apps/web/src/app/features/admin/spaces/templates/`, typed as `SpaceTemplateSchema[]` so
-the compiler validates every field shape. Note this is **not** `SchemaCreate`: that type is
-`Omit<Schema, …>` over a union, and `Omit` is not distributive — it collapses `SchemaComponent |
-SchemaEnum` into their shared keys, dropping `fields`, `values` and `previewField` along with the
-discriminated union that makes field shapes checkable.
-
-`templates.spec.ts` additionally checks what types cannot: that cross-references resolve —
+Schemas are typed as `SpaceTemplateSchema[]` (the export format) so the compiler validates every field
+shape; `templates.test.ts` checks what types cannot: that cross-references resolve —
 `SCHEMA`/`SCHEMAS` targets, `OPTION`/`OPTIONS` enum sources — and the id rules the import path
 enforces.
 
+### Test templates
+
+A template marked `test` (today **Translations (large)**, `translations_large`, **Contents (all fields)**, `contents_fields`, **Assets (large)**, `assets_large`, and **Contents (large)**, `contents_large`) is listed and accepted only
+when the server runs with `LOCALESS_TEST_TEMPLATES=true`: `pnpm dev` (`apps/server/dev.env`) and the e2e
+server set it; production never does unless someone sets it on purpose. Otherwise it is absent from the list
+and a create request naming it gets 400. Its data is generated by a fixed rule (no randomness, no clock), so
+e2e tests know what to expect: see `translations-large.template.ts`.
+
 ### Permissions
 
-The template choice appears only when **creating** a space, and only for users who may create
-schemas — role `ADMIN`, or `CUSTOM` with `SCHEMA_CREATE`. `POST /api/app/spaces/:s/schemas/template`
-requires that permission, so the server would reject the template otherwise. A user without it sees no template control and
-creates empty spaces normally.
+Creating a space is an admin's, and so is choosing a template: a template is part of creating the
+space, so it asks for nothing more, even though it writes schemas, documents, files or translations. Both routes
+(`GET /api/app/spaces/templates`, `POST /api/app/spaces`) refuse anyone else (403). Roles: [User Roles](../../frontend-permissions.md); permissions were to be reworked
+separately.
 
 ### Failure
 
-A template is applied in one server transaction (`POST …/schemas/template`), after the space is
-created by its own request. If that transaction fails, the space still exists and is usable, and the notification says so rather than reporting a
-failed creation. There is no rollback — deleting a space the user just watched appear would be
-worse than leaving an empty one.
+Everything is one transaction: an unknown template (or a test one while they are off) is a 400, and a failure while writing the template
+leaves no space behind. The dialog's success toast means the space and its template are both there.

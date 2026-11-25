@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
@@ -40,7 +40,7 @@ export class EditDialogComponent implements OnInit {
 
   form: FormGroup = this.fb.group({
     description: this.fb.control('', TranslationValidator.DESCRIPTION),
-    labels: this.fb.control([], TranslationValidator.DESCRIPTION),
+    labels: this.fb.control([], TranslationValidator.LABELS),
   });
 
   ngOnInit(): void {
@@ -50,15 +50,19 @@ export class EditDialogComponent implements OnInit {
     }
   }
 
-  addLabel(value: string): void {
-    if (value.trim()) {
-      const labels: string[] = this.form.controls['labels'].value;
-      if (labels instanceof Array) {
-        this.form.controls['labels'].setValue([...labels, value.trim()]);
-      } else {
-        this.form.controls['labels'].setValue([value.trim()]);
-      }
-    }
+  /** Why the label typed last was not added; cleared once one is. */
+  readonly labelError = signal<string | undefined>(undefined);
+
+  /** Adds the typed label (Enter); an invalid or duplicate one stays in the input with the reason shown. */
+  addLabel(input: HTMLInputElement): void {
+    const label = input.value.trim();
+    if (!label) return;
+    const labels: string[] = this.form.controls['labels'].value ?? [];
+    const error = TranslationValidator.labelError(label, labels);
+    this.labelError.set(error);
+    if (error) return;
+    this.form.controls['labels'].setValue([...labels, label]);
+    input.value = '';
   }
 
   removeLabel(label: string): void {

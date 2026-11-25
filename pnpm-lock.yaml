@@ -179,6 +179,9 @@ catalogs:
     '@angular/router':
       specifier: ^22.2.2
       version: 22.2.2
+    '@eslint/js':
+      specifier: ^9.39.5
+      version: 9.39.5
     '@ng-icons/core':
       specifier: ^36.1.0
       version: 36.1.0
@@ -191,6 +194,9 @@ catalogs:
     '@types/node':
       specifier: ^24.19.1
       version: 24.19.1
+    '@types/pg':
+      specifier: ^8.23.1
+      version: 8.23.1
     class-variance-authority:
       specifier: ^0.7.1
       version: 0.7.1
@@ -203,12 +209,24 @@ catalogs:
     embla-carousel-angular:
       specifier: 22.0.0
       version: 22.0.0
+    eslint:
+      specifier: ^9.39.4
+      version: 9.39.5
+    eslint-plugin-simple-import-sort:
+      specifier: ^14.0.0
+      version: 14.0.0
     happy-dom:
       specifier: ^20.9.0
       version: 20.9.0
     ngx-scrollbar:
       specifier: ^19.1.5
       version: 19.1.5
+    oauth2-mock-server:
+      specifier: ^9.2.0
+      version: 9.2.0
+    pg:
+      specifier: ^8.23.1
+      version: 8.23.1
     prettier:
       specifier: ^3.8.3
       version: 3.8.3
@@ -218,6 +236,9 @@ catalogs:
     rxjs:
       specifier: ^7.8.2
       version: 7.8.2
+    standardwebhooks:
+      specifier: ^1.1.1
+      version: 1.1.1
     tailwind-merge:
       specifier: ^3.7.0
       version: 3.7.0
@@ -227,6 +248,9 @@ catalogs:
     typescript:
       specifier: ~6.0.3
       version: 6.0.3
+    typescript-eslint:
+      specifier: ^8.71.1
+      version: 8.71.1
     uuid:
       specifier: ^14.0.2
       version: 14.0.2
@@ -253,6 +277,45 @@ importers:
       prettier-plugin-tailwindcss:
         specifier: 'catalog:'
         version: 0.8.0(prettier@3.8.3)
+
+  apps/e2e:
+    devDependencies:
+      '@axe-core/playwright':
+        specifier: ^4.13.0
+        version: 4.13.0(playwright-core@1.64.1)
+      '@eslint/js':
+        specifier: 'catalog:'
+        version: 9.39.5
+      '@playwright/test':
+        specifier: ^1.64.1
+        version: 1.64.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.1
+      '@types/pg':
+        specifier: 'catalog:'
+        version: 8.23.1
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
+      eslint-plugin-simple-import-sort:
+        specifier: 'catalog:'
+        version: 14.0.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))
+      oauth2-mock-server:
+        specifier: 'catalog:'
+        version: 9.2.0
+      pg:
+        specifier: 'catalog:'
+        version: 8.23.1
+      standardwebhooks:
+        specifier: 'catalog:'
+        version: 1.1.1
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.71.1(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
 
   apps/server:
     dependencies:
@@ -323,7 +386,7 @@ importers:
         specifier: ^6.8.8
         version: 6.8.8
       pg:
-        specifier: ^8.23.1
+        specifier: 'catalog:'
         version: 8.23.1
       reflect-metadata:
         specifier: ^0.2.2
@@ -344,6 +407,9 @@ importers:
         specifier: 'catalog:'
         version: 4.6.5
     devDependencies:
+      '@eslint/js':
+        specifier: 'catalog:'
+        version: 9.39.5
       '@nestjs/testing':
         specifier: ^12.1.2
         version: 12.1.2(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@12.1.2(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(reflect-metadata@0.2.2)(rxjs@7.8.2))
@@ -366,7 +432,7 @@ importers:
         specifier: ^8.0.2
         version: 8.0.2
       '@types/pg':
-        specifier: ^8.23.1
+        specifier: 'catalog:'
         version: 8.23.1
       '@types/unzipper':
         specifier: ^0.10.11
@@ -377,18 +443,30 @@ importers:
       drizzle-kit:
         specifier: ^0.31.11
         version: 0.31.11
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
+      eslint-plugin-simple-import-sort:
+        specifier: 'catalog:'
+        version: 14.0.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))
       ffmpeg-static:
         specifier: ^5.3.0
         version: 5.3.0(supports-color@8.1.1)
       oauth2-mock-server:
-        specifier: ^9.2.0
+        specifier: 'catalog:'
         version: 9.2.0
       openapi3-ts:
         specifier: ^4.6.1
         version: 4.6.1
+      standardwebhooks:
+        specifier: 'catalog:'
+        version: 1.1.1
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.71.1(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       unplugin-swc:
         specifier: ^2.0.0
         version: 2.0.0(@rspack/core@1.6.8(@swc/helpers@0.5.21))(@swc/core@1.16.13(@swc/helpers@0.5.21))(esbuild@0.28.2)(rolldown@1.2.8)(rollup@4.63.5)(vite@8.3.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(less@4.5.1)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.0)(tsx@4.23.15)(yaml@2.9.1))(webpack@5.105.4(@swc/core@1.16.13(@swc/helpers@0.5.21))(esbuild@0.28.2)(uglify-js@3.19.3))
@@ -607,7 +685,7 @@ importers:
         specifier: ^22.2.2
         version: 22.2.2(@angular/compiler@22.2.2)(typescript@6.0.3)
       '@eslint/js':
-        specifier: ^9.39.5
+        specifier: 'catalog:'
         version: 9.39.5
       '@inquirer/prompts':
         specifier: ^8.7.2
@@ -646,7 +724,7 @@ importers:
         specifier: ^2.8.3
         version: 2.8.3
       eslint:
-        specifier: ^9.39.4
+        specifier: 'catalog:'
         version: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
       eslint-config-prettier:
         specifier: ^10.1.8
@@ -655,7 +733,7 @@ importers:
         specifier: ^5.5.5
         version: 5.5.5(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1)))(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(prettier@3.8.3)
       eslint-plugin-simple-import-sort:
-        specifier: ^14.0.0
+        specifier: 'catalog:'
         version: 14.0.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))
       happy-dom:
         specifier: 'catalog:'
@@ -685,7 +763,7 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
       typescript-eslint:
-        specifier: ^8.71.1
+        specifier: 'catalog:'
         version: 8.71.1(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
@@ -697,12 +775,24 @@ importers:
         specifier: 'catalog:'
         version: 4.6.5
     devDependencies:
+      '@eslint/js':
+        specifier: 'catalog:'
+        version: 9.39.5
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.1
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
+      eslint-plugin-simple-import-sort:
+        specifier: 'catalog:'
+        version: 14.0.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.71.1(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@4.1.11)(happy-dom@20.9.0)(vite@8.3.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(less@4.5.1)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -1035,6 +1125,11 @@ packages:
     engines: {node: '>= 20'}
     peerDependencies:
       '@types/json-schema': ^7.0.15
+
+  '@axe-core/playwright@4.13.0':
+    resolution: {integrity: sha512-6YLx+kxXu5GJceG4ozFg+33a2EMTdjYwWGloJ3sb9Kta5pp+ZNS53uxGVog5JetIY8s++P5UrtX+cri+u0VAVg==}
+    peerDependencies:
+      playwright-core: '>= 1.0.0'
 
   '@babel/code-frame@7.29.7':
     resolution: {integrity: sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==}
@@ -3971,6 +4066,11 @@ packages:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
+  '@playwright/test@1.64.1':
+    resolution: {integrity: sha512-IaYGml/nSOiZWROfPtuIL7neuu9qDOZ3TNvNljUIrhDMxiGTgPjzj/g9p9RxpS2tSepPDRY+UwAaEeiKtUvIAg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   '@protobufjs/aspromise@1.1.2':
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
 
@@ -4537,6 +4637,9 @@ packages:
       '@adobe/react-spectrum': ^3.47.0
       react: 18.3.1
       react-dom: 18.3.1
+
+  '@stablelib/base64@1.0.1':
+    resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -5715,6 +5818,10 @@ packages:
 
   avvio@9.3.0:
     resolution: {integrity: sha512-g2tQ7LE7oOSqDfwEm3M+ZCMTJc7KiZCdJ4UwyZJb5ckTKyYu50OYmvv0mCFXPuYXoM4zkSt8zM9XQ9KCvxA74A==}
+
+  axe-core@4.13.0:
+    resolution: {integrity: sha512-UzGt8zg7Ny8djbYMhxl2zuEevVa7r2gJjYY5Lwr1xM7+XU2nd6CkIWFTVcCIbAP63vSz71NaVyyuSk9lHKcy0A==}
+    engines: {node: '>=4'}
 
   axios@1.12.0:
     resolution: {integrity: sha512-oXTDccv8PcfjZmPGlWsPSwtOJCZ/b6W5jAMCNcfwJbCzDckwG0jrYJFaWH1yvivfCXjVzV/SPDEhMB3Q+DSurg==}
@@ -7033,6 +7140,9 @@ packages:
 
   fast-safe-stringify@2.1.1:
     resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
+
+  fast-sha256@1.3.0:
+    resolution: {integrity: sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==}
 
   fast-shallow-equal@1.0.0:
     resolution: {integrity: sha512-HPtaa38cPgWvaCFmRNhlc6NG7pv6NUHqjPgVAkWGoB9mQMwYB27/K0CvOM5Czy+qpT3e8XJ6Q4aPAnzpNpzNaw==}
@@ -9136,6 +9246,16 @@ packages:
   pkg-types@1.3.1:
     resolution: {integrity: sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==}
 
+  playwright-core@1.64.1:
+    resolution: {integrity: sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  playwright@1.64.1:
+    resolution: {integrity: sha512-HCrVhHr5QQuwYoswEUGTb7gGp522yflbv/ST8nF4sFWGuLjQCt17Q/EubpGGSNKYn1tsTCPZxqHhHCfVURu7UA==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   polished@4.3.1:
     resolution: {integrity: sha512-OBatVyC/N7SCW/FaDHrSd+vn0o5cS855TOmYi4OkdWUMSJCET/xip//ch8xGUvtr3i44X9LVyWwQlRMTN3pwSA==}
     engines: {node: '>=10'}
@@ -10426,6 +10546,9 @@ packages:
 
   stacktrace-js@2.0.2:
     resolution: {integrity: sha512-Je5vBeY4S1r/RnLydLl0TBTi3F2qdfWmYsGvtfZgEI+SCprPppaIhQf5nGcal4gI4cGpCV/duLcAzT1np6sQqg==}
+
+  standardwebhooks@1.1.1:
+    resolution: {integrity: sha512-bCbX9ZEyFkWPsRz7Bl3NuQUJohmwGSev/yhr7vhaGPlc4AfIrspIRa6cPTBuI1ItmrTDJ4d/S2hCsfe4+vQGnQ==}
 
   statuses@1.5.0:
     resolution: {integrity: sha512-OpZ3zP+jT1PI7I8nemJX4AKmAX070ZkYPVWV/AaKTJl+tXCTGyVdC1a4SL8RUQYEwk/f34ZX8UTykN68FwrqAA==}
@@ -11823,6 +11946,11 @@ snapshots:
     dependencies:
       '@types/json-schema': 7.0.15
       js-yaml: 4.3.2
+
+  '@axe-core/playwright@4.13.0(playwright-core@1.64.1)':
+    dependencies:
+      axe-core: 4.13.0
+      playwright-core: 1.64.1
 
   '@babel/code-frame@7.29.7':
     dependencies:
@@ -14710,6 +14838,10 @@ snapshots:
 
   '@pkgr/core@0.2.9': {}
 
+  '@playwright/test@1.64.1':
+    dependencies:
+      playwright: 1.64.1
+
   '@protobufjs/aspromise@1.1.2': {}
 
   '@protobufjs/base64@1.1.2': {}
@@ -15234,6 +15366,8 @@ snapshots:
       '@swc/helpers': 0.5.21
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@stablelib/base64@1.0.1': {}
 
   '@standard-schema/spec@1.1.0': {}
 
@@ -16784,6 +16918,8 @@ snapshots:
       '@fastify/error': 4.2.0
       fastq: 1.20.1
 
+  axe-core@4.13.0: {}
+
   axios@1.12.0(debug@4.4.3(supports-color@8.1.1)):
     dependencies:
       follow-redirects: 1.16.0(debug@4.4.3(supports-color@8.1.1))
@@ -18226,6 +18362,8 @@ snapshots:
       fast-decode-uri-component: 1.0.1
 
   fast-safe-stringify@2.1.1: {}
+
+  fast-sha256@1.3.0: {}
 
   fast-shallow-equal@1.0.0: {}
 
@@ -20472,6 +20610,12 @@ snapshots:
       mlly: 1.8.0
       pathe: 2.0.3
 
+  playwright-core@1.64.1: {}
+
+  playwright@1.64.1:
+    dependencies:
+      playwright-core: 1.64.1
+
   polished@4.3.1:
     dependencies:
       '@babel/runtime': 7.28.6
@@ -21771,6 +21915,11 @@ snapshots:
       error-stack-parser: 2.1.4
       stack-generator: 2.0.10
       stacktrace-gps: 3.1.2
+
+  standardwebhooks@1.1.1:
+    dependencies:
+      '@stablelib/base64': 1.0.1
+      fast-sha256: 1.3.0
 
   statuses@1.5.0: {}
 

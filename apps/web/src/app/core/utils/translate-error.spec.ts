@@ -6,7 +6,9 @@ describe('translateErrorMessage', () => {
   it('explains a 412: no translation provider on this environment', () => {
     const error = new HttpErrorResponse({ status: 412, error: { message: 'Machine translation is not configured ...' } });
     expect(translateErrorMessage(error, 'Could not be translated.')).toBe(TRANSLATE_NOT_CONFIGURED);
-    expect(TRANSLATE_NOT_CONFIGURED).toContain('Google Translate is not configured on this environment');
+    expect(TRANSLATE_NOT_CONFIGURED).toBe(
+      'Machine translation is not set up. Ask an admin to connect DeepL or Google in Admin → Settings → Integrations.',
+    );
   });
 
   it("uses the server's message for other errors", () => {

@@ -1,9 +1,9 @@
 @layer theme, base, components, utilities;
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/preflight.css" layer(base);
-@import "tailwindcss/utilities.css";
-@import "@spartan-ng/brain/hlm-tailwind-preset.css";
-@import "./styles/style-nova.css";
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import 'tailwindcss/utilities.css';
+@import '@spartan-ng/brain/hlm-tailwind-preset.css';
+@import './styles/style-nova.css';
 
 @source './**/*.{html,scss,ts}';
 @source '../../../packages/ui/**/*.ts';
@@ -92,4 +92,12 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/*
+ * A search box whose text isn't searched yet (`ll-filter-toolbar`, the Translations filter): Enter or its Search button
+ * applies it. Important: the Spartan input-group rules are unlayered and their focus ring is more specific.
+ */
+.spartan-input-group[data-search-pending] {
+  @apply border-amber-500! ring-3! ring-amber-500/30! dark:border-amber-400! dark:ring-amber-400/30!;
 }

@@ -1,10 +1,11 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { contents } from '../src/infra/database/schema.js';
+
 import { newUuid } from '../src/infra/database/id.js';
+import { contents } from '../src/infra/database/schema.js';
 import { findIdByPath, folderPaths, isUnderOrSelf, pathOf, subtree, withPaths } from '../src/shared/queries/content-tree.query.js';
-import { createTestApp, insertSpace, TestApp } from './test-app.js';
 import { S1, S2 } from './ids.js';
+import { createTestApp, insertSpace, TestApp } from './test-app.js';
 
 /** The content tree: linked by `parent_id`, every path computed (content-tree.query.ts). */
 describe('content tree', () => {
@@ -82,7 +83,10 @@ describe('content tree', () => {
       { id: a, spaceId: S2, kind: 'FOLDER', name: 'a', slug: 'a' },
       { id: b, spaceId: S2, kind: 'FOLDER', name: 'b', slug: 'b', parentId: a },
     ]);
-    await t.db.update(contents).set({ parentId: b }).where(and(eq(contents.spaceId, S2), eq(contents.id, a)));
+    await t.db
+      .update(contents)
+      .set({ parentId: b })
+      .where(and(eq(contents.spaceId, S2), eq(contents.id, a)));
     expect((await subtree(t.db, S2, a)).map(it => it.id).sort()).toEqual([a, b].sort());
     expect(await isUnderOrSelf(t.db, S2, a, b)).toBe(true);
     await t.db.delete(contents).where(eq(contents.spaceId, S2));
@@ -98,7 +102,9 @@ describe('content tree', () => {
 
   it('refuses a parent that does not exist, and cascades a delete to the subtree', async () => {
     expect(
-      await refusal(t.db.insert(contents).values({ id: newUuid(), spaceId: S1, kind: 'FOLDER', name: 'x', slug: 'x', parentId: newUuid() })),
+      await refusal(
+        t.db.insert(contents).values({ id: newUuid(), spaceId: S1, kind: 'FOLDER', name: 'x', slug: 'x', parentId: newUuid() }),
+      ),
     ).toMatch(/foreign key/);
     // A parent of another space is refused too: the key is (space_id, parent_id).
     expect(

@@ -10,7 +10,7 @@ import { EditDocumentComponent } from './edit-document/edit-document.component';
 
 const documentResolver: ResolveFn<ContentDocument> = route => {
   const { spaceId, contentId } = route.params;
-  return inject(ContentService).findDocumentById(spaceId, contentId);
+  return inject(ContentService).findOne(spaceId, contentId);
 };
 
 const routes: Routes = [

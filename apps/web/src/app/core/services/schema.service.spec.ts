@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Schema, SchemaType } from '@localess/shared';
+import { Schema, SchemaType, SchemaUpdate } from '@localess/shared';
 import { SchemaService } from './schema.service';
 
 describe('SchemaService', () => {
@@ -55,9 +55,9 @@ describe('SchemaService', () => {
     subscription.unsubscribe();
   });
 
-  it('findById() reads one schema', async () => {
+  it('findOne() reads one schema', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findById('space-1', 'page'));
+    const result = firstValueFrom(service.findOne('space-1', 'page'));
     http.expectOne('/api/app/spaces/space-1/schemas/page').flush({ id: 'page' });
     expect(await result).toEqual({ id: 'page' });
   });
@@ -71,43 +71,43 @@ describe('SchemaService', () => {
     await done;
   });
 
-  it('usage() reads what uses the schema by name', async () => {
+  it('findUsage() reads what uses the schema by name', async () => {
     const service = setup();
-    const usage = firstValueFrom(service.usage('space-1', 'uuid-1'));
+    const usage = firstValueFrom(service.findUsage('space-1', 'uuid-1'));
     const body = { fields: [{ schema: 'page', field: 'items' }], contents: { count: 1, first: [{ name: 'Home', fullSlug: 'home' }] } };
     http.expectOne('/api/app/spaces/space-1/schemas/uuid-1/usage').flush(body);
     expect(await usage).toEqual(body);
   });
 
-  it('updateName() renames on the server, addressing the schema by id', async () => {
+  it('rename() renames on the server, addressing the schema by id', async () => {
     const service = setup();
-    const done = firstValueFrom(service.updateName('space-1', { id: 'uuid-1', name: 'old' } as Schema, 'new'));
+    const done = firstValueFrom(service.rename('space-1', 'uuid-1', 'new'));
     const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/schemas/uuid-1/name' });
     expect(request.request.body).toEqual({ name: 'new' });
     request.flush({});
     await done;
   });
 
-  it('updateComponent() and updateEnum() replace the editable fields, dropping null/undefined ones', async () => {
+  it('update() replaces the settings, sending a copy without empty values and leaving the given body as it was', async () => {
     const service = setup();
-    const component = firstValueFrom(
-      service.updateComponent('space-1', 'page', { displayName: 'Page', description: undefined, fields: [] } as never),
-    );
+    const body = {
+      displayName: 'Page',
+      description: undefined,
+      previewField: null,
+      fields: [{ name: 'title', kind: 'TEXT', minLength: null }],
+    } as unknown as SchemaUpdate;
+    const before = structuredClone(body);
+    const done = firstValueFrom(service.update('space-1', 'page', body));
     const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/schemas/page' });
-    expect(request.request.body).toEqual({ displayName: 'Page', fields: [] });
-    request.flush({});
-    await component;
-
-    const enumUpdate = firstValueFrom(service.updateEnum('space-1', 'colors', { values: [{ name: 'Red', value: 'red' }] } as never));
-    const enumRequest = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/schemas/colors' });
-    expect(enumRequest.request.body).toEqual({ values: [{ name: 'Red', value: 'red' }] });
-    enumRequest.flush({});
-    await enumUpdate;
+    expect(request.request.body).toEqual({ displayName: 'Page', fields: [{ name: 'title', kind: 'TEXT' }] });
+    request.flush({ id: 'page' });
+    expect(await done).toEqual({ id: 'page' });
+    expect(body).toEqual(before);
   });
 
-  it('delete() deletes the schema', async () => {
+  it('remove() deletes the schema', async () => {
     const service = setup();
-    const done = firstValueFrom(service.delete('space-1', 'page'));
+    const done = firstValueFrom(service.remove('space-1', 'page'));
     http.expectOne({ method: 'DELETE', url: '/api/app/spaces/space-1/schemas/page' }).flush(null);
     await done;
   });

@@ -1,4 +1,5 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
+
 import { APP_CONFIG, AppConfig } from './config.js';
 
 @Global()

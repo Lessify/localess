@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
+
 import { loadConfig } from './config.js';
 
 describe('loadConfig', () => {
@@ -56,6 +58,20 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ LOCALESS_WEBHOOK_LOG_DAYS: '0' })).toThrow(/LOCALESS_WEBHOOK_LOG_DAYS/);
   });
 
+  it('runs one task at a time per instance unless configured, refusing 0 and more than 16', () => {
+    expect(loadConfig({}).taskConcurrency).toBe(1);
+    expect(loadConfig({ LOCALESS_TASK_CONCURRENCY: '3' }).taskConcurrency).toBe(3);
+    expect(() => loadConfig({ LOCALESS_TASK_CONCURRENCY: '0' })).toThrow(/LOCALESS_TASK_CONCURRENCY/);
+    expect(() => loadConfig({ LOCALESS_TASK_CONCURRENCY: '17' })).toThrow(/LOCALESS_TASK_CONCURRENCY/);
+  });
+
+  it('turns test templates off unless LOCALESS_TEST_TEMPLATES=true', () => {
+    expect(loadConfig({}).testTemplates).toBe(false);
+    expect(loadConfig({ LOCALESS_TEST_TEMPLATES: 'true' }).testTemplates).toBe(true);
+    expect(loadConfig({ LOCALESS_TEST_TEMPLATES: 'false' }).testTemplates).toBe(false);
+    expect(() => loadConfig({ LOCALESS_TEST_TEMPLATES: 'yes' })).toThrow();
+  });
+
   it('rejects an invalid DATABASE_URL', () => {
     expect(() => loadConfig({ DATABASE_URL: 'not a url' })).toThrow();
   });
@@ -91,5 +107,25 @@ describe('loadConfig: OAuth providers', () => {
     const config = loadConfig({ LOCALESS_PUBLIC_URL: 'https://cms.example.com/', LOCALESS_SMTP_URL: 'smtp://mail:25' });
     expect(config.publicUrl).toBe('https://cms.example.com');
     expect(config.smtp).toEqual({ url: 'smtp://mail:25', from: 'Localess <no-reply@localhost>' });
+  });
+
+  it('reads env-locked integrations from their lock variables only', () => {
+    expect(loadConfig({ DEEPL_API_KEY: 'k' }).integrationEnv.deepl).toEqual({ apiKey: 'k' });
+    expect(loadConfig({ LOCALESS_GOOGLE_TRANSLATE_LOCATION: 'eu' }).integrationEnv['google-translate']).toBeUndefined();
+    expect(loadConfig({ GOOGLE_CLOUD_PROJECT: 'p' }).integrationEnv['google-translate']).toEqual({ projectId: 'p', location: 'global' });
+    expect(loadConfig({ UNSPLASH_API_KEY: 'u' }).integrationEnv.unsplash).toEqual({ apiKey: 'u' });
+    expect(loadConfig({}).integrationEnv).toEqual({});
+  });
+
+  it('reads the primary translation provider, refusing anything else', () => {
+    expect(loadConfig({}).translatePrimary).toBeUndefined();
+    expect(loadConfig({ LOCALESS_TRANSLATE_PRIMARY: 'google' }).translatePrimary).toBe('google-translate');
+    expect(loadConfig({ LOCALESS_TRANSLATE_PRIMARY: 'deepl' }).translatePrimary).toBe('deepl');
+    expect(() => loadConfig({ LOCALESS_TRANSLATE_PRIMARY: 'bing' })).toThrow(/LOCALESS_TRANSLATE_PRIMARY/);
+  });
+
+  it('refuses a secret key shorter than 32 characters', () => {
+    expect(loadConfig({ LOCALESS_SECRET_KEY: 'x'.repeat(32) }).secretKey).toBe('x'.repeat(32));
+    expect(() => loadConfig({ LOCALESS_SECRET_KEY: 'short' })).toThrow(/LOCALESS_SECRET_KEY/);
   });
 });

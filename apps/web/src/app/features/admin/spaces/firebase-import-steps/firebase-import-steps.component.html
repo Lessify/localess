@@ -1,0 +1,23 @@
+<ol class="flex items-center gap-2 text-xs" aria-label="Import steps">
+  @for (step of steps; track step; let i = $index; let last = $last) {
+    <li class="flex items-center gap-2" [class.flex-1]="!last" [attr.aria-current]="i + 1 === current() ? 'step' : null">
+      <span
+        class="flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium"
+        [class.bg-primary]="i + 1 <= current()"
+        [class.text-primary-foreground]="i + 1 <= current()"
+        [class.border-transparent]="i + 1 <= current()">
+        @if (i + 1 < current()) {
+          <ng-icon hlm size="xs" name="lucideCheck" aria-hidden="true" />
+        } @else {
+          {{ i + 1 }}
+        }
+      </span>
+      <span class="whitespace-nowrap" [class.text-muted-foreground]="i + 1 > current()" [class.font-medium]="i + 1 === current()">{{
+        step
+      }}</span>
+      @if (!last) {
+        <span class="bg-border h-px flex-1" aria-hidden="true"></span>
+      }
+    </li>
+  }
+</ol>

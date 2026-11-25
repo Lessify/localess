@@ -1,15 +1,21 @@
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { newUuid } from '../src/infra/database/id.js';
 import { assets, contents, firebaseImports, schemas, spaces, tokens, translations } from '../src/infra/database/schema.js';
 import { transaction } from '../src/infra/database/transaction.js';
-import { SpacesRepository } from '../src/modules/spaces/repositories/spaces.repository.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
-import { newUuid } from '../src/infra/database/id.js';
-import { S2, UUID_V7 } from './ids.js';
+import { SpaceRepository } from '../src/modules/spaces/repositories/space.repository.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
+import { S2, UUID_V7 } from './ids.js';
 import { api, createTestApp, insertSpace, setImport, TestApp, userWithAccess } from './test-app.js';
+
+type SpaceBody = { spaceLocales: { position: number; locale: { id: string; name: string } }[] };
+/** A space's locales as the selected-space endpoint answers them: `spaceLocales[].locale`, in position order. */
+const localesOf = (body: SpaceBody) => body.spaceLocales.map(it => it.locale);
 
 describe('app API: spaces, locales, instance label', () => {
   let t: TestApp;
@@ -25,9 +31,9 @@ describe('app API: spaces, locales, instance label', () => {
     t = await createTestApp();
     adminCookie = await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' });
     admin = api(t, adminCookie);
-    managerCookie = await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] });
+    managerCookie = await userWithAccess(t, 'manager@example.com', { role: 'DEVELOPER' });
     manager = api(t, managerCookie);
-    readerCookie = await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] });
+    readerCookie = await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' });
     reader = api(t, readerCookie);
     noRole = api(t, await userWithAccess(t, 'new@example.com', { role: null }));
   });
@@ -37,7 +43,7 @@ describe('app API: spaces, locales, instance label', () => {
   describe('spaces', () => {
     it('gives a new space one preview token, "Auto Generated Preview Token", that reads drafts', async () => {
       const space = (await admin.post('/api/app/spaces', { name: 'With token' })).json();
-      const list = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json();
+      const list = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json().items;
       expect(list).toHaveLength(1);
       expect(list[0]).toMatchObject({ type: 'preview', name: 'Auto Generated Preview Token' });
       expect(list[0].token).toMatch(/^prv_/);
@@ -51,7 +57,7 @@ describe('app API: spaces, locales, instance label', () => {
       const before = (await t.db.select({ id: tokens.id }).from(tokens)).length;
       await expect(
         transaction(t.db, undefined, async tx => {
-          await t.app.get(SpacesRepository).create('Rolled back', 'en', tx);
+          await t.app.get(SpaceRepository).create('Rolled back', 'en', tx);
           throw new Error('boom');
         }),
       ).rejects.toThrow('boom');
@@ -60,35 +66,51 @@ describe('app API: spaces, locales, instance label', () => {
 
     let spaceId: string;
 
-    it('lets SPACE_MANAGEMENT create a space with the default locale', async () => {
+    it('lets an admin create a space with the default locale; no other role', async () => {
       expect((await reader.post('/api/app/spaces', { name: 'Nope' })).statusCode).toBe(403);
-      const response = await manager.post('/api/app/spaces', { name: 'Marketing' });
+      expect((await manager.post('/api/app/spaces', { name: 'Nope' })).statusCode).toBe(403);
+      const response = await admin.post('/api/app/spaces', { name: 'Marketing' });
       expect(response.statusCode).toBe(201);
       expect(response.json()).toMatchObject({
         name: 'Marketing',
-        locales: [{ id: 'en', name: 'English' }],
+        defaultLocaleId: 'en',
         defaultLocale: { id: 'en', name: 'English' },
+        spaceLocales: [{ localeId: 'en', position: 0, locale: { id: 'en', name: 'English' } }],
         createdAt: expect.stringMatching(/^\d{4}-/),
       });
-      expect(response.json()).not.toHaveProperty('contentVersion');
-      expect(response.json().environments).toEqual([]);
+      // The selected space carries its locales, not its environments (their own endpoint) nor computed fields.
+      for (const key of ['contentVersion', 'environments', 'locales', 'legacyId', 'importStatus', 'firebaseImport']) {
+        expect(response.json(), key).not.toHaveProperty(key);
+      }
       spaceId = response.json().id;
       expect(spaceId).toMatch(UUID_V7);
     });
 
-    it('lists spaces by name for any role, but not for users without one', async () => {
+    it('lists spaces by name for an admin, and their names for any role, but not for users without one', async () => {
       await admin.post('/api/app/spaces', { name: 'alpha' });
       await admin.post('/api/app/spaces', { name: 'Beta' });
-      // Case-insensitive, whatever the database collation.
-      expect((await reader.get('/api/app/spaces')).json().map((s: { name: string }) => s.name)).toEqual(['alpha', 'Beta', 'Marketing']);
+      // Case-insensitive, whatever the database collation. Admin → Spaces only: each item carries its Firebase import
+      // (who ran it, from where), admin data; everyone else reads the sidebar list.
+      expect((await manager.get('/api/app/spaces')).statusCode).toBe(403);
+      expect((await admin.get('/api/app/spaces')).json().items.map((s: { name: string }) => s.name)).toEqual([
+        'alpha',
+        'Beta',
+        'Marketing',
+      ]);
+      expect((await reader.get('/api/app/spaces')).statusCode).toBe(403);
       expect((await noRole.get('/api/app/spaces')).statusCode).toBe(403);
       expect((await reader.get(`/api/app/spaces/${spaceId}`)).json().name).toBe('Marketing');
+      // The sidebar list: every space as `{ id, name }`, by name whatever the case.
+      const names = (await reader.get('/api/app/spaces/names')).json();
+      expect(names.map((s: { name: string }) => s.name)).toEqual(['alpha', 'Beta', 'Marketing']);
+      expect(Object.keys(names[0]).sort()).toEqual(['id', 'name']);
+      expect((await noRole.get('/api/app/spaces/names')).statusCode).toBe(403);
       expect((await reader.get('/api/app/spaces/missing')).statusCode).toBe(404);
       expect((await reader.get(`/api/app/spaces/${S2}`)).statusCode).toBe(404);
       expect((await reader.get('/api/app/spaces/a%2Fb')).statusCode).toBe(404);
     });
 
-    it('takes only UUIDs, not the Firestore id of an imported space, which it shows as legacyId', async () => {
+    it('takes only UUIDs, not the Firestore id of an imported space, which Admin → Spaces shows from its firebaseImport', async () => {
       await insertSpace(t.db, {
         id: S2,
         name: 'Imported',
@@ -98,8 +120,15 @@ describe('app API: spaces, locales, instance label', () => {
       await setImport(t.db, S2, { legacyId: 'Firestore20charsId01' });
       expect((await reader.get('/api/app/spaces/Firestore20charsId01')).statusCode).toBe(404);
       expect((await admin.get('/api/app/spaces/Firestore20charsId01/tokens')).statusCode).toBe(404);
-      const response = await reader.get(`/api/app/spaces/${S2}`);
-      expect(response.json()).toMatchObject({ id: S2, legacyId: 'Firestore20charsId01', name: 'Imported' });
+      expect((await reader.get(`/api/app/spaces/${S2}`)).json()).not.toHaveProperty('firebaseImport');
+      const [item] = (await admin.get('/api/app/spaces?search=Imported')).json().items;
+      expect(item).toMatchObject({
+        id: S2,
+        name: 'Imported',
+        firebaseImport: { sourceSpaceId: 'Firestore20charsId01', status: 'FINISHED' },
+      });
+      // Finished, so it is in the sidebar list.
+      expect((await reader.get('/api/app/spaces/names')).json().map((s: { id: string }) => s.id)).toContain(S2);
       await t.db.delete(spaces).where(eq(spaces.id, S2));
     });
 
@@ -111,23 +140,25 @@ describe('app API: spaces, locales, instance label', () => {
         locales: [{ id: 'en', name: 'English' }],
         defaultLocale: { id: 'en', name: 'English' },
       });
+      const item = async () => (await admin.get('/api/app/spaces?search=Importing')).json().items[0];
       await setImport(t.db, id, { legacyId: 'FirestoreImporting01', status: 'RUNNING' });
-      expect((await admin.get(`/api/app/spaces/${id}`)).json()).toMatchObject({ importStatus: 'IMPORTING' });
+      expect(await item()).toMatchObject({ firebaseImport: { status: 'RUNNING', sourceSpaceId: 'FirestoreImporting01' } });
+      expect((await admin.get('/api/app/spaces/names')).json().map((s: { id: string }) => s.id)).not.toContain(id);
       expect((await admin.delete(`/api/app/spaces/${id}`)).statusCode).toBe(409);
       await setImport(t.db, id, { legacyId: 'FirestoreImporting01', status: 'FAILED' });
-      expect((await admin.get(`/api/app/spaces/${id}`)).json()).toMatchObject({ importStatus: 'FAILED' });
+      expect(await item()).toMatchObject({ firebaseImport: { status: 'FAILED' } });
+      expect((await admin.get('/api/app/spaces/names')).json().map((s: { id: string }) => s.id)).not.toContain(id);
       expect((await admin.delete(`/api/app/spaces/${id}`)).statusCode).toBe(204);
       expect(await t.db.select().from(firebaseImports).where(eq(firebaseImports.sourceSpaceId, 'FirestoreImporting01'))).toEqual([]);
     });
 
-    it('shows no import fields on a space created here or whose import finished', async () => {
+    it('lists a space created here without firebaseImport, and one imported with it', async () => {
       const id = newUuid();
       await insertSpace(t.db, { id, name: 'Done', locales: [{ id: 'en', name: 'English' }] });
-      expect((await admin.get(`/api/app/spaces/${id}`)).json()).not.toHaveProperty('legacyId');
+      const item = async () => (await admin.get('/api/app/spaces?search=Done')).json().items[0];
+      expect(await item()).not.toHaveProperty('firebaseImport');
       await setImport(t.db, id, { legacyId: 'FirestoreFinished001' });
-      const body = (await admin.get(`/api/app/spaces/${id}`)).json();
-      expect(body).toMatchObject({ legacyId: 'FirestoreFinished001' });
-      expect(body).not.toHaveProperty('importStatus');
+      expect(await item()).toMatchObject({ firebaseImport: { sourceSpaceId: 'FirestoreFinished001', status: 'FINISHED' } });
       await t.db.delete(spaces).where(eq(spaces.id, id));
     });
 
@@ -136,8 +167,14 @@ describe('app API: spaces, locales, instance label', () => {
       await insertSpace(t.db, { id, name: 'Once', locales: [{ id: 'en', name: 'English' }] });
       await setImport(t.db, id, { legacyId: 'FirestoreOnce0000001' });
       const again = t.db.insert(firebaseImports).values({
-        id: newUuid(), origin: 'https://firebase.example.com', sourceSpaceId: 'FirestoreOnce0000002', sourceSpaceName: 'x',
-        spaceId: id, status: 'FINISHED', stages: [], startedBy: { name: 'Admin', email: 'admin@example.com' },
+        id: newUuid(),
+        origin: 'https://firebase.example.com',
+        sourceSpaceId: 'FirestoreOnce0000002',
+        sourceSpaceName: 'x',
+        spaceId: id,
+        status: 'FINISHED',
+        stages: [],
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
       });
       await expect(again).rejects.toThrow();
       await t.db.delete(spaces).where(eq(spaces.id, id));
@@ -150,41 +187,102 @@ describe('app API: spaces, locales, instance label', () => {
       expect((await reader.patch(`/api/app/spaces/${spaceId}`, { name: 'x' })).statusCode).toBe(403);
     });
 
-    it('manages environments one by one: create, update, reorder, delete; names may repeat', async () => {
+    it('manages environments one by one: create, update, move, delete; names may repeat', async () => {
       const base = `/api/app/spaces/${spaceId}/environments`;
-      expect((await reader.get(`/api/app/spaces/${spaceId}`)).json().environments).toEqual([]);
+      /** The space's environments in its order (every one: they are few). */
+      const names = async () => (await reader.get(base)).json().items.map((it: { name: string }) => it.name);
+      expect((await reader.get(base)).json()).toEqual({ items: [], page: 0, size: 20, total: 0 });
+      expect((await noRole.get(base)).statusCode).toBe(403);
 
+      // Adding and updating answer the environment; removing and moving answer nothing.
       const created = await manager.post(base, { name: 'Preview', url: 'https://preview.example.com' });
       expect(created.statusCode).toBe(201);
-      const preview = created.json().environments[0];
-      expect(preview).toEqual({ id: expect.stringMatching(UUID_V7), name: 'Preview', url: 'https://preview.example.com' });
-      const twin = (await manager.post(base, { name: 'Preview', url: 'https://twin.example.com' })).json().environments[1];
-      const staging = (await manager.post(base, { name: 'Staging', url: 'https://staging.example.com' })).json().environments[2];
-      expect(twin.name).toBe('Preview');
+      const preview = created.json();
+      expect(preview).toMatchObject({
+        id: expect.stringMatching(UUID_V7),
+        spaceId,
+        name: 'Preview',
+        url: 'https://preview.example.com',
+        position: 0,
+      });
+      const twin = (await manager.post(base, { name: 'Preview', url: 'https://twin.example.com' })).json();
+      const staging = (await manager.post(base, { name: 'Staging', url: 'https://staging.example.com' })).json();
+      expect(twin).toMatchObject({ name: 'Preview', position: 1 });
 
-      const updated = await manager.patch(`${base}/${twin.id}`, { name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}' });
+      const updated = await manager.put(`${base}/${twin.id}`, { name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}' });
       expect(updated.statusCode).toBe(200);
-      expect(updated.json().environments[1]).toEqual({ id: twin.id, name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}' });
+      expect(updated.json()).toMatchObject({ id: twin.id, name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}', position: 1 });
+      // A replacement: name and URL together; PATCH is not a route.
+      expect((await manager.put(`${base}/${twin.id}`, { name: 'Twin' })).statusCode).toBe(400);
+      expect((await manager.patch(`${base}/${twin.id}`, { name: 'Twin' })).statusCode).toBe(404);
 
-      const reordered = await manager.put(`${base}/order`, { ids: [staging.id, preview.id, twin.id] });
-      expect(reordered.json().environments.map((it: { name: string }) => it.name)).toEqual(['Staging', 'Preview', 'Twin']);
-      for (const ids of [[staging.id, preview.id], [staging.id, preview.id, twin.id, twin.id], [staging.id, preview.id, newUuid()]]) {
-        expect((await manager.put(`${base}/order`, { ids })).statusCode).toBe(400);
+      // A move takes the environment to a place, the others shifting; -1, or past the end, is the last.
+      const moved = await manager.post(`${base}/${staging.id}/move`, { position: 0 });
+      expect(moved.statusCode).toBe(204);
+      expect(moved.body).toBe('');
+      expect(await names()).toEqual(['Staging', 'Preview', 'Twin']);
+      expect((await reader.get(`${base}/names`)).json()).toEqual([
+        { id: staging.id, name: 'Staging', url: 'https://staging.example.com' },
+        { id: preview.id, name: 'Preview', url: 'https://preview.example.com' },
+        { id: twin.id, name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}' },
+      ]);
+      await manager.post(`${base}/${staging.id}/move`, { position: 99999 });
+      expect(await names()).toEqual(['Preview', 'Twin', 'Staging']);
+      await manager.post(`${base}/${twin.id}/move`, { position: 2 });
+      expect(await names()).toEqual(['Preview', 'Staging', 'Twin']);
+      await manager.post(`${base}/${preview.id}/move`, { position: -1 });
+      expect(await names()).toEqual(['Staging', 'Twin', 'Preview']);
+      await manager.post(`${base}/${preview.id}/move`, { position: 0 });
+      expect(await names()).toEqual(['Preview', 'Staging', 'Twin']);
+      await manager.post(`${base}/${staging.id}/move`, { position: 0 });
+      expect(await names()).toEqual(['Staging', 'Preview', 'Twin']);
+      // Already there: nothing written, the space not touched.
+      const touched = (await reader.get(`/api/app/spaces/${spaceId}`)).json().updatedAt;
+      expect((await manager.post(`${base}/${staging.id}/move`, { position: 0 })).statusCode).toBe(204);
+      expect((await reader.get(`/api/app/spaces/${spaceId}`)).json().updatedAt).toBe(touched);
+      for (const body of [{}, { position: -2 }, { position: 1.5 }, { position: '1' }]) {
+        expect((await manager.post(`${base}/${staging.id}/move`, body)).statusCode, JSON.stringify(body)).toBe(400);
       }
+      expect((await manager.post(`${base}/${newUuid()}/move`, { position: 0 })).statusCode).toBe(404);
+      expect((await manager.post(`${base}/not-a-uuid/move`, { position: 0 })).statusCode).toBe(404);
+      expect((await reader.post(`${base}/${staging.id}/move`, { position: 1 })).statusCode).toBe(403);
 
       const deleted = await manager.delete(`${base}/${staging.id}`);
-      expect(deleted.statusCode).toBe(200);
-      expect(deleted.json().environments.map((it: { id: string }) => it.id)).toEqual([preview.id, twin.id]);
+      expect(deleted.statusCode).toBe(204);
+      expect(deleted.body).toBe('');
+      expect(await names()).toEqual(['Preview', 'Twin']);
       // A new environment goes last.
-      const last = (await manager.post(base, { name: 'Last', url: 'https://last.example.com' })).json().environments;
-      expect(last.map((it: { name: string }) => it.name)).toEqual(['Preview', 'Twin', 'Last']);
+      // Positions are not renumbered on delete: after the highest.
+      expect((await manager.post(base, { name: 'Last', url: 'https://last.example.com' })).json()).toMatchObject({
+        name: 'Last',
+        position: 3,
+      });
+      expect(await names()).toEqual(['Preview', 'Twin', 'Last']);
 
-      expect((await manager.patch(`${base}/${staging.id}`, { name: 'Gone', url: 'https://gone.example.com' })).statusCode).toBe(404);
+      expect((await manager.put(`${base}/${staging.id}`, { name: 'Gone', url: 'https://gone.example.com' })).statusCode).toBe(404);
       expect((await manager.delete(`${base}/${staging.id}`)).statusCode).toBe(404);
       expect((await manager.delete(`${base}/not-a-uuid`)).statusCode).toBe(404);
       expect((await reader.post(base, { name: 'x', url: 'https://x.example.com' })).statusCode).toBe(403);
+      expect((await reader.get(`/api/app/spaces/${S2}/environments`)).statusCode).toBe(404);
+      expect((await reader.get(`/api/app/spaces/${S2}/environments/names`)).statusCode).toBe(404);
+      expect((await manager.post(`/api/app/spaces/${S2}/environments`, { name: 'x', url: 'https://x.example.com' })).statusCode).toBe(404);
       // The old way to set them is gone.
       expect((await manager.patch(`/api/app/spaces/${spaceId}`, { environments: [] })).statusCode).toBe(400);
+    });
+
+    it('refuses an unknown field in a body, naming it; a query may carry parameters of its own', async () => {
+      const base = `/api/app/spaces/${spaceId}`;
+      const typo = await admin.post('/api/app/spaces', { name: 'Typo', tempalte: 'blog' });
+      expect(typo.statusCode).toBe(400);
+      expect(typo.json().message[0]).toContain('tempalte');
+      // An old client's field next to the new one.
+      expect((await manager.post(`${base}/locales`, { localeId: 'de', id: 'de' })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/default-locale`, { defaultLocaleId: 'en', id: 'en' })).statusCode).toBe(400);
+      expect((await manager.post(`${base}/locales/en/move`, { position: 0, extra: true })).statusCode).toBe(400);
+      expect((await manager.post(`${base}/environments`, { name: 'A', url: 'https://a.example.com', position: 0 })).statusCode).toBe(400);
+      expect((await manager.post(`${base}/environments/${newUuid()}/move`, { position: 0, extra: true })).statusCode).toBe(400);
+      expect((await reader.get(`${base}/locales?_=1`)).statusCode).toBe(200);
+      expect((await admin.get('/api/app/spaces?utm_source=x')).statusCode).toBe(200);
     });
 
     it('accepts only absolute http(s) environment URLs, placeholders allowed anywhere', async () => {
@@ -193,59 +291,138 @@ describe('app API: spaces, locales, instance label', () => {
       for (const url of ['javascript:alert(1)', 'data:text/html,<script>x</script>', '/relative/{slug}', 'ftp://example.com']) {
         expect((await manager.post(base, { name: 'Bad', url })).statusCode, url).toBe(400);
       }
-      const [first] = (await reader.get(`/api/app/spaces/${spaceId}`)).json().environments;
-      expect((await manager.patch(`${base}/${first.id}`, { name: 'Bad', url: 'javascript:alert(1)' })).statusCode).toBe(400);
+      const [first] = (await reader.get(`/api/app/spaces/${spaceId}/environments`)).json().items;
+      expect((await manager.put(`${base}/${first.id}`, { name: 'Bad', url: 'javascript:alert(1)' })).statusCode).toBe(400);
       expect((await manager.post(base, { name: '', url: 'https://x.example.com' })).statusCode).toBe(400);
     });
 
     it('keeps environments of other spaces out of reach', async () => {
-      const other = (await manager.post('/api/app/spaces', { name: 'Other' })).json().id;
-      const [first] = (await reader.get(`/api/app/spaces/${spaceId}`)).json().environments;
-      expect((await manager.patch(`/api/app/spaces/${other}/environments/${first.id}`, { name: 'x', url: 'https://x.example.com' })).statusCode).toBe(404);
+      const other = (await admin.post('/api/app/spaces', { name: 'Other' })).json().id;
+      const [first] = (await reader.get(`/api/app/spaces/${spaceId}/environments`)).json().items;
+      expect(
+        (await manager.put(`/api/app/spaces/${other}/environments/${first.id}`, { name: 'x', url: 'https://x.example.com' })).statusCode,
+      ).toBe(404);
       expect((await manager.delete(`/api/app/spaces/${other}/environments/${first.id}`)).statusCode).toBe(404);
-      expect((await manager.put(`/api/app/spaces/${other}/environments/order`, { ids: [first.id] })).statusCode).toBe(400);
+      expect((await manager.post(`/api/app/spaces/${other}/environments/${first.id}/move`, { position: 0 })).statusCode).toBe(404);
       await manager.delete(`/api/app/spaces/${other}`);
     });
 
     it('manages locales: add by id (idempotent, known locales only), set the default, refuse removing it, remove', async () => {
       const base = `/api/app/spaces/${spaceId}`;
-      expect((await manager.post(`${base}/locales`, { id: 'xx-unknown' })).statusCode).toBe(400);
-      await manager.post(`${base}/locales`, { id: 'de' });
-      const twice = await manager.post(`${base}/locales`, { id: 'de' });
-      expect(twice.json().locales).toEqual([
+      expect((await manager.post(`${base}/locales`, { localeId: 'xx-unknown' })).statusCode).toBe(400);
+      const added = await manager.post(`${base}/locales`, { localeId: 'de' });
+      expect(added.statusCode).toBe(201);
+      expect(added.json()).toMatchObject({ spaceId, localeId: 'de', position: 1, locale: { id: 'de', name: 'German' } });
+      // Again: the same space locale, not a second one.
+      expect((await manager.post(`${base}/locales`, { localeId: 'de' })).json()).toEqual(added.json());
+      expect(localesOf((await reader.get(base)).json())).toEqual([
         { id: 'en', name: 'English' },
         { id: 'de', name: 'German' },
       ]);
-      expect((await manager.put(`${base}/default-locale`, { id: 'de' })).json().defaultLocale).toEqual({ id: 'de', name: 'German' });
-      expect((await manager.put(`${base}/default-locale`, { id: 'fr' })).statusCode).toBe(400);
+      const setDefault = await manager.put(`${base}/default-locale`, { defaultLocaleId: 'de' });
+      expect(setDefault.json()).toMatchObject({ defaultLocaleId: 'de', defaultLocale: { id: 'de', name: 'German' } });
+      expect((await manager.put(`${base}/default-locale`, { defaultLocaleId: 'fr' })).statusCode).toBe(400);
+      // Its own route only: the space's update takes the name alone.
+      expect((await manager.patch(base, { name: 'Space', defaultLocaleId: 'en' })).statusCode).toBe(400);
+      expect((await reader.put(`${base}/default-locale`, { defaultLocaleId: 'en' })).statusCode).toBe(403);
       expect((await manager.delete(`${base}/locales/de`)).statusCode).toBe(400);
-      await manager.put(`${base}/default-locale`, { id: 'en' });
-      expect((await manager.delete(`${base}/locales/de`)).json().locales).toEqual([{ id: 'en', name: 'English' }]);
-      expect((await reader.post(`${base}/locales`, { id: 'de' })).statusCode).toBe(403);
+      await manager.put(`${base}/default-locale`, { defaultLocaleId: 'en' });
+      const removed = await manager.delete(`${base}/locales/de`);
+      expect(removed.statusCode).toBe(204);
+      expect(removed.body).toBe('');
+      expect(localesOf((await reader.get(base)).json())).toEqual([{ id: 'en', name: 'English' }]);
+      // One the space does not have: a 404 that changes nothing (no touch, no event).
+      const before = (await reader.get(base)).json().updatedAt;
+      expect((await manager.delete(`${base}/locales/de`)).statusCode).toBe(404);
+      expect((await manager.delete(`${base}/locales/xx`)).statusCode).toBe(404);
+      expect((await reader.get(base)).json().updatedAt).toBe(before);
+      expect((await manager.post(`/api/app/spaces/${S2}/locales`, { localeId: 'de' })).statusCode).toBe(404);
+      expect((await reader.post(`${base}/locales`, { localeId: 'de' })).statusCode).toBe(403);
     });
 
-    it('reorders locales: every locale of the space, each once', async () => {
+    it('moves a locale to a place, the others shifting; -1, or past the end, is the last', async () => {
       const base = `/api/app/spaces/${spaceId}`;
-      await manager.post(`${base}/locales`, { id: 'de' });
-      await manager.post(`${base}/locales`, { id: 'fr' });
-      const reordered = await manager.put(`${base}/locales/order`, { ids: ['fr', 'en', 'de'] });
-      expect(reordered.statusCode).toBe(200);
-      expect(reordered.json().locales.map((it: { id: string }) => it.id)).toEqual(['fr', 'en', 'de']);
-      expect((await reader.get(base)).json().locales.map((it: { id: string }) => it.id)).toEqual(['fr', 'en', 'de']);
+      const order = async () => localesOf((await reader.get(base)).json()).map(it => it.id);
+      await manager.post(`${base}/locales`, { localeId: 'de' });
+      await manager.post(`${base}/locales`, { localeId: 'fr' });
+      const moved = await manager.post(`${base}/locales/fr/move`, { position: 0 });
+      expect(moved.statusCode).toBe(204);
+      expect(await order()).toEqual(['fr', 'en', 'de']);
+      expect((await reader.get(`${base}/locales/names`)).json()).toEqual([
+        { id: 'fr', name: 'French' },
+        { id: 'en', name: 'English' },
+        { id: 'de', name: 'German' },
+      ]);
       // A locale added later goes last.
-      await manager.post(`${base}/locales`, { id: 'it' });
-      expect((await reader.get(base)).json().locales.map((it: { id: string }) => it.id)).toEqual(['fr', 'en', 'de', 'it']);
-      for (const ids of [['fr', 'en', 'de'], ['fr', 'en', 'de', 'it', 'it'], ['fr', 'en', 'de', 'es']]) {
-        expect((await manager.put(`${base}/locales/order`, { ids })).statusCode, ids.join()).toBe(400);
+      await manager.post(`${base}/locales`, { localeId: 'it' });
+      expect(await order()).toEqual(['fr', 'en', 'de', 'it']);
+      await manager.post(`${base}/locales/it/move`, { position: 1 });
+      expect(await order()).toEqual(['fr', 'it', 'en', 'de']);
+      await manager.post(`${base}/locales/fr/move`, { position: 99999 });
+      expect(await order()).toEqual(['it', 'en', 'de', 'fr']);
+      await manager.post(`${base}/locales/it/move`, { position: -1 });
+      expect(await order()).toEqual(['en', 'de', 'fr', 'it']);
+      await manager.post(`${base}/locales/it/move`, { position: 0 });
+      expect(await order()).toEqual(['it', 'en', 'de', 'fr']);
+      // A removal leaves a gap in the positions; the next move closes it.
+      await manager.delete(`${base}/locales/de`);
+      await manager.post(`${base}/locales/fr/move`, { position: 0 });
+      const page = (await reader.get(`${base}/locales`)).json();
+      expect(page.items.map((it: { localeId: string; position: number }) => [it.localeId, it.position])).toEqual([
+        ['fr', 0],
+        ['it', 1],
+        ['en', 2],
+      ]);
+      expect((await manager.post(`${base}/locales/fr/move`, { position: -2 })).statusCode).toBe(400);
+      expect((await manager.post(`${base}/locales/es/move`, { position: 0 })).statusCode).toBe(404);
+      expect((await reader.post(`${base}/locales/fr/move`, { position: 1 })).statusCode).toBe(403);
+      for (const id of ['fr', 'it']) await manager.delete(`${base}/locales/${id}`);
+    });
+
+    it('keeps the default one of the space locales when it is set and removed at the same time', async () => {
+      const base = `/api/app/spaces/${spaceId}`;
+      for (let round = 0; round < 10; round++) {
+        await manager.post(`${base}/locales`, { localeId: 'de' });
+        const [setDefault, removed] = await Promise.all([
+          manager.put(`${base}/default-locale`, { defaultLocaleId: 'de' }),
+          manager.delete(`${base}/locales/de`),
+        ]);
+        // One wins; the other is refused (400 when it read the winner's commit, 409 when it found it under the lock).
+        expect([200, 400, 409], setDefault.body).toContain(setDefault.statusCode);
+        expect([204, 400, 409], removed.body).toContain(removed.statusCode);
+        const space = (await reader.get(base)).json();
+        expect(localesOf(space).map(it => it.id)).toContain(space.defaultLocaleId);
+        await manager.put(`${base}/default-locale`, { defaultLocaleId: 'en' });
+        await manager.delete(`${base}/locales/de`);
       }
-      expect((await reader.put(`${base}/locales/order`, { ids: ['en', 'fr', 'de', 'it'] })).statusCode).toBe(403);
-      for (const id of ['fr', 'de', 'it']) await manager.delete(`${base}/locales/${id}`);
+    });
+
+    it('adds a locale sent twice at once once; environments added at once take distinct places', async () => {
+      const base = `/api/app/spaces/${spaceId}`;
+      const addFr = () => manager.post(`${base}/locales`, { localeId: 'fr' });
+      const twice = await Promise.all([addFr(), addFr()]);
+      expect(twice.map(it => it.statusCode)).toEqual([201, 201]);
+      expect(twice.map(it => it.json().localeId)).toEqual(['fr', 'fr']);
+      expect(localesOf((await reader.get(base)).json()).filter(it => it.id === 'fr')).toHaveLength(1);
+      await manager.delete(`${base}/locales/fr`);
+
+      const added = await Promise.all(
+        ['A', 'B', 'C'].map(name => manager.post(`${base}/environments`, { name, url: `https://${name.toLowerCase()}.example.com` })),
+      );
+      const positions = added.map(it => it.json().position);
+      expect(new Set(positions).size).toBe(3);
+      for (const environment of added) await manager.delete(`${base}/environments/${environment.json().id}`);
     });
 
     it('lists every locale a space can add, read-only', async () => {
       const response = await reader.get('/api/app/locales');
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual(expect.arrayContaining([{ id: 'en', name: 'English' }, { id: 'de-AT', name: 'German (Austria)' }]));
+      expect(response.json()).toEqual(
+        expect.arrayContaining([
+          { id: 'en', name: 'English' },
+          { id: 'de-AT', name: 'German (Austria)' },
+        ]),
+      );
       expect(response.json().length).toBeGreaterThan(400);
       expect((await noRole.get('/api/app/locales')).statusCode).toBe(403);
       expect((await admin.post('/api/app/locales', { id: 'xx', name: 'X' })).statusCode).toBe(404);
@@ -253,8 +430,8 @@ describe('app API: spaces, locales, instance label', () => {
 
     it('computes the overview on request for any role: counts, asset storage, translation progress', async () => {
       const base = `/api/app/spaces/${spaceId}`;
-      await manager.post(`${base}/locales`, { id: 'de' });
-      await manager.post(`${base}/locales`, { id: 'fr' });
+      await manager.post(`${base}/locales`, { localeId: 'de' });
+      await manager.post(`${base}/locales`, { localeId: 'fr' });
       await t.db.insert(translations).values([
         { id: newUuid(), spaceId, key: 'hello', locales: { en: 'Hello', de: 'Hallo' } },
         { id: newUuid(), spaceId, key: 'bye', locales: { en: 'Bye', de: '' } },
@@ -265,10 +442,10 @@ describe('app API: spaces, locales, instance label', () => {
         { spaceId, id: newUuid(), kind: 'FOLDER', name: 'Blog', slug: 'blog' },
       ]);
       await t.db.insert(assets).values([
-        { spaceId, id: newUuid(), kind: 'FILE', name: 'a', size: 1000 },
-        { spaceId, id: newUuid(), kind: 'FILE', name: 'b', size: 24 },
+        { spaceId, id: newUuid(), kind: 'FILE', name: 'a', originalName: 'a', size: 1000 },
+        { spaceId, id: newUuid(), kind: 'FILE', name: 'b', originalName: 'b', size: 24 },
         // Imported from Firebase without its file: counted, size unknown.
-        { spaceId, id: newUuid(), kind: 'FILE', name: 'c', size: null },
+        { spaceId, id: newUuid(), kind: 'FILE', name: 'c', originalName: 'c', size: null },
         { spaceId, id: newUuid(), kind: 'FOLDER', name: 'f' },
       ]);
       await t.db.insert(schemas).values({ id: newUuid(), spaceId, name: 'page', type: 'ROOT', fields: [] });
@@ -300,7 +477,7 @@ describe('app API: spaces, locales, instance label', () => {
     });
 
     it('counts an empty space as zeros', async () => {
-      const empty = (await manager.post('/api/app/spaces', { name: 'Empty' })).json().id;
+      const empty = (await admin.post('/api/app/spaces', { name: 'Empty' })).json().id;
       expect((await reader.get(`/api/app/spaces/${empty}/overview`)).json()).toEqual({
         counts: { locales: 1, translations: 0, assets: 0, contents: 0, schemas: 0 },
         storage: { assets: 0, assetsWithoutSize: 0 },
@@ -332,15 +509,37 @@ describe('app API: spaces, locales, instance label', () => {
       expect(poisoned.statusCode).toBe(400);
     });
 
+    it('answers 404 for a space id that is not a UUID, on every route', async () => {
+      const base = '/api/app/spaces/not-a-uuid';
+      const requests = [
+        reader.get(base),
+        reader.get(`${base}/overview`),
+        reader.get(`${base}/locales`),
+        reader.get(`${base}/locales/names`),
+        reader.get(`${base}/environments`),
+        reader.get(`${base}/environments/names`),
+        manager.patch(base, { name: 'X' }),
+        manager.put(`${base}/default-locale`, { defaultLocaleId: 'en' }),
+        manager.post(`${base}/locales`, { localeId: 'de' }),
+        manager.post(`${base}/locales/en/move`, { position: 0 }),
+        manager.delete(`${base}/locales/en`),
+        manager.post(`${base}/environments`, { name: 'A', url: 'https://a.example.com' }),
+        manager.post(`${base}/environments/${newUuid()}/move`, { position: 0 }),
+        manager.delete(base),
+      ];
+      for (const response of await Promise.all(requests)) expect(response.statusCode, response.body).toBe(404);
+    });
+
     it('deletes a space with all its rows and files', async () => {
       expect((await reader.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(403);
-      expect((await manager.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(204);
+      expect((await manager.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(403);
+      expect((await admin.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(204);
       // Its files are queued in the delete and swept right after the commit.
       await t.app.get(StorageSweeperService).whenIdle();
       expect(await t.db.select().from(spaces).where(eq(spaces.id, spaceId))).toEqual([]);
       expect(await t.db.select().from(contents).where(eq(contents.spaceId, spaceId))).toEqual([]);
       await expect(readdir(join(t.storageDir, 'spaces', spaceId))).rejects.toThrow();
-      expect((await manager.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(404);
+      expect((await admin.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(404);
     });
   });
 

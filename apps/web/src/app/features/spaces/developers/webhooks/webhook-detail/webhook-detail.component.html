@@ -8,7 +8,7 @@
   <div class="flex flex-col gap-4 p-4">
     <!-- Header -->
     <div class="flex items-center gap-2">
-      <button hlmBtn variant="ghost" size="icon-sm" (click)="goBack()">
+      <button hlmBtn variant="ghost" size="icon-sm" aria-label="Back to Webhooks" (click)="goBack()">
         <ng-icon hlm name="lucideArrowLeft" />
       </button>
       <div class="flex-1">
@@ -33,7 +33,7 @@
     </div>
 
     <!-- Info cards -->
-    <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
       <div class="rounded-lg border p-3">
         <p class="text-muted-foreground text-xs font-medium">Status</p>
         @if (wh.enabled) {
@@ -50,6 +50,28 @@
             <hlm-badge variant="outline">{{ event }}</hlm-badge>
           }
         </p>
+      </div>
+      <div class="rounded-lg border p-3" data-testid="webhook-signing">
+        <p class="text-muted-foreground text-xs font-medium">Signing</p>
+        @if (wh.hasSecret) {
+          <span hlmBadge class="mt-1">Signed</span>
+        } @else {
+          <span hlmBadge variant="secondary" class="mt-1">Not signed</span>
+        }
+        <div class="mt-2 flex flex-wrap gap-1">
+          @if (wh.hasSecret) {
+            <button hlmBtn variant="outline" size="sm" (click)="createSecret()">
+              <ng-icon hlm size="sm" name="lucideRefreshCw" />
+              Regenerate Secret
+            </button>
+            <button hlmBtn variant="ghost" size="sm" (click)="removeSecret()">Turn Off Signing</button>
+          } @else {
+            <button hlmBtn variant="outline" size="sm" (click)="createSecret()">
+              <ng-icon hlm size="sm" name="lucideKeyRound" />
+              Sign Deliveries
+            </button>
+          }
+        </div>
       </div>
       <div class="rounded-lg border p-3">
         <p class="text-muted-foreground text-xs font-medium">Created At</p>
@@ -96,7 +118,7 @@
           <ng-container llColumnDef="status">
             <th llHeaderCell *llHeaderCellDef>Status</th>
             <td llCell *llCellDef="let element">
-              @if (element.status === WebHookStatus.SUCCESS) {
+              @if (element.status === WebhookStatus.SUCCESS) {
                 <span hlmBadge>Success</span>
               } @else {
                 <span hlmBadge variant="destructive">Failure</span>
@@ -155,7 +177,7 @@
                       hlmTooltip="Whether the delivery succeeded (the target server responded with a 2xx code) or failed." />
                   </dt>
                   <dd>
-                    @if (element.status === WebHookStatus.SUCCESS) {
+                    @if (element.status === WebhookStatus.SUCCESS) {
                       <span hlmBadge>Success</span>
                     } @else {
                       <span hlmBadge variant="destructive">Failure</span>
@@ -295,7 +317,7 @@
           </tr>
         </table>
       </div>
-      <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+      <ll-paginator [sticky]="true" [length]="logsTotal()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
     </div>
   </div>
 }

@@ -12,7 +12,7 @@ operations.
 ## Routes
 
 ```
-/features/spaces/:spaceId/settings    [SPACE_MANAGEMENT]
+/features/spaces/:spaceId/settings    [DEVELOPERS]
   → redirects to /settings/general
   /general          ← GeneralComponent
   /locales          ← LocalesComponent
@@ -53,18 +53,27 @@ Edit the space name and other top-level space metadata. Reads current data from 
 ## LocalesComponent
 
 Add, remove and reorder the space's locales, and set the **default locale**: new translations are created in it, content stores
-its values in the bare field, and a locale with no value falls back to it. The table lists the locales in the space's order (the
-order used everywhere in the app) until a column header sorts it, and is filtered through an `<ll-filter-toolbar>` (`onFilterChange()`).
+its values in the bare field, and a locale with no value falls back to it. The table is one page from the server
+(`GET /api/app/spaces/:s/locales`, `Page<SpaceLocale>`, a `PagedList`, see [pagination](../../server/pagination.md)): in the
+space's order (the order used everywhere in the app) until the Id or Name header sorts it (cleared: the space's order again), and
+searched by the locale's id or name through an `<ll-filter-toolbar>` (`onFilterChange()`). It reloads on the space's `spaces` change
+event, so a change answers nothing the screen reads. The default is the space's `defaultLocaleId`.
+`GET /api/app/spaces/:s/locales/names` answers every locale of the space as `IdName[]`, in its order.
 
 - `openAddDialog()` — opens `LocaleDialogComponent`, which loads every locale from `GET /api/app/locales` (database data, read-only)
-  minus the space's own, and adds the pick by id (`POST /api/app/spaces/:s/locales {id}`; an id not in the `locales` table is refused)
-- `openDeleteDialog(element)` — `ConfirmationDialogComponent`, then deletes the locale (`DELETE /api/app/spaces/:s/locales/:locale`). The action is disabled for the default locale, and the server refuses to delete it too
+  minus the space's own, and adds the pick by id (`POST /api/app/spaces/:s/locales {localeId}`, answers the `SpaceLocale`; an id not in the
+  `locales` table is refused)
+- `openDeleteDialog(element)` — `ConfirmationDialogComponent`, then deletes the locale (`DELETE /api/app/spaces/:s/locales/:locale`, 204). The action is disabled for the default locale, and the server refuses to delete it too
 - `openSetDefaultDialog(element)` — `ConfirmationDialogComponent` warning that content values stored for the default locale are not
-  moved (they are read as the new locale from then on; translations are unaffected), then `PUT /api/app/spaces/:s/default-locale`
-- `move(element, ±1)` / `canMove()` — **Move Up / Move Down** in the row menu: swaps the locale with its neighbour in the space's order
-  and sends the whole order (`PUT /api/app/spaces/:s/locales/order {ids}`, every locale of the space once)
+  moved (they are read as the new locale from then on; translations are unaffected), then `PUT /api/app/spaces/:s/default-locale {defaultLocaleId}`
+  (answers the `Space`; served by `SpaceController.setDefaultLocale`, apart from `PATCH /spaces/:s`: its own process)
+- `move(element, ±1)` / `canMove()` — **Move Up / Move Down** in the row menu: moves the locale one place in the space's order
+  (its index read from `SpaceStore`, which holds all of them): `POST /api/app/spaces/:s/locales/:locale/move {position}`, 204. The
+  server takes the locale to `position` (0 the first; -1, or past the end, the last), shifts the others and writes only the rows that change
+  (a swap: two); already there, nothing is written and no event is sent. The same call serves a drag and drop, or Move to First / Last
+  (`0` / `-1`)
 
-**Services:** `LocaleService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
+**Services:** `SpaceLocaleService` (this feature's, `settings/locales/space-locale.service.ts`: the page, add, move, delete), `SpaceService` (`setDefaultLocale`), `LocaleService` (translate support), `NotificationService`, `HlmDialogService`, `SpaceStore`
 
 ### Translation support
 
@@ -146,7 +155,7 @@ country: `gb.svg` and `uk.svg` are identical bytes, and matching by name got `en
 
 ### LocaleDialogComponent
 
-Form: a single `locale` combobox. Options come from `LocaleService.findAllLocales()` minus the locales the space already has (passed in via
+Form: a single `locale` combobox. Options come from `LocaleService.findAll()` minus the locales the space already has (passed in via
 the dialog context); the search filters by name. Each option carries its locale icon, and the selected locale's icon is mirrored as an
 inline-start addon on the input.
 
@@ -161,7 +170,9 @@ dialogs in `features/spaces` now follow this pattern (the delete confirmation in
 
 Create and manage API tokens ([Auth Tokens](../../auth-tokens.md)), displayed in an `ll-table` with columns `hint`, `name`, `type`,
 `cacheTtl`, `updatedAt`, `actions` (`displayedColumns` in `tokens.component.ts`). A new space already has one token, the
-**Auto Generated Preview Token**.
+**Auto Generated Preview Token**. The table is one page from the server (`PagedList`, `SpaceTokenService.findAll`,
+`GET …/tokens?page=&size=&sort=&direction=&search=`), newest first unless sorted by Name or Updated At; the search box
+matches the name or the hint. It reloads on every `tokens` change event.
 
 - **Token** shows the `hint` (prefix and last 4 characters, e.g. `mgt_…aB3x`), never the whole value.
 - **Type** is a badge (icon and label from `TOKEN_TYPE_INFO`, `shared/models/token.model.ts`), its description as tooltip.
@@ -180,11 +191,11 @@ only its "I've copied it" button closes it.
 
 - `openAddDialog()` / `openEditDialog(element)` — open `TokenDialogComponent`; edit sends the name and cache TTL only
 - `openRegenerateDialog(element)` — confirmation that every client using the current token loses access, then
-  `TokenService.regenerate()`: same id, type and name under a new value (shown once for management tokens)
+  `SpaceTokenService.regenerate()`: same id, type and name under a new value (shown once for management tokens)
 - `openDeleteDialog(element)` — confirmation dialog then deletes the token
 - `copied()` — feedback when a public or preview token value is copied (management tokens have no copy button)
 
-**Services:** `TokenService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
+**Services:** `SpaceTokenService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
 
 ### TokenDialogComponent
 
@@ -206,16 +217,23 @@ Form fields (`token-dialog.component.ts:62-66`; helpers follow below it):
 
 Configure the **visual editor** integration — allows in-context editing when Localess is embedded in a preview environment. Environments
 (`space_environments`: id, name, url, position) are managed one by one and every change is saved at once; names may repeat, the id tells
-them apart, and the first is the default:
+them apart, and the first is the default ("(default)" beside its name, whatever the table's sort or search). The table is one page
+from the server, like Locales (`GET /api/app/spaces/:s/environments`, `Page<SpaceEnvironment>`, a `PagedList`, see
+[pagination](../../server/pagination.md)): in the space's order until the Name or URL header sorts it (cleared: the space's order
+again), searched by name or URL through an `<ll-filter-toolbar>` (`onFilterChange()`). It reloads on the space's `spaces` change
+event. `GET …/environments/names` answers every environment as `IdNameUrl[]` (`{ id, name, url }`), in its order.
 
 - `openAddDialog()` / `openEditDialog(environment)` — `EnvironmentDialogComponent` (name + URL, with the example URL under the field), then
-  `SpaceService.createEnvironment()` (`POST /api/app/spaces/:s/environments`, appended last) or `updateEnvironment()`
-  (`PATCH …/environments/:id`)
-- `openDeleteDialog(environment)` — `ConfirmationDialogComponent`, then `deleteEnvironment()` (`DELETE …/environments/:id`)
-- `drop(event)` — drag-and-drop (CDK) reorders the list at once and sends the whole order (`PUT …/environments/order {ids}`); a refused
-  order is put back
+  `SpaceEnvironmentService.create()` (`POST /api/app/spaces/:s/environments`, appended last) or `update()`
+  (`PUT …/environments/:id`, name and URL together); both answer the `SpaceEnvironment`
+- `openDeleteDialog(environment)` — `ConfirmationDialogComponent`, then `SpaceEnvironmentService.remove()` (`DELETE …/environments/:id`, 204)
+- `move(environment, ±1)` / `canMove()` — **Move Up / Move Down** in the row menu: moves the environment one place in the
+  space's order: `POST …/environments/:id/move {position}`, 204, as for locales (the others shift, -1 or past the end is the last, only the
+  rows that change are written)
 
-The list (`environments`, a `linkedSignal`) follows `SpaceStore.selectedSpace`: every write returns the space and announces a `spaces` change.
+The space's order and the default come from `SpaceStore.environments()`: every environment as `IdNameUrl`
+(`SpaceEnvironmentService.findAllNames()`, `GET …/environments/names`, live), which the content Visual Editor also uses for its
+preview URLs (its environment picker and the selected environment are `IdNameUrl` too).
 
 The dialog's URL control uses `SpaceValidator.ENVIRONMENT_URL`, which also requires an absolute `http:`/`https:` URL on a different origin from the app
 (error key `previewUrl`). This only gives feedback in the form; the security check that matters runs again when the preview renders. See
@@ -238,7 +256,7 @@ filled with `SAMPLE_PREVIEW_CONTEXT`, because `{locale}` may sit in the host. Ea
 (`exampleUrl()`). The preview resolves the URL for the open document and locale, checks the result with `isSafePreviewUrl`, and exchanges
 messages only with the resolved URL's origin (`ContentPreviewComponent.previewOrigin()`).
 
-**Services:** `SpaceService`, `NotificationService`, `PlatformService`, `SpaceStore`, `LocalSettingsStore`
+**Services:** `SpaceEnvironmentService` (the page, add, update, delete, move), `NotificationService`, `PlatformService`, `SpaceStore`, `LocalSettingsStore`
 
 ---
 
@@ -259,9 +277,11 @@ in this component.
 
 | Service               | Purpose                                      |
 | --------------------- | -------------------------------------------- |
-| `SpaceService`        | Update space name and visual editor settings |
-| `LocaleService`       | CRUD for space locales                       |
-| `TokenService`        | CRUD for API tokens                          |
+| `SpaceService`        | Update the space name; set its default locale (`SpaceController`) |
+| `SpaceLocaleService`  | The space's locales: page, add, move, delete (`SpaceLocaleController`; in `settings/locales/`) |
+| `SpaceEnvironmentService` | The space's Visual Editor environments: page, names, add, update, delete, move (`SpaceEnvironmentController`) |
+| `LocaleService`       | The locale catalog (`LocaleController`) and what the translation provider supports |
+| `SpaceTokenService`   | CRUD for API tokens                          |
 | `TranslationService`  | Delete all translations (Danger Zone)        |
 | `NotificationService` | Snackbar feedback                            |
 | `SpaceStore`          | Read selected space data                     |

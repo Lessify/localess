@@ -11,12 +11,95 @@
     <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
     <link rel="manifest" href="./site.webmanifest" />
     <script src="scripts/theme-init.js"></script>
+    <!-- The loading screen (#ll-boot below): the app icon (assets/logo.svg, as in ll-logo), whose two L's turn into each
+         other's place and swap colours, so every loop ends on its first frame. Removed by AppComponent after the first
+         navigation. -->
+    <style>
+      #ll-boot {
+        --ll-boot-source: #ffffff;
+        --ll-boot-translated: #8aa6ff;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: oklch(1 0 0);
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+      html.dark #ll-boot {
+        background: oklch(0.145 0 0);
+      }
+      #ll-boot.ll-boot-done {
+        opacity: 0;
+      }
+      #ll-boot svg {
+        animation: ll-boot-in 0.3s ease 0.15s both;
+      }
+      #ll-boot .mark {
+        transform-box: view-box;
+        transform-origin: 60px 60px;
+        animation: ll-boot-turn 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+      }
+      #ll-boot .l1 {
+        fill: var(--ll-boot-source);
+        animation: ll-boot-source 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+      }
+      #ll-boot .l2 {
+        fill: var(--ll-boot-translated);
+        animation: ll-boot-translated 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+      }
+      @keyframes ll-boot-in {
+        from {
+          opacity: 0;
+        }
+      }
+      @keyframes ll-boot-turn {
+        0% {
+          transform: rotate(0deg);
+        }
+        60%,
+        100% {
+          transform: rotate(180deg);
+        }
+      }
+      @keyframes ll-boot-source {
+        60%,
+        100% {
+          fill: var(--ll-boot-translated);
+        }
+      }
+      @keyframes ll-boot-translated {
+        60%,
+        100% {
+          fill: var(--ll-boot-source);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #ll-boot svg,
+        #ll-boot .mark,
+        #ll-boot .l1,
+        #ll-boot .l2 {
+          animation: none;
+        }
+      }
+    </style>
     <link rel="preconnect" href="https://fonts.gstatic.com" />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
   </head>
   <body class="mat-typography bg-background style-nova">
+    <div id="ll-boot" role="status" aria-label="Loading Localess">
+      <svg width="64" height="64" viewBox="0 0 120 120" aria-hidden="true">
+        <rect width="120" height="120" rx="27" fill="#003dff" />
+        <g class="mark">
+          <polygon class="l1" points="26,26 48,26 48,72 66,72 66,94 26,94" />
+          <polygon class="l2" points="94,94 72,94 72,48 54,48 54,26 94,26" />
+        </g>
+      </svg>
+    </div>
     <ll-root></ll-root>
   </body>
 </html>

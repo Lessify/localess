@@ -15,7 +15,7 @@ load balancer) in front and:
   headers (`trustProxy` is on), so session cookies get the `Secure` flag and the login rate limit
   sees real client IPs. Because the headers are trusted, do **not** expose the server port directly
   to the internet — only the proxy should reach it.
-- Do not buffer `/api/app/events`: it is a Server-Sent Events stream that keeps the admin UI live.
+- Do not buffer `/api/app/events` and `/api/app/spaces/<id>/events`: they are Server-Sent Events streams that keep the admin UI live.
   (nginx: `proxy_buffering off;` and a long `proxy_read_timeout` for that location.)
 - Allow request bodies up to `LOCALESS_UPLOAD_MAX_MB` (default 1024 MB) on the upload routes, or
   lower that variable to match your proxy.
@@ -55,7 +55,8 @@ One instance is the default and is enough for most installs. The design allows m
   infrastructure (Redis, a queue) is needed.
 - **Storage:** only the filesystem driver exists today, so every instance must mount the same
   storage directory (NFS or another shared filesystem). An S3-compatible driver is an open decision,
-  not available yet.
+  not available yet. Such a driver answers `localPath()` with nothing: exiftool and ffmpeg then read a
+  temporary copy of the file (`withLocalFile`), where the filesystem driver gives them the stored file.
 - **Tasks:** set `LOCALESS_TASK_WORKER=false` on replicas that should only serve requests. Keep at
   least one instance with the worker on. Exports load a whole space into memory, so give worker
   instances the memory headroom.

@@ -1,19 +1,27 @@
-<div class="flex items-center justify-end gap-2 p-2">
-  @if (fileUploadQueue().length > 0) {
-    <span hlmBadge class="h-6">
-      <hlm-spinner />
-      Uploading ... ({{ fileUploadQueue().length }})
-    </span>
-  }
+<!-- The file of an asset imported without one (Upload file in its menu or card); outside every block, so both reach it. -->
+<input hidden type="file" #missingFileInput (change)="onMissingFileUpload($event)" />
+<div class="flex flex-wrap items-center justify-end gap-2 p-2">
+  <ll-active-tasks [spaceId]="spaceId()" [kinds]="assetTaskKinds" />
+  <ll-upload-queue [queue]="uploads" />
   <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.assetLayout()">
-    <button hlmToggleGroupItem value="list" hlmTooltip="List Layout" (click)="settingsStore.setAssetLayout('list')">
+    <button
+      hlmToggleGroupItem
+      value="list"
+      hlmTooltip="List Layout"
+      aria-label="List Layout"
+      (click)="settingsStore.setAssetLayout('list')">
       <ng-icon hlm size="sm" name="lucideLayoutList" />
     </button>
-    <button hlmToggleGroupItem value="grid" hlmTooltip="Grid Layout" (click)="settingsStore.setAssetLayout('grid')">
+    <button
+      hlmToggleGroupItem
+      value="grid"
+      hlmTooltip="Grid Layout"
+      aria-label="Grid Layout"
+      (click)="settingsStore.setAssetLayout('grid')">
       <ng-icon hlm size="sm" name="lucideLayoutGrid" />
     </button>
   </hlm-toggle-group>
-  @if ('ASSET_CREATE' | canUserPerform | async) {
+  @if ('CONTENT_WRITERS' | hasRole | async) {
     <button hlmBtn [hlmDropdownMenuTrigger]="uploadExtraMenu">
       <ng-icon hlm size="sm" name="lucideUpload" />
       Upload Assets
@@ -29,7 +37,7 @@
           <ng-icon hlm size="sm" name="lucideFileSymlink" />
           From Link
         </button>
-        @if (unsplashPluginService.enabled()) {
+        @if (unsplashService.enabled()) {
           <button hlmDropdownMenuItem (click)="openUnsplashDialog()">
             <ng-icon hlm size="sm" name="tablerBrandUnsplash" />
             From Unsplash
@@ -43,49 +51,30 @@
       Create Folder
     </button>
   }
-  @if ((importExportEnabled ? ['ASSET_IMPORT', 'ASSET_EXPORT'] : 'ASSET_REGEN_METADATA') | canUserPerform | async) {
-    <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
+  @if ('ADMINS' | hasRole | async) {
+    <button hlmBtn size="icon" variant="ghost" aria-label="More" [hlmDropdownMenuTrigger]="extraMenu">
       <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
     </button>
     <ng-template #extraMenu>
       <hlm-dropdown-menu class="w-50">
-        @if (importExportEnabled) {
-          @if ('ASSET_IMPORT' | canUserPerform | async) {
-            <button hlmDropdownMenuItem (click)="openImportDialog()">
-              <ng-icon hlm size="sm" name="lucideUploadCloud" />
-              Import
-            </button>
-          }
-          @if ('ASSET_EXPORT' | canUserPerform | async) {
-            <button hlmDropdownMenuItem (click)="openExportDialog()">
-              <ng-icon hlm size="sm" name="lucideCloudDownload" />
-              Export
-            </button>
-          }
-        }
-        @if ('ASSET_REGEN_METADATA' | canUserPerform | async) {
-          @if (importExportEnabled) {
-            <hlm-dropdown-menu-separator />
-          }
-          <button hlmDropdownMenuItem (click)="openRegenerateMetadataDialog()">
-            <ng-icon hlm size="sm" name="lucideRefreshCcwDot" />
-            Regenerate Metadata
-          </button>
-        }
+        <button hlmDropdownMenuItem (click)="openRegenerateMetadataDialog()">
+          <ng-icon hlm size="sm" name="lucideRefreshCcwDot" />
+          Regenerate Metadata
+        </button>
       </hlm-dropdown-menu>
     </ng-template>
   }
 </div>
-@if (isLoading()) {
+@if (page.loading()) {
   <hlm-progress class="h-0.5">
     <hlm-progress-indicator />
   </hlm-progress>
 }
 <div class="mx-auto mt-3 px-2">
-  <nav hlmBreadcrumb class="p-2">
+  <nav hlmBreadcrumb aria-label="Folder path" class="p-2">
     <ol hlmBreadcrumbList>
       <li hlmBreadcrumbItem>
-        <button hlmBreadcrumbButton (click)="navigateToFolder(null)">
+        <button hlmBreadcrumbButton aria-label="Root folder" (click)="navigateToFolder(null)">
           <ng-icon hlm size="sm" name="lucideFolderRoot" />
         </button>
       </li>
@@ -101,10 +90,18 @@
       }
     </ol>
   </nav>
-  <div llFileDragDrop (filesChanges)="filesUpload($event)">
+  <ll-filter-toolbar class="mb-3 block" [filters]="filters" (filterChange)="assetList.onFilterChange($event)" />
+  <div llFileDragDrop role="region" aria-label="Assets" (filesChanges)="filesUpload($event)">
     @if (settingsStore.assetLayout() === 'list') {
       <div llTableContainer>
-        <table ll-table [dataSource]="dataSource" llTableSort>
+        <table
+          ll-table
+          [dataSource]="dataSource"
+          llTableSort
+          llTableSortActive="name"
+          llTableSortDirection="asc"
+          [llTableSortDisableClear]="true"
+          (sortChange)="assetList.onSortChange($event)">
           <ng-container llColumnDef="icon">
             <th llHeaderCell *llHeaderCellDef>Icon</th>
             <td llCell *llCellDef="let element">
@@ -118,18 +115,27 @@
               }
             </td>
           </ng-container>
-          <ng-container llColumnDef="preview">
+          <!-- Optional columns leave a narrow table first, so the name and the actions always fit. -->
+          <ng-container llColumnDef="preview" llColumnDefClass="hidden @lg/table:table-cell">
             <th llHeaderCell *llHeaderCellDef>Preview</th>
             <td llCell *llCellDef="let element">
-              @if (element.kind === 'FILE' && filePreview(element.type)) {
+              @if (element.kind === 'FILE' && element.missingFile) {
+                <!-- Imported from Firebase without its file: nothing to show until one is uploaded to it. -->
+                <div
+                  class="text-muted-foreground flex size-[115px] flex-col items-center justify-center gap-1 rounded-sm border text-xs"
+                  role="img"
+                  aria-label="File missing">
+                  <ng-icon hlm size="lg" name="lucideFileX" />
+                  File missing
+                </div>
+              } @else if (element.kind === 'FILE' && filePreview(element.type)) {
                 <img
                   class="image-bg rounded-sm border object-contain"
                   width="200"
                   height="200"
                   loading="lazy"
                   alt="thumbnail"
-                  [loaderParams]="{ thumbnail: true }"
-                  ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ element.id }}" />
+                  src="/api/app/spaces/{{ spaceId() }}/assets/{{ element.id }}/thumbnail" />
               }
             </td>
           </ng-container>
@@ -138,6 +144,10 @@
             <td llCell *llCellDef="let element">
               <div>
                 <div class="break-all">{{ element.name }}{{ element.extension }}</div>
+                <!-- Everything under the folder: rows from several folders, so each shows where it is. -->
+                @if (location()(element); as path) {
+                  <div class="text-muted-foreground line-clamp-1 break-all">{{ path }}</div>
+                }
                 @if (element.metadata; as metadata) {
                   @if (metadata.width && metadata.height) {
                     <div> W{{ metadata.width }} x H{{ metadata.height }}</div>
@@ -149,7 +159,7 @@
               </div>
             </td>
           </ng-container>
-          <ng-container llColumnDef="size">
+          <ng-container llColumnDef="size" llColumnDefClass="hidden @lg/table:table-cell">
             <th llHeaderCell *llHeaderCellDef llTableSortHeader="size">File Size</th>
             <td llCell *llCellDef="let element">
               @if (element.size) {
@@ -159,7 +169,7 @@
               }
             </td>
           </ng-container>
-          <ng-container llColumnDef="type">
+          <ng-container llColumnDef="type" llColumnDefClass="hidden @md/table:table-cell">
             <th llHeaderCell *llHeaderCellDef llTableSortHeader="type">Type</th>
             <td llCell *llCellDef="let element">
               @if (element.kind === 'FILE') {
@@ -173,13 +183,13 @@
               }
             </td>
           </ng-container>
-          <ng-container llColumnDef="createdAt">
+          <ng-container llColumnDef="createdAt" llColumnDefClass="hidden @md/table:table-cell">
             <th llHeaderCell *llHeaderCellDef llTableSortHeader="createdAt">Created At</th>
             <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt | date: 'medium'">
               {{ element.createdAt | date: 'mediumDate' }}
             </td>
           </ng-container>
-          <ng-container llColumnDef="updatedAt">
+          <ng-container llColumnDef="updatedAt" llColumnDefClass="hidden @md/table:table-cell">
             <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
             <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
               {{ element.updatedAt | date: 'mediumDate' }}
@@ -188,12 +198,27 @@
           <ng-container llColumnDef="actions">
             <th llHeaderCell *llHeaderCellDef>Actions</th>
             <td llCell *llCellDef="let element">
-              <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+              <button
+                hlmBtn
+                size="icon"
+                variant="ghost"
+                aria-label="Actions"
+                [hlmDropdownMenuTrigger]="actionsMenu"
+                (click)="$event.stopPropagation()">
                 <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
               </button>
               <ng-template #actionsMenu>
                 <hlm-dropdown-menu>
-                  @if (element.kind === 'FILE') {
+                  @if (element.kind === 'FILE' && element.missingFile && ('CONTENT_WRITERS' | hasRole | async)) {
+                    <hlm-dropdown-menu-group>
+                      <button hlmDropdownMenuItem (click)="chooseMissingFile(element, missingFileInput)">
+                        <ng-icon hlm size="sm" name="lucideFileUp" />
+                        Upload file
+                      </button>
+                    </hlm-dropdown-menu-group>
+                    <hlm-dropdown-menu-separator />
+                  }
+                  @if (element.kind === 'FILE' && !element.missingFile) {
                     <hlm-dropdown-menu-group>
                       <button hlmDropdownMenuItem (click)="onDownload(element)">
                         <ng-icon hlm size="sm" name="lucideDownload" />
@@ -202,7 +227,7 @@
                     </hlm-dropdown-menu-group>
                     <hlm-dropdown-menu-separator />
                   }
-                  @if ('ASSET_UPDATE' | canUserPerform | async) {
+                  @if ('CONTENT_WRITERS' | hasRole | async) {
                     <hlm-dropdown-menu-group>
                       <button hlmDropdownMenuItem (click)="openEditDialog(element)">
                         <ng-icon hlm size="sm" name="lucidePencil" />
@@ -214,7 +239,7 @@
                       </button>
                     </hlm-dropdown-menu-group>
                   }
-                  @if ('ASSET_DELETE' | canUserPerform | async) {
+                  @if ('CONTENT_WRITERS' | hasRole | async) {
                     <hlm-dropdown-menu-separator />
                     <hlm-dropdown-menu-group>
                       <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
@@ -230,41 +255,64 @@
 
           <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
           <tr ll-row *llRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></tr>
-          @if (!isLoading()) {
-            <tr *llNoDataRow>
-              <td [attr.colspan]="displayedColumns.length" class="text-center align-middle">
-                <br />
-                <br />
-                Drag and Drop a file here or use the "Upload Assets" button
-                <br />
-                <br />
-                <br />
-              </td>
-            </tr>
-          }
+          <!-- Always declared: the table only shows a no-data row it had when the data changed; the text waits for the load. -->
+          <tr *llNoDataRow>
+            <td [attr.colspan]="displayedColumns.length" class="text-center align-middle">
+              @if (!page.loading()) {
+                @if (assetList.filtering()) {
+                  No assets match.
+                } @else {
+                  <br />
+                  <br />
+                  Drag and Drop a file here or use the "Upload Assets" button
+                  <br />
+                  <br />
+                  <br />
+                }
+              }
+            </td>
+          </tr>
         </table>
       </div>
     } @else {
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(192px,1fr))] gap-4 pb-2">
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 pb-2" role="list" aria-label="Asset cards">
         @for (item of dataSource.renderedData(); track item.id) {
-          <ll-asset-card [item]="item" [spaceId]="spaceId()" [zoomCursor]="true" (assetSelect)="onAssetSelect($event)">
-            @if (item.kind === 'FILE') {
-              <button hlmBtn size="icon" variant="ghost" (click)="onDownload(item)" hlmTooltip="Download">
+          <ll-asset-card
+            role="listitem"
+            [attr.aria-label]="item.kind === 'FILE' ? item.name + item.extension : item.name"
+            [item]="item"
+            [spaceId]="spaceId()"
+            [path]="location()(item)"
+            [zoomCursor]="true"
+            (assetSelect)="onAssetSelect($event)">
+            @if (item.kind === 'FILE' && item.missingFile && ('CONTENT_WRITERS' | hasRole | async)) {
+              <button
+                hlmBtn
+                size="icon"
+                variant="ghost"
+                (click)="chooseMissingFile(item, missingFileInput)"
+                hlmTooltip="Upload file"
+                aria-label="Upload file">
+                <ng-icon hlm size="sm" name="lucideFileUp" />
+              </button>
+            }
+            @if (item.kind === 'FILE' && !item.missingFile) {
+              <button hlmBtn size="icon" variant="ghost" (click)="onDownload(item)" hlmTooltip="Download" aria-label="Download">
                 <ng-icon hlm size="sm" name="lucideDownload" />
               </button>
             }
-            @if ('ASSET_UPDATE' | canUserPerform | async) {
-              <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(item)" hlmTooltip="Edit">
+            @if ('CONTENT_WRITERS' | hasRole | async) {
+              <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(item)" hlmTooltip="Edit" aria-label="Edit">
                 <ng-icon hlm size="sm" name="lucidePencil" />
               </button>
             }
-            @if ('ASSET_UPDATE' | canUserPerform | async) {
-              <button hlmBtn size="icon" variant="ghost" (click)="openMoveDialog(item)" hlmTooltip="Move">
+            @if ('CONTENT_WRITERS' | hasRole | async) {
+              <button hlmBtn size="icon" variant="ghost" (click)="openMoveDialog(item)" hlmTooltip="Move" aria-label="Move">
                 <ng-icon hlm size="sm" name="lucideFolderInput" />
               </button>
             }
-            @if ('ASSET_DELETE' | canUserPerform | async) {
-              <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(item)" hlmTooltip="Delete">
+            @if ('CONTENT_WRITERS' | hasRole | async) {
+              <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(item)" hlmTooltip="Delete" aria-label="Delete">
                 <ng-icon hlm size="sm" name="lucideTrash" />
               </button>
             }
@@ -273,5 +321,5 @@
       </div>
     }
   </div>
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="page.total()" [(pageIndex)]="assetList.list.page" [(pageSize)]="assetList.list.size" />
 </div>

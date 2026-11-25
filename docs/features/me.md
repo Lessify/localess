@@ -24,7 +24,7 @@ apps/web/src/app/features/me/
 
 ## MeComponent
 
-Displays the current user's profile card — avatar, name, email, email-verified status, role, and (for `CUSTOM` role) the permission list. Reads all data from `UserStore`.
+Displays the current user's profile card — avatar, name, email, email-verified status and role. Reads all data from `UserStore`.
 
 **Injected services:** `HlmDialogService`, `NotificationService`, `MeService`, `UserStore`
 
@@ -34,16 +34,15 @@ Displays the current user's profile card — avatar, name, email, email-verified
 - `openUpdatePasswordDialog()` — opens `MePasswordDialogComponent` (only available for email/password provider)
 
 **Visibility rules (`me.component.html`):**
-- Locked account (`isLocked()`) — all action buttons are hidden and a "your account is locked" message is shown instead
 - Google / Microsoft provider — only "Update Profile" is shown; a message explains email and password are managed by the external provider
 
 ## Dialogs
 
 ### MeDialogComponent
-Form: `displayName`, `photoURL` (plain URL text field — no upload).
+Form: `displayName`, `photoUrl` (plain URL text field — no upload; an http(s) URL, `''` clears it). The Me bodies are strict: an unknown field is a 400.
 
 ### MeEmailDialogComponent
-Form: `newEmail`, plus `currentPassword` for accounts that have a password (`UserStore.isPasswordProvider()`). Calls `MeService.updateEmail()` (`PUT /api/app/me/email`), then reloads the current user. The server checks the current password, rejects an address another user already has (409), and marks the new address unverified.
+Form: `newEmail`, plus `currentPassword` for accounts that have a password (`UserStore.hasPassword()`). Calls `MeService.updateEmail()` (`PUT /api/app/me/email`); `UserStore` takes the user it answers. The server checks the current password, rejects an address another user already has (409), and marks the new address unverified.
 
 ### MePasswordDialogComponent
 Form: `newPassword` (min length 6), plus `currentPassword` for accounts that have a password. Calls `MeService.updatePassword()` (`PUT /api/app/me/password`). Changing the password signs out every other session of the user.
@@ -54,6 +53,6 @@ Form: `newPassword` (min length 6), plus `currentPassword` for accounts that hav
 
 | Service | Purpose |
 |---------|---------|
-| `MeService` | Update display name / photo (`PATCH /api/app/me`), email (`PUT /api/app/me/email`), password (`PUT /api/app/me/password`); reloads `UserStore` afterwards |
+| `MeService` | Update display name / photo (`PATCH /api/app/me`), email (`PUT /api/app/me/email`), password (`PUT /api/app/me/password`); `UserStore` takes the user the profile and email changes answer (who is signed in is `GET /api/auth/me`) |
 | `NotificationService` | Toast feedback |
-| `UserStore` | Read current user state (email, providers, displayName) |
+| `UserStore` | Read current user state (email, how they sign in, displayName) |

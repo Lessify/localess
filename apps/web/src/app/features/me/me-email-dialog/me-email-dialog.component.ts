@@ -22,7 +22,7 @@ export class MeEmailDialogComponent {
   private readonly dialogRef = inject<BrnDialogRef<MeEmailDialogResult>>(BrnDialogRef);
 
   /** The server asks for the current password when the account has one. */
-  readonly askCurrentPassword = this.userStore.isPasswordProvider();
+  readonly askCurrentPassword = this.userStore.hasPassword();
 
   /** No context: the dialog asks for a new address rather than editing the current one. */
   form: FormGroup = this.fb.group({

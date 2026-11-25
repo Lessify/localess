@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "playwright-test": {
+      "command": "pnpm",
+      "args": ["--filter", "@localess/e2e", "exec", "playwright", "run-test-mcp-server", "--headless"]
+    }
+  }
+}

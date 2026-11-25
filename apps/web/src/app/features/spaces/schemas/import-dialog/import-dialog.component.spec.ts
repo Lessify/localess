@@ -29,7 +29,14 @@ describe('ImportDialogComponent', () => {
     expect(component.fileWrong).toBe(false);
   });
 
-  it('accepts a .lls.zip file', async () => {
+  it('accepts a Localess file', async () => {
+    const { component } = setup();
+    await component.onFileChange(fileChangeEvent(new File(['data'], 'site-schemas.localess.zip')));
+    expect(component.fileWrong).toBe(false);
+    expect(component.form.valid).toBe(true);
+  });
+
+  it('still accepts an old .lls.zip file', async () => {
     const { component } = setup();
     const file = new File(['data'], 'schemas.lls.zip');
 
@@ -41,13 +48,14 @@ describe('ImportDialogComponent', () => {
     expect(component.form.valid).toBe(true);
   });
 
-  it('flags a file without the .lls.zip extension', async () => {
+  it('flags a file of another type', async () => {
     const { component } = setup();
     const file = new File(['data'], 'schemas.zip');
 
     await component.onFileChange(fileChangeEvent(file));
 
     expect(component.fileWrong).toBe(true);
+    expect(component.form.valid).toBe(false);
   });
 
   it('does nothing when the change event has no target files', async () => {

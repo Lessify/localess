@@ -51,6 +51,11 @@ export interface TranslateItem {
   format?: TranslateFormat;
 }
 
+/** Result of a single translation (`POST /api/app/translate` with `content`). */
+export interface TranslateTextResult {
+  content: string;
+}
+
 /** Result of a batch translation. `failed` names what could not be translated and why. */
 export interface TranslateBatchResult {
   items: { id: string; content: string }[];

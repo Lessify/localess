@@ -1,10 +1,12 @@
 import { parseArgs } from 'node:util';
+
 import { NestFactory } from '@nestjs/core';
-import { FirstAdminService } from '../modules/users/services/first-admin.service.js';
+
+import { loadConfig } from '../infra/config/config.js';
 import { DATABASE, Database } from '../infra/database/database.module.js';
 import { STORAGE_DRIVER, StorageDriver } from '../infra/storage/storage.driver.js';
+import { FirstAdminService } from '../modules/users/services/first-admin.service.js';
 import { runChecks } from './check.js';
-import { loadConfig } from '../infra/config/config.js';
 import { CliModule } from './cli.module.js';
 
 export const PASSWORD_ENV = 'LOCALESS_ADMIN_PASSWORD';

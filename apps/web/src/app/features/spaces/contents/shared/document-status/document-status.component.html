@@ -1,1 +1,2 @@
-<ng-icon hlm [name]="icon()" size="sm" [hlmTooltip]="tooltip()" />
+<!-- role="img" with the status as its name: the icon is the only place the status shows (ng-icon hides itself otherwise). -->
+<ng-icon hlm [name]="icon()" size="sm" [hlmTooltip]="tooltip()" role="img" aria-hidden="false" [attr.aria-label]="tooltip()" />

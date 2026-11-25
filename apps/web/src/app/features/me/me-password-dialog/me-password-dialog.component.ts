@@ -22,7 +22,7 @@ export class MePasswordDialogComponent {
   private readonly dialogRef = inject<BrnDialogRef<MePasswordDialogResult>>(BrnDialogRef);
 
   /** The server asks for the current password when the account has one. */
-  readonly askCurrentPassword = this.userStore.isPasswordProvider();
+  readonly askCurrentPassword = this.userStore.hasPassword();
 
   /** No context: the dialog only ever sets a new password, never shows the current one. */
   form: FormGroup = this.fb.group({

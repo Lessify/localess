@@ -42,3 +42,9 @@ export function subtreeIds(folders: TreeFolder[], folderId: string): Set<string>
   }
   return ids;
 }
+
+/** Where an asset is, by folder names: `~` for the root, `~/Images/Photos` under it. */
+export function assetLocation<T extends TreeFolder & { name: string }>(folders: Map<string, T>, parentId: string | undefined): string {
+  const path = folderPath(folders, parentId ?? null, folder => folder.name);
+  return path ? `~/${path}` : '~';
+}

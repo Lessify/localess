@@ -17,7 +17,7 @@ describe('FirebaseImportService', () => {
 
   it('lists source spaces and starts an import with origin and token in the body', async () => {
     const service = setup();
-    const spaces = firstValueFrom(service.sourceSpaces('https://cms.example.com', 't'));
+    const spaces = firstValueFrom(service.findSourceSpaces('https://cms.example.com', 't'));
     const list = http.expectOne({ method: 'POST', url: `${BASE}/spaces` });
     expect(list.request.body).toEqual({ origin: 'https://cms.example.com', token: 't' });
     list.flush([]);

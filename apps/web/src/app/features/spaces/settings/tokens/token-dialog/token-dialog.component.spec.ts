@@ -83,4 +83,22 @@ describe('TokenDialogComponent', () => {
 
     expect(close).toHaveBeenCalledWith({ name: 'CI', type: TokenType.MANAGEMENT, cacheTtl: null });
   });
+
+  it('names each type radio after its title and describes it with its description (real template)', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: CREATE_CONTEXT },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(TokenDialogComponent);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const radio = element.querySelector('input[type="radio"][value="public"]')!;
+    const title = element.querySelector(`#${radio.getAttribute('aria-labelledby')}`);
+    const description = element.querySelector(`#${radio.getAttribute('aria-describedby')}`);
+    expect(title?.textContent?.trim()).toBe('Public');
+    expect(description?.textContent?.trim()).toBeTruthy();
+  });
 });

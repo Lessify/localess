@@ -1,23 +1,19 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { UserPermission } from '@localess/shared';
+
 import { sessions, users } from '../src/infra/database/schema.js';
-import { UsersService } from '../src/modules/users/services/users.service.js';
-import { createTestApp, login, sessionCookie, TestApp, XHR } from './test-app.js';
+import { createTestApp, createUser, login, sessionCookie, TestApp, XHR } from './test-app.js';
 
 describe('authentication', () => {
   let t: TestApp;
-  let usersService: UsersService;
 
   beforeAll(async () => {
     t = await createTestApp();
-    usersService = t.app.get(UsersService);
-    await usersService.create({ email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
-    await usersService.create({
+    await createUser(t, { email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
+    await createUser(t, {
       email: 'Editor@Example.com',
       password: 'editor-pass',
-      role: 'CUSTOM',
-      permissions: [UserPermission.CONTENT_READ],
+      role: 'VIEWER',
     });
   });
 
@@ -38,8 +34,9 @@ describe('authentication', () => {
       payload: { email: 'admin@example.com', password: 'admin-pass' },
     });
     expect(response.statusCode).toBe(200);
-    expect(response.json().user).toMatchObject({ email: 'admin@example.com', role: 'ADMIN', providers: ['password'] });
+    expect(response.json().user).toMatchObject({ email: 'admin@example.com', role: 'ADMIN', hasPassword: true, identities: [] });
     expect(response.json().user).not.toHaveProperty('permissions');
+    expect(response.json().user).not.toHaveProperty('lock');
 
     const cookie = response.cookies.find(it => it.name === 'localess_session');
     expect(cookie).toMatchObject({ httpOnly: true, sameSite: 'Lax', path: '/' });
@@ -49,7 +46,7 @@ describe('authentication', () => {
   it('matches emails case-insensitively', async () => {
     const cookie = await login(t, 'editor@example.com', 'editor-pass');
     const response = await me(cookie);
-    expect(response.json().user).toMatchObject({ email: 'Editor@Example.com', role: 'CUSTOM', permissions: ['CONTENT_READ'], lock: false });
+    expect(response.json().user).toMatchObject({ email: 'Editor@Example.com', role: 'VIEWER' });
   });
 
   it('answers wrong passwords and unknown emails with the same 401', async () => {
@@ -112,7 +109,7 @@ describe('authentication', () => {
   });
 
   it('blocks disabled users, including their existing sessions', async () => {
-    const user = await usersService.create({ email: 'leaver@example.com', password: 'leaver-pass', role: 'CUSTOM' });
+    const user = await createUser(t, { email: 'leaver@example.com', password: 'leaver-pass', role: 'VIEWER' });
     const cookie = await login(t, 'leaver@example.com', 'leaver-pass');
     await t.db.update(users).set({ disabled: true }).where(eq(users.id, user.id));
     expect((await me(cookie)).statusCode).toBe(401);
@@ -126,10 +123,10 @@ describe('authentication', () => {
   });
 
   it('applies role changes immediately, without signing in again', async () => {
-    const user = await usersService.create({ email: 'promoted@example.com', password: 'promo-pass', role: 'CUSTOM', permissions: [] });
+    const user = await createUser(t, { email: 'promoted@example.com', password: 'promo-pass', role: 'VIEWER' });
     const cookie = await login(t, 'promoted@example.com', 'promo-pass');
     expect((await t.request({ method: 'GET', url: '/api/app/users', headers: { cookie } })).statusCode).toBe(403);
-    await usersService.updateAccess(user.id, { role: 'CUSTOM', permissions: [UserPermission.USER_MANAGEMENT] });
+    await t.db.update(users).set({ role: 'ADMIN' }).where(eq(users.id, user.id));
     expect((await t.request({ method: 'GET', url: '/api/app/users', headers: { cookie } })).statusCode).toBe(200);
   });
 

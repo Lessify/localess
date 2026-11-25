@@ -236,7 +236,10 @@ describe('sync-v1 outgoing messages', () => {
 });
 
 describe('sync-v1 blocks report', () => {
-  const blocksPosted = posted => posted().filter(it => it.data.type === 'blocks').map(it => it.data.ids);
+  const blocksPosted = posted =>
+    posted()
+      .filter(it => it.data.type === 'blocks')
+      .map(it => it.data.ids);
 
   it('reports only the top-level blocks once connected', async () => {
     const body =
@@ -281,7 +284,8 @@ describe('sync-v1 blocks report', () => {
 });
 
 describe('sync-v1 enterSchema selection', () => {
-  const body = '<main data-ll-id="root" data-ll-schema="Page"><div data-ll-id="a" data-ll-schema="Hero"></div><div data-ll-id="b" data-ll-schema="Card"></div></main>';
+  const body =
+    '<main data-ll-id="root" data-ll-schema="Page"><div data-ll-id="a" data-ll-schema="Hero"></div><div data-ll-id="b" data-ll-schema="Card"></div></main>';
 
   async function connected() {
     const loaded = await loadSync({ body });
@@ -504,15 +508,29 @@ describe('sync-v1 block toolbar', () => {
     loaded.fromEditor({ type: 'pong' });
     await loaded.flush();
     // happy-dom does no layout, so the blocks get a box in view.
-    loaded.window.HTMLElement.prototype.getBoundingClientRect = () => ({ top: 100, bottom: 300, left: 0, right: 400, width: 400, height: 200 });
+    loaded.window.HTMLElement.prototype.getBoundingClientRect = () => ({
+      top: 100,
+      bottom: 300,
+      left: 0,
+      right: 400,
+      width: 400,
+      height: 200,
+    });
     const change = data => loaded.fromEditor({ type: 'change', documentId: 'doc-1', data });
     if (document) change(document);
     const enter = (id, extra = {}) => loaded.fromEditor({ type: 'enterSchema', id, schema: 'Card', ...extra });
     const host = () => loaded.window.document.querySelector('localess-toolbar');
     const buttons = () => [...(host()?.shadowRoot.querySelectorAll('button') ?? [])];
     const visibleActions = () => (host()?.style.display === 'block' ? buttons().map(it => it.dataset.action) : []);
-    const click = action => buttons().find(it => it.dataset.action === action).click();
-    const actionsSent = () => loaded.posted().filter(it => it.data.type === 'blockAction').map(it => it.data);
+    const click = action =>
+      buttons()
+        .find(it => it.dataset.action === action)
+        .click();
+    const actionsSent = () =>
+      loaded
+        .posted()
+        .filter(it => it.data.type === 'blockAction')
+        .map(it => it.data);
     return { ...loaded, change, enter, host, buttons, visibleActions, click, actionsSent };
   }
 

@@ -1,12 +1,17 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { WebHookEvent } from '@localess/shared';
+import { WEBHOOK_HEADERS_MAX, WebhookCreate, WebhookEvent, WebhookUpdate } from '@localess/shared';
+import { provideIcons } from '@ng-icons/core';
+import { lucidePlus, lucideX } from '@ng-icons/lucide';
+import { ChipRemoveLabelDirective } from '@shared/directives/chip-remove-label.directive';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
@@ -24,11 +29,15 @@ import { WebhookDialogContext, WebhookDialogResult } from './webhook-dialog.mode
     HlmDialogImports,
     ReactiveFormsModule,
     HlmButtonImports,
+    HlmCheckboxImports,
     HlmFieldImports,
+    HlmIconImports,
     HlmInputGroupImports,
     HlmInputImports,
     HlmComboboxImports,
+    ChipRemoveLabelDirective,
   ],
+  providers: [provideIcons({ lucidePlus, lucideX })],
 })
 export class WebhookDialogComponent {
   private readonly fb = inject(FormBuilder);
@@ -41,19 +50,67 @@ export class WebhookDialogComponent {
    */
   readonly context = injectBrnDialogContext<Partial<WebhookDialogContext>>({ optional: true });
   readonly isEdit = this.context?.id != null;
+  /** The URL as the server answers it, its query values masked (`••••`): sent back unchanged, they are kept. */
+  readonly hasMaskedUrl = this.isEdit && (this.context?.url ?? '').includes('••••');
 
-  webhookEvents = Object.values(WebHookEvent);
+  webhookEvents = Object.values(WebhookEvent);
 
   form: FormGroup = this.fb.group({
     name: this.fb.control(this.context?.name || '', WebhookValidator.NAME),
     url: this.fb.control(this.context?.url || '', WebhookValidator.URL),
     events: this.fb.control(this.context?.events || [], WebhookValidator.EVENTS),
-    secret: this.fb.control(this.context?.secret || ''),
+    signed: this.fb.control(false),
+    // A kept header (editing) has its value on the server only: its name is fixed, an empty value keeps it.
+    headers: this.fb.array((this.context?.headerNames ?? []).map(name => this.header(name, true))),
   });
+
+  readonly headersMax = WEBHOOK_HEADERS_MAX;
+
+  get headers(): FormArray<FormGroup> {
+    return this.form.controls['headers'] as FormArray<FormGroup>;
+  }
+
+  addHeader(): void {
+    this.headers.push(this.header('', false));
+  }
+
+  removeHeader(index: number): void {
+    this.headers.removeAt(index);
+  }
+
+  private header(name: string, kept: boolean): FormGroup {
+    return this.fb.group({
+      name: this.fb.control({ value: name, disabled: kept }, [Validators.required, WebhookValidator.HEADER_NAME]),
+      value: this.fb.control('', kept ? [WebhookValidator.HEADER_VALUE] : [Validators.required, WebhookValidator.HEADER_VALUE]),
+      kept: this.fb.control(kept),
+    });
+  }
 
   protected readonly eventItemToString = (value: string): string => value;
 
   save(): void {
-    this.dialogRef.close(this.form.value as WebhookDialogResult);
+    const { name, url, events, signed, headers } = this.form.getRawValue() as {
+      name: string;
+      url: string;
+      events: WebhookEvent[];
+      signed: boolean;
+      headers: { name: string; value: string; kept: boolean }[];
+    };
+    if (this.isEdit) {
+      // Every header kept: a typed value replaces, an empty one keeps the value it has.
+      const update: WebhookUpdate = {
+        name,
+        url,
+        events,
+        headers: Object.fromEntries(headers.map(it => [it.name.trim(), it.kept && !it.value ? null : it.value])),
+      };
+      this.dialogRef.close(update);
+      return;
+    }
+    const create: WebhookCreate = { name, url, events };
+    if (headers.length) create.headers = Object.fromEntries(headers.map(it => [it.name.trim(), it.value]));
+    // Signing an existing webhook is on its page (a new secret, shown once).
+    if (signed) create.signed = true;
+    this.dialogRef.close(create);
   }
 }

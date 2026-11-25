@@ -1,46 +1,50 @@
 import { Injectable } from '@nestjs/common';
-import type { TaskEntity } from '../repositories/tasks.repository.js';
+
+import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 import { AssetTransferService } from '../services/asset-transfer.service.js';
 import { SchemaTransferService } from '../services/schema-transfer.service.js';
+import { TaskLogService } from '../services/task-log.service.js';
 import { TranslationTransferService } from '../services/translation-transfer.service.js';
+import { TranslationTranslateService } from '../services/translation-translate.service.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
+import type { TaskProgressReporter } from '../utils/task-progress.js';
 
 /**
- * The export/import jobs, ported from functions/src/tasks.ts with the same archive layouts and file
- * names. Exports stream the archive straight into storage; imports read only the entries they expect
- * from the stored archive (no extraction to disk), each capped in size. Each kind's job lives in its
- * transfer service; this dispatches by kind.
+ * Dispatches a task to its kind's job (each in its service). A job answers FINISHED or ERROR (and an export its file);
+ * everything else it has to say, it logs.
  */
 @Injectable()
 export class TaskRunner {
   constructor(
-    private readonly assets: AssetTransferService,
-    private readonly schemas: SchemaTransferService,
-    private readonly translations: TranslationTransferService,
+    private readonly assetTransferService: AssetTransferService,
+    private readonly schemaTransferService: SchemaTransferService,
+    private readonly translationTransferService: TranslationTransferService,
+    private readonly translationTranslateService: TranslationTranslateService,
+    private readonly taskLogService: TaskLogService,
   ) {}
 
-  async run(task: TaskEntity): Promise<TaskOutcome> {
+  async run(task: TaskEntity, progress: TaskProgressReporter): Promise<TaskOutcome> {
     switch (task.kind) {
-      case 'ASSET_EXPORT':
-      case 'ASSET_IMPORT':
-        // Redesigned with the asset tree (docs/roadmap/content-asset-tree.md); switched off until then.
-        return { status: 'ERROR', message: 'Asset import and export are being redesigned' };
       case 'ASSET_REGEN_METADATA':
-        return this.assets.regenerateMetadata(task);
-      case 'CONTENT_EXPORT':
-      case 'CONTENT_IMPORT':
-        // Redesigned with the content tree (docs/roadmap/content-asset-tree.md); switched off until then.
-        return { status: 'ERROR', message: 'Content import and export are being redesigned' };
+        return this.assetTransferService.regenerateMetadata(task, progress);
       case 'SCHEMA_EXPORT':
-        return this.schemas.export(task);
+        return this.schemaTransferService.export(task, progress);
       case 'SCHEMA_IMPORT':
-        return this.schemas.import(task);
+        return this.schemaTransferService.import(task, progress);
       case 'TRANSLATION_EXPORT':
-        return task.locale ? this.translations.exportFlat(task) : this.translations.export(task);
+        return this.translationTransferService.export(task, progress);
       case 'TRANSLATION_IMPORT':
-        return task.locale ? this.translations.importFlat(task) : this.translations.import(task);
-      default:
-        return { status: 'ERROR', message: `Unknown task kind '${task.kind}'` };
+        return task.params?.type === 'translation-json-flat'
+          ? this.translationTransferService.importLocale(task, progress)
+          : this.translationTransferService.import(task, progress);
+      case 'TRANSLATION_TRANSLATE':
+        return this.translationTranslateService.translate(task, progress);
+      default: {
+        // Every kind is handled above (a new one fails to compile here); a row written by a newer build still answers.
+        const kind: never = task.kind;
+        await this.taskLogService.log(task, 'ERROR', `Unknown task kind '${String(kind)}'`);
+        return { status: 'ERROR' };
+      }
     }
   }
 }

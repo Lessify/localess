@@ -48,22 +48,13 @@
                 "output": "scripts"
               }
             ],
-            "styles": [
-              "src/styles.css",
-              "src/styles.scss"
-            ],
+            "styles": ["src/styles.css", "src/styles.scss"],
             "scripts": [],
-            "allowedCommonJsDependencies": [
-              "@stoplight/elements/web-components.min.js"
-            ],
+            "allowedCommonJsDependencies": ["@stoplight/elements/web-components.min.js"],
             "browser": "src/main.ts",
             "stylePreprocessorOptions": {
               "sass": {
-                "silenceDeprecations": [
-                  "color-functions",
-                  "global-builtin",
-                  "import"
-                ]
+                "silenceDeprecations": ["color-functions", "global-builtin", "import"]
               }
             }
           },
@@ -125,28 +116,21 @@
           "options": {
             "tsConfig": "tsconfig.spec.json",
             "buildTarget": "localess:build:development",
-            "setupFiles": [
-              "src/test-setup.ts"
-            ],
+            "setupFiles": ["src/test-setup.ts"],
             "runnerConfig": true
           }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
-            "lintFilePatterns": [
-              "src/**/*.ts",
-              "src/**/*.html"
-            ]
+            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
           }
         }
       }
     }
   },
   "cli": {
-    "schematicCollections": [
-      "@angular-eslint/schematics"
-    ],
+    "schematicCollections": ["@angular-eslint/schematics"],
     "analytics": false
   },
   "schematics": {

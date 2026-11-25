@@ -1,4 +1,4 @@
-import { Directive, ElementRef, inject, input } from '@angular/core';
+import { Directive, ElementRef, inject, input, numberAttribute } from '@angular/core';
 
 @Directive({
   selector: 'img[llImagePreview]',
@@ -10,7 +10,8 @@ import { Directive, ElementRef, inject, input } from '@angular/core';
 export class ImagePreviewDirective {
   private hostElement = inject<ElementRef<HTMLImageElement>>(ElementRef);
 
-  scale = input<number>(2, { alias: 'llImagePreview' });
+  /** How much the preview enlarges the image; a bare `llImagePreview` (no value) is 2. */
+  scale = input(2, { alias: 'llImagePreview', transform: (value: number | string) => numberAttribute(value, 2) });
 
   onMouseOver() {
     if (this.hostElement.nativeElement.parentElement) {

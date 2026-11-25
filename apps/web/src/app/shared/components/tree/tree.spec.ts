@@ -37,6 +37,7 @@ const DEEP_NODES: LlTreeNode[] = [
       [(selectedKey)]="selectedKey"
       [indent]="indent()"
       [guides]="guides()"
+      [selectGroups]="selectGroups()"
       (nodeSelect)="selected.set($event)">
       <ng-template llTreeNodeDef let-node>
         <span class="node-name">{{ node.name }}</span>
@@ -51,6 +52,7 @@ class TreeHostComponent {
   readonly selected = signal<LlTreeNode | undefined>(undefined);
   readonly indent = signal(16);
   readonly guides = signal(false);
+  readonly selectGroups = signal(false);
 }
 
 describe('LlTree', () => {
@@ -297,6 +299,20 @@ describe('LlTree', () => {
 
       expect(host.selectedKey()).toBeUndefined();
       expect(host.selected()).toBeUndefined();
+    });
+
+    it('with selectGroups, selects a group node too, opening it', async () => {
+      const { fixture, host } = await setup();
+      host.selectGroups.set(true);
+      await settle(fixture);
+
+      click(rows(fixture)[0]);
+      await settle(fixture);
+
+      expect(host.selectedKey()).toBe('home');
+      expect(host.selected()?.key).toBe('home');
+      expect(items(fixture)[0].getAttribute('aria-selected')).toBe('true');
+      expect(host.expandedKeys().has('home')).toBe(true);
     });
 
     it('reflects an externally set selectedKey as aria-selected', async () => {

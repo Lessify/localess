@@ -5,7 +5,7 @@ Each model is defined once here; neither app redeclares it.
 
 | Entry point | Contents |
 |---|---|
-| `@localess/shared` | Models and enums (`src/models/*.model.ts`, the JSON wire format), permissions (`canPerform`, `canGrant`, `canManageUser`), locales, `extractContent` |
+| `@localess/shared` | Models and enums (`src/models/*.model.ts`, the JSON wire format), roles (`roles.ts`: the role lists and `hasRole`), locales, `extractContent` |
 | `@localess/shared/zod` | Zod validators for request bodies and imports (`src/models/*.zod.ts`) |
 
 The web app imports only the first entry point, so zod stays out of the browser bundle.
@@ -15,6 +15,7 @@ The web app imports only the first entry point, so zod stays out of the browser 
 ```bash
 pnpm shared:build   # tsc -b → dist/ (the server build runs it first through project references)
 pnpm shared:test    # type-check + vitest
+pnpm --filter @localess/shared lint   # ESLint, type-aware, imports sorted (part of the root `pnpm lint`)
 ```
 
 The server compiles against `dist/`; the web app and the server tests resolve the source directly (tsconfig

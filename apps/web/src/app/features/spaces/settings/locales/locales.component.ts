@@ -1,9 +1,10 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { LocaleService } from '@core/services/locale.service';
 import { NotificationService } from '@core/services/notification.service';
+import { SpaceService } from '@core/services/space.service';
 import { SpaceStore } from '@core/stores/space.store';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { PagedList } from '@core/utils/paged-list';
 import { Locale } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowDown, lucideArrowUp, lucideCheck, lucideEllipsisVertical, lucidePlus, lucideTrash, lucideX } from '@ng-icons/lucide';
@@ -15,17 +16,19 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { combineLatest, EMPTY } from 'rxjs';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
 import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog/locale-dialog.model';
+import { SpaceLocaleService } from './space-locale.service';
 
 @Component({
   selector: 'll-space-settings-locales',
@@ -54,48 +57,62 @@ import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog/locale-
     }),
   ],
 })
-export class LocalesComponent implements AfterViewInit {
+export class LocalesComponent {
   readonly localeService = inject(LocaleService);
+  private readonly spaceLocaleService = inject(SpaceLocaleService);
+  private readonly spaceService = inject(SpaceService);
   private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
 
+  /** The page shown: paged, sorted and searched on the server, in the space's order unless sorted otherwise. */
+  readonly list = new PagedList(20);
+  readonly total = signal(0);
   private readonly locales = signal<Locale[]>([]);
   readonly dataSource = new TableDataSource<Locale>(this.locales, this.injector);
   displayedColumns: string[] = ['id', 'icon', 'name', 'translateFrom', 'translateTo', 'isDefault', 'actions'];
+  /** The default is the space's `defaultLocaleId`. */
+  readonly defaultLocaleId = computed(() => this.spaceStore.selectedSpace()?.defaultLocaleId);
 
   private destroyRef = inject(DestroyRef);
 
+  /**
+   * The current query's page for the selected space, again whenever either changes or the space does (live). A failed
+   * load is told and ends only that request: the next query change fetches again.
+   */
   constructor() {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<Locale>({
-      searchFields: locale => [locale.id, locale.name],
-    });
-    toObservable(this.spaceStore.selectedSpace)
+    combineLatest([toObservable(this.spaceStore.selectedSpaceId).pipe(filter(it => it !== undefined)), toObservable(this.list.params)])
       .pipe(
-        filter(it => it !== undefined), // Skip initial data
+        switchMap(([spaceId, params]) =>
+          this.spaceLocaleService.findAll(spaceId!, params).pipe(
+            catchError(() => {
+              this.notificationService.error('Locales can not be loaded.');
+              this.isLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe({
-        next: space => {
-          this.locales.set(space!.locales);
-          this.isLoading.set(false);
-        },
+      .subscribe(page => {
+        this.locales.set(page.items.flatMap(it => (it.locale ? [it.locale] : [])));
+        this.total.set(page.total);
+        this.list.onLoaded(page);
+        this.isLoading.set(false);
       });
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
+  /** The search box (the locale's id or name), on the server; from the first page. */
+  onFilterChange(value: FilterToolbarValue): void {
+    this.list.setFilters({ search: value.search?.trim() || undefined });
   }
 
-  onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+  /** Cleared: back to the space's order. */
+  onSortChange(sort: TableSortState): void {
+    this.list.setSort(sort.active, sort.direction);
   }
 
   /**
@@ -104,7 +121,8 @@ export class LocalesComponent implements AfterViewInit {
    * array would arrive as index keys.
    */
   openAddDialog(): void {
-    const { id, locales } = this.spaceStore.selectedSpace()!;
+    const { id } = this.spaceStore.selectedSpace()!;
+    const locales = this.spaceStore.locales();
     this.hlmDialog
       .open<LocaleDialogResult, LocaleDialogContext>(LocaleDialogComponent, {
         context: { locales },
@@ -113,7 +131,7 @@ export class LocalesComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.localeService.create(id, it!.locale)),
+        switchMap(it => this.spaceLocaleService.create(id, it!.locale)),
       )
       .subscribe({
         next: () => {
@@ -140,11 +158,10 @@ export class LocalesComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.localeService.delete(spaceId!, element)),
+        switchMap(() => this.spaceLocaleService.remove(spaceId!, element)),
       )
       .subscribe({
         next: () => {
-          this.locales.update(locales => locales.filter(x => x.id !== element.id));
           this.notificationService.success(`Locale '${element.name}' has been deleted.`);
         },
         error: () => {
@@ -165,7 +182,7 @@ export class LocalesComponent implements AfterViewInit {
         context: {
           title: 'Change Default Locale',
           content:
-            `Make '${element.name}' the default locale instead of '${space.defaultLocale.name}'? ` +
+            `Make '${element.name}' the default locale instead of '${this.spaceStore.defaultLocale()?.name}'? ` +
             `Content values stored for the default locale are not moved: from now on they are read as '${element.name}'. ` +
             'Translations are not affected.',
         },
@@ -174,7 +191,7 @@ export class LocalesComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.localeService.setDefault(space.id, element)),
+        switchMap(() => this.spaceService.setDefaultLocale(space.id, element)),
       )
       .subscribe({
         next: () => {
@@ -188,19 +205,17 @@ export class LocalesComponent implements AfterViewInit {
 
   /** Whether `element` can move one place in the space's order (`-1` up, `1` down). */
   canMove(element: Locale, direction: -1 | 1): boolean {
-    const locales = this.spaceStore.selectedSpace()?.locales ?? [];
+    const locales = this.spaceStore.locales();
     const index = locales.findIndex(it => it.id === element.id);
     return index >= 0 && index + direction >= 0 && index + direction < locales.length;
   }
 
-  /** Swaps `element` with its neighbour in the space's order, which is also the order everywhere else in the app. */
+  /** Moves `element` one place in the space's order (it swaps with its neighbour), which is also the order everywhere else in the app. */
   move(element: Locale, direction: -1 | 1): void {
     const space = this.spaceStore.selectedSpace();
     if (!space || !this.canMove(element, direction)) return;
-    const ids = space.locales.map(it => it.id);
-    const index = ids.indexOf(element.id);
-    [ids[index], ids[index + direction]] = [ids[index + direction], ids[index]];
-    this.localeService.reorder(space.id, ids).subscribe({
+    const index = this.spaceStore.locales().findIndex(it => it.id === element.id);
+    this.spaceLocaleService.move(space.id, element, index + direction).subscribe({
       error: () => {
         this.notificationService.error(`Locale '${element.name}' can not be moved.`);
       },

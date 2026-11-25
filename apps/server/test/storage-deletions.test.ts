@@ -1,18 +1,20 @@
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
+
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+
 import { newUuid } from '../src/infra/database/id.js';
 import { storageDeletions } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
-import { AssetsRepository } from '../src/modules/assets/repositories/assets.repository.js';
-import { AssetsService } from '../src/modules/assets/services/assets.service.js';
-import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
-import { StorageDeletionsRepository } from '../src/shared/repositories/storage-deletions.repository.js';
+import { AssetRepository } from '../src/modules/assets/repositories/asset.repository.js';
+import { AssetService } from '../src/modules/assets/services/asset.service.js';
+import { SpaceService } from '../src/modules/spaces/services/space.service.js';
+import { StorageDeletionRepository } from '../src/shared/repositories/storage-deletion.repository.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
-import { createTestApp, insertSpace, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
+import { createTestApp, insertSpace, TestApp } from './test-app.js';
 
 /**
  * Stored files are deleted through the `storage_deletions` queue: a delete queues them in its transaction and the
@@ -20,14 +22,14 @@ import { S1 } from './ids.js';
  */
 describe('storage deletions', () => {
   let t: TestApp;
-  let assets: AssetsService;
+  let assets: AssetService;
   let sweeper: StorageSweeperService;
   let storage: StorageDriver;
 
   beforeAll(async () => {
     t = await createTestApp();
     await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }] });
-    assets = t.app.get(AssetsService);
+    assets = t.app.get(AssetService);
     sweeper = t.app.get(StorageSweeperService);
     storage = t.app.get<StorageDriver>(STORAGE_DRIVER);
   });
@@ -53,8 +55,8 @@ describe('storage deletions', () => {
 
   it('queues the files of a deleted file and deletes them right after the commit', async () => {
     const file = await upload('a');
-    expect(await exists(`spaces/${S1}/assets/${file.id}/original`)).toBe(true);
-    await assets.delete(S1, file.id);
+    expect(await exists(`spaces/${S1}/assets/${file.id}/a.txt`)).toBe(true);
+    await assets.remove(S1, file.id);
     await sweeper.whenIdle();
     expect(await exists(`spaces/${S1}/assets/${file.id}`)).toBe(false);
     expect(await queue()).toEqual([]);
@@ -63,7 +65,7 @@ describe('storage deletions', () => {
   it('keeps a failed deletion queued with its error, and a later sweep deletes the files', async () => {
     const file = await upload('b');
     vi.spyOn(storage, 'deletePrefix').mockRejectedValueOnce(new Error('disk unavailable'));
-    await assets.delete(S1, file.id);
+    await assets.remove(S1, file.id);
     await sweeper.whenIdle();
     const [entry] = await queue();
     expect(entry).toMatchObject({
@@ -73,7 +75,7 @@ describe('storage deletions', () => {
       lastError: 'disk unavailable',
     });
     expect(entry.notBefore.getTime()).toBeGreaterThan(Date.now());
-    expect(await exists(`spaces/${S1}/assets/${file.id}/original`)).toBe(true);
+    expect(await exists(`spaces/${S1}/assets/${file.id}/b.txt`)).toBe(true);
 
     await due();
     await sweeper.sweep();
@@ -86,7 +88,7 @@ describe('storage deletions', () => {
     const one = await upload('one', folder.id);
     const two = await upload('two', folder.id);
     vi.spyOn(sweeper, 'kick').mockImplementation(() => undefined);
-    await assets.delete(S1, folder.id);
+    await assets.remove(S1, folder.id);
     expect((await queue()).map(it => it.assetId).sort()).toEqual([one.id, two.id].sort());
 
     await sweeper.sweep();
@@ -100,7 +102,7 @@ describe('storage deletions', () => {
     await insertSpace(t.db, { id: spaceId, name: 'Gone', locales: [{ id: 'en', name: 'English' }] });
     const file = await upload('c', null, spaceId);
     vi.spyOn(sweeper, 'kick').mockImplementation(() => undefined);
-    await t.app.get(SpacesService).delete(spaceId);
+    await t.app.get(SpaceService).remove(spaceId);
     expect(await queue()).toEqual([expect.objectContaining({ prefix: `spaces/${spaceId}/`, spaceId, assetId: null })]);
 
     await sweeper.sweep();
@@ -112,18 +114,18 @@ describe('storage deletions', () => {
   it('leaves no entry after an upload', async () => {
     const file = await upload('d');
     expect(await queue()).toEqual([]);
-    await assets.delete(S1, file.id);
+    await assets.remove(S1, file.id);
     await sweeper.whenIdle();
   });
 
   it('cleans up after an upload that died after storing its file, once its hour has passed', async () => {
     // The row is never written and the immediate cleanup fails too: the upload's guard entry is all that is left.
-    vi.spyOn(t.app.get(AssetsRepository), 'createFile').mockRejectedValueOnce(new Error('connection lost'));
+    vi.spyOn(t.app.get(AssetRepository), 'createFile').mockRejectedValueOnce(new Error('connection lost'));
     vi.spyOn(storage, 'deletePrefix').mockRejectedValueOnce(new Error('connection lost'));
     await expect(upload('e')).rejects.toThrow('connection lost');
     const [entry] = await queue();
     expect(entry.notBefore.getTime()).toBeGreaterThan(Date.now() + 55 * 60 * 1000);
-    expect(await exists(`spaces/${S1}/assets/${entry.assetId}/original`)).toBe(true);
+    expect(await exists(`spaces/${S1}/assets/${entry.assetId}/e.txt`)).toBe(true);
 
     await sweeper.sweep();
     expect(await queue()).toHaveLength(1);
@@ -138,8 +140,8 @@ describe('storage deletions', () => {
     await t.db.insert(storageDeletions).values({ prefix: `spaces/${S1}/assets/${file.id}/`, spaceId: S1, assetId: file.id });
     await sweeper.sweep();
     expect(await queue()).toEqual([]);
-    expect(await exists(`spaces/${S1}/assets/${file.id}/original`)).toBe(true);
-    await assets.delete(S1, file.id);
+    expect(await exists(`spaces/${S1}/assets/${file.id}/f.txt`)).toBe(true);
+    await assets.remove(S1, file.id);
     await sweeper.whenIdle();
   });
 
@@ -157,7 +159,7 @@ describe('storage deletions', () => {
       return real(prefix);
     });
     // A second instance: its own sweeper over the same database.
-    const other = new StorageSweeperService(t.app.get(StorageDeletionsRepository), storage);
+    const other = new StorageSweeperService(t.app.get(StorageDeletionRepository), storage);
     await Promise.all([sweeper.sweep(), other.sweep()]);
     expect(deleted.sort()).toEqual(ids.map(id => `spaces/${S1}/assets/${id}/`).sort());
     expect(await queue()).toEqual([]);

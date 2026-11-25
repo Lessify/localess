@@ -1,5 +1,6 @@
 import { TokenType } from '@localess/shared';
 import { describe, expect, it } from 'vitest';
+
 import { hashToken } from '../../auth/utils/token-hash.js';
 import { newApiToken, parseApiToken, tokenColumns, tokenHint } from './api-token-format.js';
 

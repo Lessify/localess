@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { User } from '@localess/shared';
+import { AuthLogin, PasswordResetConfirm, PasswordResetRequest, User } from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -12,7 +12,7 @@ export class AuthApiService {
   private readonly http = inject(HttpClient);
 
   login(email: string, password: string): Observable<User> {
-    return this.http.post<{ user: User }>('/api/auth/login', { email, password }).pipe(map(it => it.user));
+    return this.http.post<{ user: User }>('/api/auth/login', { email, password } satisfies AuthLogin).pipe(map(it => it.user));
   }
 
   logout(): Observable<void> {
@@ -21,11 +21,11 @@ export class AuthApiService {
 
   /** Always succeeds, whether or not the email has an account. */
   requestPasswordReset(email: string): Observable<void> {
-    return this.http.post<void>('/api/auth/password-reset/request', { email });
+    return this.http.post<void>('/api/auth/password-reset/request', { email } satisfies PasswordResetRequest);
   }
 
   confirmPasswordReset(token: string, password: string): Observable<void> {
-    return this.http.post<void>('/api/auth/password-reset/confirm', { token, password });
+    return this.http.post<void>('/api/auth/password-reset/confirm', { token, password } satisfies PasswordResetConfirm);
   }
 
   /** Where the browser goes to sign in with a provider (a full-page redirect, not a popup). */
