@@ -9,3 +9,58 @@
     opacity: 1;
   }
 }
+
+// The source L (--source) and the translated L (--translated) of the mark. A half turn puts each L in the other's place,
+// so `.turned` swaps their colours back; hovering swaps them once more (the Swap).
+$source: #ffffff;
+$translated: #8aa6ff;
+$easing: cubic-bezier(0.65, 0, 0.35, 1);
+
+.mark {
+  --source: #{$source};
+  --translated: #{$translated};
+  transform-box: view-box;
+  transform-origin: 60px 60px;
+  transition: transform 0.6s $easing;
+
+  &.turned {
+    --source: #{$translated};
+    --translated: #{$source};
+  }
+}
+
+:host(:hover) .mark {
+  --source: #{$translated};
+  --translated: #{$source};
+
+  &.turned {
+    --source: #{$source};
+    --translated: #{$translated};
+  }
+}
+
+.l1 {
+  fill: var(--source);
+}
+
+.l2 {
+  fill: var(--translated);
+}
+
+.l1,
+.l2 {
+  transition: fill 0.6s $easing;
+}
+
+:host(:hover) .l1,
+:host(:hover) .l2 {
+  transition-duration: 0.35s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark,
+  .l1,
+  .l2 {
+    transition: none;
+  }
+}

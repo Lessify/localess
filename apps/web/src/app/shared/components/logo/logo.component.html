@@ -1,5 +1,13 @@
-<div class="flex gap-2 px-2">
-  <img ngSrc="assets/logo.svg" class="size-8" alt="Logo" height="32" width="32" />
+<!-- Folded, the sidebar rail is 3rem wide: without the padding the 2rem mark sits centred over the menu icons. -->
+<div class="flex gap-2" [class.px-2]="open()">
+  <!-- The mark from assets/logo.svg, inline so its two L's can move: Swap on hover, a half turn when the sidebar folds or opens. -->
+  <svg class="size-8 shrink-0" viewBox="0 0 120 120" role="img" aria-label="Localess">
+    <rect width="120" height="120" rx="27" fill="#003dff" />
+    <g class="mark" [class.turned]="turned()" [style.transform]="rotation()">
+      <polygon class="l1" points="26,26 48,26 48,72 66,72 66,94 26,94" />
+      <polygon class="l2" points="94,94 72,94 72,48 54,48 54,26 94,26" />
+    </g>
+  </svg>
   @if (open()) {
     <h3 hlmH3 animate.enter="enter-animation">Localess</h3>
   }
