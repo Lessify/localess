@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal } from '@angular/core';
+import { SaveActivityService } from '@core/api/save-activity.service';
 import { HlmH3 } from '@spartan-ng/helm/typography';
 
 @Component({
@@ -21,4 +22,7 @@ export class LogoComponent {
   turned = computed(() => this.turns() % 2 === 1);
 
   rotation = computed(() => `rotate(${this.turns() * 180}deg)`);
+
+  /** A save is running: the L's keep swapping colours until it ends. */
+  saving = inject(SaveActivityService).saving;
 }

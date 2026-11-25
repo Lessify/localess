@@ -1,4 +1,6 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { SaveActivityService } from '@core/api/save-activity.service';
 
 import { LogoComponent } from './logo.component';
 
@@ -29,6 +31,21 @@ describe('LogoComponent', () => {
     expect(fixture.componentInstance.turns()).toBe(0);
     expect(mark(fixture).classList).not.toContain('turned');
     expect(mark(fixture).style.transform).toBe('rotate(0deg)');
+  });
+
+  it('swaps on while the app saves', () => {
+    const saving = signal(false);
+    TestBed.configureTestingModule({ providers: [{ provide: SaveActivityService, useValue: { saving } }] });
+    const fixture = create(true);
+    expect(mark(fixture).classList).not.toContain('busy');
+
+    saving.set(true);
+    fixture.detectChanges();
+    expect(mark(fixture).classList).toContain('busy');
+
+    saving.set(false);
+    fixture.detectChanges();
+    expect(mark(fixture).classList).not.toContain('busy');
   });
 
   it('makes a half turn, with the colours swapped, each time the sidebar folds or opens', () => {

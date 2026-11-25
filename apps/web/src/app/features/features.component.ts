@@ -18,6 +18,7 @@ import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/ro
 import { AppConfigService } from '@core/api/app-config.service';
 import { AuthApiService } from '@core/services/auth-api.service';
 import { NotificationService } from '@core/services/notification.service';
+import { TabActivityService } from '@core/services/tab-activity.service';
 import { TaskNotifierService } from '@core/services/task-notifier.service';
 import { VersionService } from '@core/services/version.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
@@ -320,6 +321,8 @@ export class FeaturesComponent implements OnInit {
   constructor() {
     // A task the user started tells its end wherever they are.
     inject(TaskNotifierService).start();
+    // ... and swaps the browser tab's icon, with its progress in the title, until it ends.
+    inject(TabActivityService).start();
     // An admin connecting or disconnecting an integration shows or hides Translate and Unsplash without a reload.
     const configWatch = this.appConfig.watch();
     this.destroyRef.onDestroy(() => configWatch.unsubscribe());

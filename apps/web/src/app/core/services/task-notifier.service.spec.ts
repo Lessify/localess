@@ -122,6 +122,31 @@ describe('TaskNotifierService', () => {
     expect(listeners.get('s2')).toBe(1);
   });
 
+  it("sums up the user's running tasks for the browser tab: the first one's label and progress, until they end", () => {
+    const { notifier } = setup();
+    expect(notifier.active()).toBeUndefined();
+
+    notifier.watch('s1', task({ kind: TaskKind.TRANSLATION_EXPORT }));
+    expect(notifier.active()).toEqual({ count: 1, label: 'Translation Export', percent: undefined });
+
+    streams
+      .get('s1')!
+      .next({ spaceId: 's1', entity: 'tasks', id: 't1', op: 'progress', progress: { step: 'translations', done: 21, total: 50 } });
+    streams
+      .get('s1')!
+      .next({ spaceId: 's1', entity: 'tasks', id: 'other', op: 'progress', progress: { step: 'translations', done: 1, total: 2 } });
+    expect(notifier.active()).toEqual({ count: 1, label: 'Translation Export', percent: 42 });
+
+    notifier.watch('s1', task({ id: 't2' }));
+    expect(notifier.active()?.count).toBe(2);
+
+    current = task({ kind: TaskKind.TRANSLATION_EXPORT });
+    update('t1');
+    current = task({ id: 't2' });
+    update('t2');
+    expect(notifier.active()).toBeUndefined();
+  });
+
   it('keeps listening to the space of a task the user started until it ends, after they moved to another space', () => {
     const { notifier, success } = setup();
     notifier.watch('s1', task());

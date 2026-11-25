@@ -8,6 +8,7 @@ import { firstValueFrom } from 'rxjs';
 import { vi } from 'vitest';
 
 import { apiInterceptor } from './api.interceptor';
+import { SaveActivityService } from './save-activity.service';
 
 describe('apiInterceptor', () => {
   let http: HttpTestingController;
@@ -40,6 +41,24 @@ describe('apiInterceptor', () => {
     expect(http.expectOne('/api/app/spaces').request.headers.get('X-Requested-With')).toBe('XMLHttpRequest');
     void firstValueFrom(client.get('https://api.github.com/repos/x'));
     expect(http.expectOne('https://api.github.com/repos/x').request.headers.has('X-Requested-With')).toBe(false);
+  });
+
+  it('counts writes to the API as saves, not reads', () => {
+    const track = vi.spyOn(TestBed.inject(SaveActivityService), 'track');
+
+    void firstValueFrom(client.get('/api/app/spaces'));
+    http.expectOne('/api/app/spaces').flush([]);
+    expect(track).not.toHaveBeenCalled();
+
+    for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+      void firstValueFrom(client.request(method, '/api/app/spaces/1'));
+      http.expectOne('/api/app/spaces/1').flush({});
+    }
+    expect(track).toHaveBeenCalledTimes(4);
+
+    void firstValueFrom(client.post('https://example.com/hook', {}));
+    http.expectOne('https://example.com/hook').flush({});
+    expect(track).toHaveBeenCalledTimes(4);
   });
 
   it('signs out and goes to the login page on a 401 from the app API', async () => {
